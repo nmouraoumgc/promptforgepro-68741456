@@ -1,5 +1,5 @@
-import { useLocation, Link, useNavigate } from 'react-router-dom';
-import { Sun, Moon, Search, User, LogIn, LogOut, Settings, ShieldCheck, Flame } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Search, User, LogOut, Settings, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -10,18 +10,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { usePromptStore } from '@/stores/promptStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 export function Header() {
-  const location = useLocation();
   const navigate = useNavigate();
-  const { darkMode, toggleDarkMode } = usePromptStore();
   const { user, profile, isAdmin, signOut } = useAuthStore();
   const isMobile = useIsMobile();
-  
-  const isHomePage = location.pathname === '/';
 
   const handleSignOut = async () => {
     await signOut();
@@ -48,19 +43,6 @@ export function Header() {
           />
         </div>
 
-        {/* Dark Mode Toggle */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={toggleDarkMode}
-          className="h-9 w-9"
-        >
-          {darkMode ? (
-            <Sun className="h-5 w-5" />
-          ) : (
-            <Moon className="h-5 w-5" />
-          )}
-        </Button>
 
         {/* Auth Section */}
         {user ? (
@@ -103,11 +85,8 @@ export function Header() {
           </DropdownMenu>
         ) : (
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" asChild className="hidden sm:flex">
-              <Link to="/login">
-                <LogIn className="mr-2 h-4 w-4" />
-                Entrar
-              </Link>
+            <Button variant="ghost" size="sm" asChild>
+              <Link to="/login">Entrar</Link>
             </Button>
             <Button size="sm" asChild>
               <Link to="/signup">Criar Conta</Link>
