@@ -35,6 +35,7 @@ import {
   Category
 } from '@/types/prompt';
 import { cn } from '@/lib/utils';
+import LivePromptPreview from '@/components/builder/LivePromptPreview';
 
 const stepIcons = {
   Target, Layers, Cpu, Palette, Users, Lock, Sparkles, CheckCircle
@@ -495,92 +496,118 @@ export default function GuidedBuilder() {
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto animate-fade-in">
-      {/* Progress Steps */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          {BUILDER_STEPS.map((step, index) => {
-            const Icon = stepIcons[step.icon as keyof typeof stepIcons] || Target;
-            const isCompleted = index < builderState.step;
-            const isCurrent = index === builderState.step;
+    <div className="p-6 animate-fade-in">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Main Builder */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Progress Steps */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              {BUILDER_STEPS.map((step, index) => {
+                const Icon = stepIcons[step.icon as keyof typeof stepIcons] || Target;
+                const isCompleted = index < builderState.step;
+                const isCurrent = index === builderState.step;
+                
+                return (
+                  <div
+                    key={step.id}
+                    className="flex flex-col items-center cursor-pointer"
+                    onClick={() => index <= builderState.step && goToStep(index)}
+                  >
+                    <div
+                      className={cn(
+                        'flex h-10 w-10 items-center justify-center rounded-full border-2 transition-all',
+                        isCompleted && 'bg-primary border-primary text-primary-foreground',
+                        isCurrent && 'border-primary text-primary',
+                        !isCompleted && !isCurrent && 'border-muted text-muted-foreground'
+                      )}
+                    >
+                      {isCompleted ? <Check className="h-5 w-5" /> : <Icon className="h-5 w-5" />}
+                    </div>
+                    <span className={cn(
+                      'text-xs mt-1 hidden md:block',
+                      (isCompleted || isCurrent) ? 'text-foreground' : 'text-muted-foreground'
+                    )}>
+                      {step.title}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
             
-            return (
-              <div
-                key={step.id}
-                className="flex flex-col items-center cursor-pointer"
-                onClick={() => index <= builderState.step && goToStep(index)}
-              >
-                <div
-                  className={cn(
-                    'flex h-10 w-10 items-center justify-center rounded-full border-2 transition-all',
-                    isCompleted && 'bg-primary border-primary text-primary-foreground',
-                    isCurrent && 'border-primary text-primary',
-                    !isCompleted && !isCurrent && 'border-muted text-muted-foreground'
-                  )}
+            {/* Progress Bar */}
+            <div className="h-2 bg-muted rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-primary transition-all duration-300"
+                style={{ width: `${((builderState.step + 1) / BUILDER_STEPS.length) * 100}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Step Content */}
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>{BUILDER_STEPS[builderState.step].title}</CardTitle>
+              <CardDescription>{BUILDER_STEPS[builderState.step].description}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={builderState.step}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.2 }}
                 >
-                  {isCompleted ? <Check className="h-5 w-5" /> : <Icon className="h-5 w-5" />}
+                  {renderStepContent()}
+                </motion.div>
+              </AnimatePresence>
+              
+              {/* Micro-feedback */}
+              {builderState.step < 7 && (
+                <div className="mt-4 pt-4 border-t border-border">
+                  <p className="text-xs text-muted-foreground flex items-center gap-2">
+                    <Sparkles className="h-3 w-3 text-primary" />
+                    {builderState.step === 0 && 'Este campo define a clareza do teu prompt. Sê específico para melhores resultados.'}
+                    {builderState.step === 1 && 'O tipo de output ajuda a IA a formatar a resposta corretamente.'}
+                    {builderState.step === 2 && 'Modelos diferentes têm capacidades diferentes. Escolhe o mais adequado.'}
+                    {builderState.step === 3 && 'O tom define a personalidade do output. Afeta diretamente o score final.'}
+                    {builderState.step === 4 && 'Definir o público ajuda a IA a adaptar a linguagem e complexidade.'}
+                    {builderState.step === 5 && 'Restrições claras reduzem ambiguidade e aumentam a qualidade.'}
+                    {builderState.step === 6 && 'Equilibra controlo e liberdade criativa conforme o teu objetivo.'}
+                  </p>
                 </div>
-                <span className={cn(
-                  'text-xs mt-1 hidden md:block',
-                  (isCompleted || isCurrent) ? 'text-foreground' : 'text-muted-foreground'
-                )}>
-                  {step.title}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-        
-        {/* Progress Bar */}
-        <div className="h-2 bg-muted rounded-full overflow-hidden">
-          <div 
-            className="h-full bg-primary transition-all duration-300"
-            style={{ width: `${((builderState.step + 1) / BUILDER_STEPS.length) * 100}%` }}
-          />
-        </div>
-      </div>
+              )}
+            </CardContent>
+          </Card>
 
-      {/* Step Content */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>{BUILDER_STEPS[builderState.step].title}</CardTitle>
-          <CardDescription>{BUILDER_STEPS[builderState.step].description}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={builderState.step}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.2 }}
+          {/* Navigation */}
+          <div className="flex justify-between">
+            <Button
+              variant="outline"
+              onClick={prevStep}
+              disabled={builderState.step === 0}
             >
-              {renderStepContent()}
-            </motion.div>
-          </AnimatePresence>
-        </CardContent>
-      </Card>
+              <ChevronLeft className="mr-2 h-4 w-4" />
+              Anterior
+            </Button>
+            
+            {builderState.step < 7 && (
+              <Button
+                onClick={nextStep}
+                disabled={!canProceed()}
+              >
+                Seguinte
+                <ChevronRight className="ml-2 h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        </div>
 
-      {/* Navigation */}
-      <div className="flex justify-between">
-        <Button
-          variant="outline"
-          onClick={prevStep}
-          disabled={builderState.step === 0}
-        >
-          <ChevronLeft className="mr-2 h-4 w-4" />
-          Anterior
-        </Button>
-        
-        {builderState.step < 7 && (
-          <Button
-            onClick={nextStep}
-            disabled={!canProceed()}
-          >
-            Seguinte
-            <ChevronRight className="ml-2 h-4 w-4" />
-          </Button>
-        )}
+        {/* Live Preview Sidebar */}
+        <div className="hidden lg:block">
+          <LivePromptPreview builderState={builderState} />
+        </div>
       </div>
     </div>
   );

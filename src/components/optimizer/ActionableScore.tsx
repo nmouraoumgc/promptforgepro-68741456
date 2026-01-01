@@ -1,0 +1,148 @@
+import { TrendingUp, Wand2, BookOpen, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { Link } from 'react-router-dom';
+
+interface ScoreData {
+  overall: number;
+  clarity: number;
+  specificity: number;
+  structure: number;
+  creativity: number;
+}
+
+interface ActionableScoreProps {
+  score: ScoreData;
+  onAutoFix?: () => void;
+}
+
+const getScoreLabel = (score: number): { label: string; color: string } => {
+  if (score >= 90) return { label: 'Excelente', color: 'text-success' };
+  if (score >= 75) return { label: 'Bom', color: 'text-info' };
+  if (score >= 60) return { label: 'Bom, mas pode melhorar', color: 'text-warning' };
+  if (score >= 40) return { label: 'Precisa de trabalho', color: 'text-orange-500' };
+  return { label: 'Precisa de muito trabalho', color: 'text-destructive' };
+};
+
+const getImprovementSuggestions = (score: ScoreData): string[] => {
+  const suggestions: string[] = [];
+  
+  if (score.clarity < 80) {
+    suggestions.push('Define melhor o objetivo principal do prompt');
+  }
+  if (score.specificity < 75) {
+    suggestions.push('Adiciona exemplos concretos do output esperado');
+  }
+  if (score.structure < 80) {
+    suggestions.push('Organiza o prompt em secções claras (contexto, instruções, restrições)');
+  }
+  if (score.creativity < 60) {
+    suggestions.push('Adiciona liberdade criativa ou exemplos inspiradores');
+  }
+  if (score.overall < 70) {
+    suggestions.push('Reduz instruções vagas como "bom" ou "interessante"');
+  }
+  
+  // If score is high, give positive feedback
+  if (suggestions.length === 0) {
+    suggestions.push('O teu prompt está bem estruturado!');
+    suggestions.push('Considera testar variações para otimizar ainda mais');
+  }
+  
+  return suggestions.slice(0, 4);
+};
+
+const scoreLabels: Record<string, string> = {
+  clarity: 'Clareza',
+  specificity: 'Especificidade',
+  structure: 'Estrutura',
+  creativity: 'Criatividade',
+};
+
+export default function ActionableScore({ score, onAutoFix }: ActionableScoreProps) {
+  const { label, color } = getScoreLabel(score.overall);
+  const suggestions = getImprovementSuggestions(score);
+  const needsImprovement = score.overall < 80;
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <TrendingUp className="h-5 w-5 text-primary" />
+          Prompt Score
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Main score */}
+        <div className="text-center p-6 rounded-xl bg-gradient-to-br from-primary/10 to-transparent border border-primary/20">
+          <div className="flex items-baseline justify-center gap-1">
+            <span className="text-5xl font-bold text-primary">{score.overall}</span>
+            <span className="text-2xl text-muted-foreground">/100</span>
+          </div>
+          <p className={`text-sm font-medium mt-2 ${color}`}>
+            {label}
+          </p>
+        </div>
+
+        {/* Score breakdown */}
+        <div className="space-y-3">
+          {Object.entries(score)
+            .filter(([key]) => key !== 'overall')
+            .map(([key, value]) => (
+              <div key={key} className="space-y-1">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">{scoreLabels[key]}</span>
+                  <span className={value < 70 ? 'text-warning' : 'text-foreground'}>{value}%</span>
+                </div>
+                <Progress value={value} className="h-2" />
+              </div>
+            ))}
+        </div>
+
+        {/* Improvement suggestions */}
+        <div className="rounded-lg bg-muted/50 p-4 space-y-3">
+          <p className="text-sm font-medium flex items-center gap-2">
+            {needsImprovement ? (
+              <>
+                <AlertTriangle className="h-4 w-4 text-warning" />
+                Para aumentar o score:
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="h-4 w-4 text-success" />
+                Pontos fortes:
+              </>
+            )}
+          </p>
+          <ul className="space-y-2">
+            {suggestions.map((suggestion, i) => (
+              <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
+                <span className={needsImprovement ? 'text-warning' : 'text-success'}>
+                  {needsImprovement ? '→' : '✓'}
+                </span>
+                {suggestion}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Action buttons */}
+        <div className="grid grid-cols-2 gap-2">
+          {needsImprovement && onAutoFix && (
+            <Button onClick={onAutoFix} className="gap-2">
+              <Wand2 className="h-4 w-4" />
+              Corrigir automaticamente
+            </Button>
+          )}
+          <Link to="/learn" className={needsImprovement ? '' : 'col-span-2'}>
+            <Button variant="outline" className="w-full gap-2">
+              <BookOpen className="h-4 w-4" />
+              Aprender a melhorar
+            </Button>
+          </Link>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
