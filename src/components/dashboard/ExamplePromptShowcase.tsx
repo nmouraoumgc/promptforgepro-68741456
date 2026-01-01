@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Eye, Sparkles, Target, FileText, Lightbulb } from 'lucide-react';
+import { Eye, Sparkles, Target, FileText, Lightbulb, ArrowRight } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -46,31 +46,33 @@ export default function ExamplePromptShowcase() {
 
   return (
     <>
-      <Card className="h-full border-border/50 hover:border-primary/30 transition-colors">
-        <CardContent className="p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium">Exemplo</span>
+      <Card 
+        className="border-border/50 hover:border-primary/40 transition-all cursor-pointer group"
+        onClick={() => setShowModal(true)}
+      >
+        <CardContent className="p-5 md:p-6">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4 min-w-0">
+              <div className="flex h-10 w-10 md:h-12 md:w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                <Sparkles className="h-5 w-5 md:h-6 md:w-6 text-primary" />
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="font-medium text-sm md:text-base">Exemplo de Prompt de Alta Qualidade</span>
+                  <Badge variant="secondary" className="text-xs bg-success/10 text-success border-0 shrink-0">
+                    {examplePrompt.score.overall}%
+                  </Badge>
+                </div>
+                <p className="text-sm text-muted-foreground truncate">
+                  {examplePrompt.objective}
+                </p>
+              </div>
             </div>
-            <Badge variant="secondary" className="text-xs bg-success/10 text-success border-0">
-              {examplePrompt.score.overall}%
-            </Badge>
+            <div className="flex items-center gap-2 text-muted-foreground group-hover:text-foreground transition-colors shrink-0">
+              <span className="text-xs hidden sm:inline">Ver detalhes</span>
+              <ArrowRight className="h-4 w-4" />
+            </div>
           </div>
-
-          <p className="text-sm text-muted-foreground line-clamp-3">
-            {examplePrompt.objective}
-          </p>
-
-          <Button 
-            onClick={() => setShowModal(true)} 
-            variant="ghost"
-            size="sm"
-            className="w-full text-xs gap-2 text-muted-foreground hover:text-foreground"
-          >
-            <Eye className="h-3 w-3" />
-            Ver detalhes
-          </Button>
         </CardContent>
       </Card>
 

@@ -92,76 +92,55 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* Ambient Stats - Only show if user has prompts */}
-      {prompts.length > 0 && (
-        <div className="flex items-center justify-center gap-6 md:gap-10 text-sm text-muted-foreground">
-          <span>{stats.total} prompts</span>
-          <span className="w-1 h-1 rounded-full bg-border" />
-          <span>{stats.favorites} favoritos</span>
-          {stats.avgScore > 0 && (
-            <>
-              <span className="w-1 h-1 rounded-full bg-border hidden sm:block" />
-              <span className="hidden sm:inline">{stats.avgScore}% score médio</span>
-            </>
-          )}
-        </div>
-      )}
+      {/* Example Showcase - Featured, directly below actions */}
+      <ExamplePromptShowcase />
 
-      {/* Secondary Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        {/* Recent Prompts */}
-        <Card className="lg:col-span-3 border-border/50">
-          <div className="flex items-center justify-between p-5 pb-0">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Clock className="h-4 w-4" />
-              <span className="text-sm font-medium">Recentes</span>
-            </div>
-            {prompts.length > 0 && (
+      {/* Ambient Stats + Recent - Secondary content */}
+      {prompts.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-center gap-6 md:gap-10 text-sm text-muted-foreground">
+            <span>{stats.total} prompts</span>
+            <span className="w-1 h-1 rounded-full bg-border" />
+            <span>{stats.favorites} favoritos</span>
+            {stats.avgScore > 0 && (
+              <>
+                <span className="w-1 h-1 rounded-full bg-border hidden sm:block" />
+                <span className="hidden sm:inline">{stats.avgScore}% score médio</span>
+              </>
+            )}
+          </div>
+
+          {/* Recent Prompts - Compact */}
+          <Card className="border-border/50">
+            <div className="flex items-center justify-between p-4 pb-0">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Clock className="h-4 w-4" />
+                <span className="text-sm font-medium">Recentes</span>
+              </div>
               <Link to="/library">
                 <span className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
                   Ver todos <ArrowRight className="h-3 w-3" />
                 </span>
               </Link>
-            )}
-          </div>
-          <CardContent className="p-5">
-            {recentPrompts.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-10 text-center">
-                <div className="h-12 w-12 rounded-full bg-muted/50 flex items-center justify-center mb-4">
-                  <Wand2 className="h-6 w-6 text-muted-foreground/50" />
-                </div>
-                <p className="text-sm text-muted-foreground">Os teus prompts aparecem aqui</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
+            </div>
+            <CardContent className="p-4">
+              <div className="flex flex-wrap gap-2">
                 {recentPrompts.map((prompt) => (
                   <Link key={prompt.id} to={`/library?id=${prompt.id}`}>
-                    <div className="flex items-center gap-3 rounded-lg p-3 transition-colors hover:bg-muted/50">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="font-medium text-sm truncate">{prompt.title}</p>
-                          {prompt.isFavorite && (
-                            <Star className="h-3 w-3 fill-warning text-warning shrink-0" />
-                          )}
-                        </div>
-                        <p className="text-xs text-muted-foreground truncate mt-0.5">
-                          {prompt.content.substring(0, 50)}...
-                        </p>
-                      </div>
-                      <Badge variant="outline" className="text-xs shrink-0">{prompt.category}</Badge>
-                    </div>
+                    <Badge 
+                      variant="secondary" 
+                      className="py-1.5 px-3 hover:bg-muted transition-colors cursor-pointer"
+                    >
+                      {prompt.isFavorite && <Star className="h-3 w-3 fill-warning text-warning mr-1.5" />}
+                      {prompt.title}
+                    </Badge>
                   </Link>
                 ))}
               </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Example Showcase - Subtle, Secondary */}
-        <div className="lg:col-span-2">
-          <ExamplePromptShowcase />
+            </CardContent>
+          </Card>
         </div>
-      </div>
+      )}
     </div>
   );
 }
