@@ -195,9 +195,9 @@ export const PACKS: Pack[] = [
   {
     id: 'copywriting-sales',
     slug: 'copywriting',
-    name: 'Copywriting de Vendas',
-    promise: 'Textos que convertem visitantes em compradores',
-    description: 'Frameworks de copywriting testados para páginas de vendas, emails e anúncios.',
+    name: 'Copywriting de Vendas Prompt Pack',
+    promise: 'Prompts, estruturas e CTAs prontos para converter visitantes em clientes',
+    description: 'Estruturas testadas em conteúdo real — não prompts genéricos.',
     audience: 'Empreendedores e marketers',
     outcomeCategory: 'sales',
     icon: 'PenTool',
@@ -206,10 +206,9 @@ export const PACKS: Pack[] = [
     previewLimit: 2,
     totalPrompts: 15,
     benefits: [
-      'Headlines que captam atenção imediata',
-      'Páginas de vendas persuasivas',
-      'Emails que abrem e convertem',
-      'Anúncios com CTR elevado',
+      'Estruturas completas prontas a usar',
+      'Variações otimizadas para diferentes objetivos',
+      'CTAs e exemplos aplicáveis imediatamente',
     ],
     categories: [
       { id: 'headlines', label: 'Headlines', description: 'Títulos irresistíveis', icon: 'Type' },

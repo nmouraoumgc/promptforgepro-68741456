@@ -84,6 +84,24 @@ const getPackCopy = (packSlug: string) => {
       ctaMicrocopy: 'Inclui todo o conteúdo do YouTube Growth Prompt Pack.',
       trustNote: 'Criado para quem quer resultados consistentes, não apenas experimentar IA.',
     },
+    copywriting: {
+      inputLabel: 'Tema do conteúdo',
+      inputPlaceholder: 'Exemplos: landing pages, emails, anúncios',
+      generateButton: '⚡ Gerar preview grátis',
+      generateMicrocopy: 'Pré-visualização limitada. Sem cartão.',
+      successMessage: '⚡ Preview gerado com sucesso',
+      lockedLabel: '🔒 Conteúdo premium oculto',
+      limitedViewNote: 'Estás a ver uma versão limitada do pack completo.',
+      unlockBenefits: [
+        'Estruturas completas prontas a usar',
+        'Variações otimizadas para diferentes objetivos',
+        'CTAs e exemplos aplicáveis imediatamente',
+      ],
+      limitTitle: '🔒 Limite gratuito atingido',
+      limitSubtext: 'Desbloqueia o pack para acesso completo e uso ilimitado.',
+      ctaMicrocopy: 'Inclui todo o conteúdo do Copywriting de Vendas Prompt Pack.',
+      trustNote: 'Criado para quem quer resultados consistentes, não apenas experimentar IA.',
+    },
   };
 
   // Default copy for other packs
@@ -139,6 +157,11 @@ export function PackPreview({ pack, onUnlock }: PackPreviewProps) {
       mockResults = [
         `Título de curiosidade: "O segredo de ${tema} que ninguém te conta"`,
         `Título SEO: "Como dominar ${tema} em 2024 (Guia Completo)"`,
+      ];
+    } else if (pack.slug === 'copywriting') {
+      mockResults = [
+        `Headline de benefício: "Descobre como ${tema} pode transformar o teu negócio"`,
+        `Headline de curiosidade: "O erro fatal que está a custar vendas em ${tema}"`,
       ];
     } else {
       mockResults = [
