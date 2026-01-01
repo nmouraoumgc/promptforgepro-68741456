@@ -17,6 +17,11 @@ import Pricing from "@/pages/Pricing";
 import TikTokPack from "@/pages/TikTokPack";
 import Checkout from "@/pages/Checkout";
 import PurchaseSuccess from "@/pages/PurchaseSuccess";
+import Login from "@/pages/Login";
+import Signup from "@/pages/Signup";
+import Account from "@/pages/Account";
+import Plans from "@/pages/Plans";
+import Admin from "@/pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +33,11 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
+          {/* Auth routes (no layout) */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          
+          {/* App routes */}
           <Route element={<AppLayout />}>
             <Route path="/" element={<Dashboard />} />
             <Route path="/builder" element={<GuidedBuilder />} />
@@ -42,6 +52,9 @@ const App = () => (
             <Route path="/packs/tiktok" element={<TikTokPack />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/purchase-success" element={<PurchaseSuccess />} />
+            <Route path="/conta" element={<Account />} />
+            <Route path="/planos" element={<Plans />} />
+            <Route path="/admin" element={<Admin />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
