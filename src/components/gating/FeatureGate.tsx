@@ -1,8 +1,9 @@
-import { Lock, Crown } from 'lucide-react';
+import { Lock, Crown, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { usePlanStore } from '@/stores/planStore';
 import { PlanType } from '@/types/plans';
+import { useNavigate } from 'react-router-dom';
 
 interface FeatureGateProps {
   feature: 'pro' | 'premium';
@@ -45,7 +46,7 @@ export function ProBadge({ feature, className = '' }: ProBadgeProps) {
     <Tooltip>
       <TooltipTrigger asChild>
         <span className={`inline-flex items-center gap-1 text-xs font-medium ${
-          isPremium ? 'text-primary' : 'text-info'
+          isPremium ? 'text-primary' : 'text-muted-foreground'
         } ${className}`}>
           {isPremium ? <Crown className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
           {isPremium ? 'Premium' : 'Pro'}
@@ -73,14 +74,25 @@ export function UpgradePrompt({
 }: UpgradePromptProps) {
   const isPremium = feature === 'premium';
   const { setPlan } = usePlanStore();
+  const navigate = useNavigate();
   
+  // Pro-specific contextual messaging
   const defaultTitle = isPremium 
     ? 'Disponível no Premium' 
-    : 'Disponível no Pro';
+    : 'Funcionalidade Pro';
   
   const defaultDescription = isPremium
     ? 'Acede a packs profissionais e templates avançados'
-    : 'Desbloqueia funcionalidades profissionais completas';
+    : 'Estás a usar o PromptForge como ferramenta profissional. O plano Pro desbloqueia controlo avançado.';
+
+  const handleUpgrade = () => {
+    if (isPremium) {
+      setPlan('premium');
+      navigate('/packs');
+    } else {
+      navigate('/pricing');
+    }
+  };
   
   if (compact) {
     return (
@@ -89,17 +101,16 @@ export function UpgradePrompt({
           {isPremium ? (
             <Crown className="h-4 w-4 text-primary" />
           ) : (
-            <Lock className="h-4 w-4 text-info" />
+            <Zap className="h-4 w-4 text-muted-foreground" />
           )}
           <span className="text-sm">{title || defaultTitle}</span>
         </div>
         <Button 
           size="sm" 
-          variant="outline" 
           className="text-xs h-7"
-          onClick={() => setPlan(feature)}
+          onClick={handleUpgrade}
         >
-          Upgrade
+          {isPremium ? 'Desbloquear' : 'Ver Pro'}
         </Button>
       </div>
     );
@@ -108,20 +119,20 @@ export function UpgradePrompt({
   return (
     <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
       <div className={`h-12 w-12 rounded-full flex items-center justify-center mb-4 ${
-        isPremium ? 'bg-primary/10' : 'bg-info/10'
+        isPremium ? 'bg-primary/10' : 'bg-muted'
       }`}>
         {isPremium ? (
           <Crown className="h-6 w-6 text-primary" />
         ) : (
-          <Lock className="h-6 w-6 text-info" />
+          <Zap className="h-6 w-6 text-muted-foreground" />
         )}
       </div>
       <h3 className="font-semibold mb-1">{title || defaultTitle}</h3>
       <p className="text-sm text-muted-foreground mb-4 max-w-sm">
         {description || defaultDescription}
       </p>
-      <Button onClick={() => setPlan(feature)}>
-        Upgrade para {isPremium ? 'Premium' : 'Pro'}
+      <Button onClick={handleUpgrade}>
+        {isPremium ? 'Desbloquear Premium' : 'Conhecer plano Pro'}
       </Button>
     </div>
   );
@@ -133,7 +144,8 @@ interface OptimizationLimitProps {
 }
 
 export function OptimizationLimitNotice({ promptId }: OptimizationLimitProps) {
-  const { currentPlan, getOptimizationCount, setPlan } = usePlanStore();
+  const { currentPlan, getOptimizationCount } = usePlanStore();
+  const navigate = useNavigate();
   
   if (currentPlan !== 'free') return null;
   
@@ -142,21 +154,74 @@ export function OptimizationLimitNotice({ promptId }: OptimizationLimitProps) {
   
   if (remaining > 1) return null;
   
+  const handleUpgrade = () => {
+    navigate('/pricing');
+  };
+  
   return (
-    <div className="flex items-center justify-between gap-4 p-3 rounded-lg bg-warning/10 border border-warning/20 text-sm">
-      <span className="text-muted-foreground">
-        {remaining <= 0 
-          ? 'Limite de otimizações atingido' 
-          : `${remaining} otimização restante para este prompt`
-        }
-      </span>
+    <div className="flex items-center justify-between gap-4 p-3 rounded-lg bg-muted/50 border border-border text-sm">
+      <div className="flex items-center gap-2">
+        <Zap className="h-4 w-4 text-muted-foreground" />
+        <span className="text-muted-foreground">
+          {remaining <= 0 
+            ? 'Limite de otimizações atingido' 
+            : `${remaining} otimização restante para este prompt`
+          }
+        </span>
+      </div>
       <Button 
         size="sm" 
-        variant="outline" 
-        className="text-xs h-7 border-warning/30 hover:bg-warning/10"
-        onClick={() => setPlan('pro')}
+        className="text-xs h-7"
+        onClick={handleUpgrade}
       >
-        Upgrade para continuar
+        Desbloquear mais
+      </Button>
+    </div>
+  );
+}
+
+// Contextual Pro upsell for specific features
+interface ProContextualUpsellProps {
+  context: 'ab-testing' | 'version-history' | 'export' | 'high-usage';
+}
+
+const proContextMessages: Record<ProContextualUpsellProps['context'], { title: string; description: string }> = {
+  'ab-testing': {
+    title: 'Testes A/B',
+    description: 'Compara variações e descobre qual prompt funciona melhor.',
+  },
+  'version-history': {
+    title: 'Histórico de versões',
+    description: 'Acede a todas as versões anteriores dos teus prompts.',
+  },
+  'export': {
+    title: 'Exportar prompts',
+    description: 'Exporta os teus prompts para usar noutras ferramentas.',
+  },
+  'high-usage': {
+    title: 'Uso avançado detetado',
+    description: 'Estás a usar o PromptForge como ferramenta profissional.',
+  },
+};
+
+export function ProContextualUpsell({ context }: ProContextualUpsellProps) {
+  const navigate = useNavigate();
+  const message = proContextMessages[context];
+  
+  return (
+    <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
+      <div className="h-12 w-12 rounded-full flex items-center justify-center mb-4 bg-muted">
+        <Zap className="h-6 w-6 text-muted-foreground" />
+      </div>
+      <h3 className="font-semibold mb-1">{message.title}</h3>
+      <p className="text-sm text-muted-foreground mb-2 max-w-sm">
+        {message.description}
+      </p>
+      <p className="text-sm text-muted-foreground mb-4 max-w-sm">
+        O plano Pro desbloqueia controlo avançado.
+      </p>
+      <Button onClick={() => navigate('/pricing')}>
+        Conhecer plano Pro
       </Button>
     </div>
   );
