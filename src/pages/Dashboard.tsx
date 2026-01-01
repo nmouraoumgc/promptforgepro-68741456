@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Wand2, 
@@ -9,22 +10,25 @@ import {
   Clock,
   Target,
   ArrowRight,
-  Flame,
   Zap,
   Award,
-  BookOpen
+  BookOpen,
+  ChevronDown
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { usePromptStore } from '@/stores/promptStore';
 import ExamplePromptShowcase from '@/components/dashboard/ExamplePromptShowcase';
 import OnboardingChecklist from '@/components/dashboard/OnboardingChecklist';
 
 export default function Dashboard() {
-  const { prompts, getFavorites, userProfile } = usePromptStore();
+  const { prompts, getFavorites } = usePromptStore();
+  const [tipsOpen, setTipsOpen] = useState(false);
   const favorites = getFavorites();
   const recentPrompts = prompts.slice(-5).reverse();
+  const hasPrompts = prompts.length > 0;
 
   const stats = {
     total: prompts.length,
@@ -37,117 +41,79 @@ export default function Dashboard() {
     avgScore: prompts.length > 0 ? prompts.reduce((acc, p) => acc + (p.score?.overall || 0), 0) / prompts.length : 0,
   };
 
-  const quickActions = [
-    { to: '/builder', icon: Wand2, label: 'Criar Prompt', description: 'Construtor guiado passo-a-passo', color: 'bg-primary text-primary-foreground' },
-    { to: '/library', icon: Library, label: 'Biblioteca', description: 'Gere os teus prompts', color: 'bg-accent text-accent-foreground' },
-    { to: '/optimizer', icon: Sparkles, label: 'Otimizar', description: 'Melhora com sugestões IA', color: 'bg-success text-success-foreground' },
-    { to: '/tester', icon: FlaskConical, label: 'Comparar A/B', description: 'Testa diferentes versões', color: 'bg-info text-info-foreground' },
+  const secondaryActions = [
+    { to: '/library', icon: Library, label: 'Biblioteca' },
+    { to: '/optimizer', icon: Sparkles, label: 'Otimizar' },
+    { to: '/tester', icon: FlaskConical, label: 'Comparar' },
   ];
-
-  const getProfileGreeting = () => {
-    const greetings: Record<string, string> = {
-      'beginner': 'Pronto para dominar a arte dos prompts?',
-      'content-creator': 'Hora de criar conteúdo que converte!',
-      'developer': 'Vamos otimizar o teu workflow de código!',
-      'designer': 'Prepara-te para gerar visuais impressionantes!',
-      'business': 'Aumenta a produtividade com IA!'
-    };
-    return greetings[userProfile];
-  };
 
   return (
     <div className="p-4 md:p-6 space-y-4 md:space-y-6 animate-fade-in">
-      {/* Example Prompt Showcase - "Aha Moment" */}
+      {/* HERO: Example Prompt Showcase - "Aha Moment" */}
       <ExamplePromptShowcase />
 
-      {/* Onboarding Checklist */}
-      <OnboardingChecklist />
+      {/* Onboarding Checklist - Only shown for new users */}
+      {!hasPrompts && <OnboardingChecklist />}
 
-      {/* Hero Section */}
-      <div className="relative overflow-hidden rounded-xl md:rounded-2xl bg-card p-4 md:p-8 border border-border">
-        <div className="absolute inset-0 opacity-50" style={{ background: 'var(--gradient-glow)' }} />
-        <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-xl bg-primary">
-              <Flame className="h-5 w-5 md:h-6 md:w-6 text-primary-foreground" />
-            </div>
-            <div>
-              <h2 className="text-xl md:text-2xl font-bold">Olá, Prompt Master!</h2>
-              <p className="text-sm text-muted-foreground">{getProfileGreeting()}</p>
-            </div>
+      {/* Primary CTA Section */}
+      <div className="relative overflow-hidden rounded-xl md:rounded-2xl bg-card p-4 md:p-6 border border-border">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-lg md:text-xl font-semibold">
+              {hasPrompts ? 'Continua a criar' : 'Começa aqui'}
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              {hasPrompts 
+                ? 'Adiciona um novo prompt à tua biblioteca' 
+                : 'Cria o teu primeiro prompt em menos de 30 segundos'}
+            </p>
           </div>
-          
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 mt-4 md:mt-6">
-            {quickActions.map((action) => (
-              <Link key={action.to} to={action.to}>
-                <Card className="group cursor-pointer transition-all hover:shadow-lg hover:border-primary/50 h-full">
-                  <CardContent className="flex flex-col md:flex-row items-center gap-2 md:gap-4 p-3 md:p-4">
-                    <div className={`flex h-9 w-9 md:h-10 md:w-10 items-center justify-center rounded-lg ${action.color}`}>
-                      <action.icon className="h-4 w-4 md:h-5 md:w-5" />
-                    </div>
-                    <div className="flex-1 text-center md:text-left">
-                      <p className="font-medium text-sm md:text-base">{action.label}</p>
-                      <p className="text-xs text-muted-foreground hidden md:block">{action.description}</p>
-                    </div>
-                    <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hidden md:block" />
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
+          <Link to="/builder">
+            <Button size="lg" className="w-full sm:w-auto gap-2">
+              <Wand2 className="h-4 w-4" />
+              Criar Prompt
+            </Button>
+          </Link>
+        </div>
+        
+        {/* Secondary Actions - Grouped */}
+        <div className="flex items-center gap-2 mt-4 pt-4 border-t border-border">
+          <span className="text-xs text-muted-foreground mr-2">Outras ações:</span>
+          {secondaryActions.map((action) => (
+            <Link key={action.to} to={action.to}>
+              <Button variant="ghost" size="sm" className="gap-1.5 text-xs h-8">
+                <action.icon className="h-3.5 w-3.5" />
+                {action.label}
+              </Button>
+            </Link>
+          ))}
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-4">
-        <Card>
-          <CardContent className="flex items-center gap-3 md:gap-4 p-4 md:p-6">
-            <div className="flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-full bg-primary/10">
-              <Target className="h-5 w-5 md:h-6 md:w-6 text-primary" />
-            </div>
-            <div>
-              <p className="text-xl md:text-2xl font-bold">{stats.total}</p>
-              <p className="text-xs md:text-sm text-muted-foreground">Total de Prompts</p>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="flex items-center gap-3 md:gap-4 p-4 md:p-6">
-            <div className="flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-full bg-warning/10">
-              <Star className="h-5 w-5 md:h-6 md:w-6 text-warning" />
-            </div>
-            <div>
-              <p className="text-xl md:text-2xl font-bold">{stats.favorites}</p>
-              <p className="text-xs md:text-sm text-muted-foreground">Favoritos</p>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="flex items-center gap-3 md:gap-4 p-4 md:p-6">
-            <div className="flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-full bg-success/10">
-              <TrendingUp className="h-5 w-5 md:h-6 md:w-6 text-success" />
-            </div>
-            <div>
-              <p className="text-xl md:text-2xl font-bold">{stats.thisWeek}</p>
-              <p className="text-xs md:text-sm text-muted-foreground">Esta Semana</p>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="flex items-center gap-3 md:gap-4 p-4 md:p-6">
-            <div className="flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-full bg-accent/10">
-              <Award className="h-5 w-5 md:h-6 md:w-6 text-accent" />
-            </div>
-            <div>
-              <p className="text-xl md:text-2xl font-bold">{stats.avgScore.toFixed(0)}%</p>
-              <p className="text-xs md:text-sm text-muted-foreground">Score Médio</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Stats - Compact Row (only show if user has prompts) */}
+      {hasPrompts && (
+        <div className="flex items-center gap-3 md:gap-4 p-3 md:p-4 rounded-lg bg-muted/30 border border-border">
+          <div className="flex items-center gap-2">
+            <Target className="h-4 w-4 text-primary" />
+            <span className="text-sm"><strong>{stats.total}</strong> prompts</span>
+          </div>
+          <div className="h-4 w-px bg-border" />
+          <div className="flex items-center gap-2">
+            <Star className="h-4 w-4 text-warning" />
+            <span className="text-sm"><strong>{stats.favorites}</strong> favoritos</span>
+          </div>
+          <div className="h-4 w-px bg-border hidden sm:block" />
+          <div className="hidden sm:flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-success" />
+            <span className="text-sm"><strong>{stats.thisWeek}</strong> esta semana</span>
+          </div>
+          <div className="h-4 w-px bg-border hidden md:block" />
+          <div className="hidden md:flex items-center gap-2">
+            <Award className="h-4 w-4 text-accent" />
+            <span className="text-sm"><strong>{stats.avgScore.toFixed(0)}%</strong> score médio</span>
+          </div>
+        </div>
+      )}
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
@@ -205,42 +171,53 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Tips Card */}
-        <Card>
-          <CardHeader className="p-4 md:p-6">
-            <CardTitle className="flex items-center gap-2 text-base md:text-lg">
-              <Zap className="h-4 w-4 md:h-5 md:w-5 text-primary" />
-              Dicas Rápidas
-            </CardTitle>
-            <CardDescription className="text-xs md:text-sm">Afina os teus prompts como um profissional</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3 md:space-y-4 p-4 md:p-6 pt-0 md:pt-0">
-            <div className="rounded-lg bg-muted/50 p-3 md:p-4">
-              <p className="font-medium text-xs md:text-sm mb-1">💡 Define o objetivo claramente</p>
-              <p className="text-xs text-muted-foreground">
-                Prompts vagos geram resultados genéricos. Especifica o que queres alcançar.
-              </p>
-            </div>
-            <div className="rounded-lg bg-muted/50 p-3 md:p-4">
-              <p className="font-medium text-xs md:text-sm mb-1">🎯 Controla o formato do output</p>
-              <p className="text-xs text-muted-foreground">
-                Diz explicitamente o que esperas: lista, parágrafo, código comentado, etc.
-              </p>
-            </div>
-            <div className="rounded-lg bg-muted/50 p-3 md:p-4">
-              <p className="font-medium text-xs md:text-sm mb-1">🔄 Itera e refina</p>
-              <p className="text-xs text-muted-foreground">
-                Usa o versionamento para melhorar progressivamente os teus prompts.
-              </p>
-            </div>
-            <Link to="/learn" className="block">
-              <Button variant="outline" className="w-full text-sm">
-                <BookOpen className="mr-2 h-4 w-4" />
-                Explorar mais dicas
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
+        {/* Tips Card - Collapsed by default */}
+        <Collapsible open={tipsOpen} onOpenChange={setTipsOpen}>
+          <Card>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="p-4 md:p-6 cursor-pointer hover:bg-muted/30 transition-colors">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Zap className="h-4 w-4 text-primary" />
+                      Dicas Rápidas
+                    </CardTitle>
+                    <CardDescription className="text-xs mt-1">Afina os teus prompts</CardDescription>
+                  </div>
+                  <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${tipsOpen ? 'rotate-180' : ''}`} />
+                </div>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="space-y-3 p-4 pt-0">
+                <div className="rounded-lg bg-muted/50 p-3">
+                  <p className="font-medium text-xs mb-1">💡 Define o objetivo claramente</p>
+                  <p className="text-xs text-muted-foreground">
+                    Prompts vagos geram resultados genéricos.
+                  </p>
+                </div>
+                <div className="rounded-lg bg-muted/50 p-3">
+                  <p className="font-medium text-xs mb-1">🎯 Controla o formato do output</p>
+                  <p className="text-xs text-muted-foreground">
+                    Especifica o formato: lista, parágrafo, código.
+                  </p>
+                </div>
+                <div className="rounded-lg bg-muted/50 p-3">
+                  <p className="font-medium text-xs mb-1">🔄 Itera e refina</p>
+                  <p className="text-xs text-muted-foreground">
+                    Usa o versionamento para melhorar.
+                  </p>
+                </div>
+                <Link to="/learn" className="block">
+                  <Button variant="ghost" size="sm" className="w-full text-xs">
+                    <BookOpen className="mr-2 h-3 w-3" />
+                    Mais dicas
+                  </Button>
+                </Link>
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
       </div>
     </div>
   );
