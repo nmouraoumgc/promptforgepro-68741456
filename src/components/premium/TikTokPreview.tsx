@@ -151,68 +151,80 @@ function InteractiveHookGenerator({ onUpgrade }: { onUpgrade: () => void }) {
         <label className="text-xs font-medium text-muted-foreground">
           Tema do vídeo
         </label>
-        <div className="flex gap-2">
-          <Input
-            placeholder="Ex: produtividade, fitness, finanças..."
-            value={tema}
-            onChange={(e) => setTema(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && !isLoading && generateHooks()}
-            className="text-sm h-9"
-            disabled={isLoading}
-          />
-          <Button 
-            onClick={generateHooks}
-            disabled={isLoading || !tema.trim()}
-            size="sm"
-            className="shrink-0 h-9"
-          >
-            {isLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              'Gerar hooks'
-            )}
-          </Button>
-        </div>
+        <Input
+          placeholder="Ex: produtividade, fitness, finanças..."
+          value={tema}
+          onChange={(e) => setTema(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && !isLoading && generateHooks()}
+          className="text-sm h-10"
+          disabled={isLoading}
+        />
       </div>
 
+      {/* Loading state */}
+      {isLoading && (
+        <div className="flex items-center justify-center gap-2 py-4 text-primary">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          <span className="text-sm font-medium">A gerar hooks…</span>
+        </div>
+      )}
+
       {/* Generated Output */}
-      {hooks && (
-        <div className="space-y-3 animate-fade-in">
-          <div className="bg-muted/40 border border-border/40 rounded-lg p-3">
-            <p className="text-xs text-muted-foreground mb-2">Resultado:</p>
-            <pre className="text-sm whitespace-pre-wrap font-sans text-foreground/90 leading-relaxed">
+      {hooks && !isLoading && (
+        <div className="space-y-4 animate-fade-in">
+          {/* Success indicator */}
+          <div className="flex items-center gap-2 text-success">
+            <Zap className="h-4 w-4" />
+            <span className="text-xs font-medium">Hooks gerados com sucesso</span>
+          </div>
+
+          {/* Hooks output */}
+          <div className="bg-gradient-to-b from-muted/50 to-muted/30 border border-border/50 rounded-lg p-4">
+            <pre className="text-sm whitespace-pre-wrap font-sans text-foreground leading-relaxed">
               {hooks}
             </pre>
           </div>
 
-          {/* Limited notice */}
-          <div className="flex items-start gap-3 bg-card/50 border border-primary/20 rounded-lg p-3">
-            <Lock className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+          {/* Lock message - reward → curiosity → frustration */}
+          <div className="flex items-start gap-3 bg-primary/5 border border-primary/20 rounded-lg p-4">
+            <Lock className="h-5 w-5 text-primary mt-0.5 shrink-0" />
             <div className="space-y-1">
-              <p className="text-sm font-medium">Versão limitada — 2 de 5 hooks</p>
+              <p className="text-sm font-semibold text-foreground">
+                Faltam 3 hooks profissionais
+              </p>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Desbloqueia o pack para ver todos os hooks e aceder a mais 11 prompts profissionais.
+                Desbloqueia para aceder à versão completa.
               </p>
             </div>
           </div>
 
-          {/* Upgrade CTA */}
+          {/* Upgrade CTA - strong visual */}
           <Button 
             onClick={onUpgrade}
-            className="w-full"
-            size="sm"
+            className="w-full h-11 text-sm font-semibold shadow-md hover:shadow-lg transition-shadow"
+            size="lg"
           >
             <Sparkles className="h-4 w-4 mr-2" />
-            Desbloquear com Premium
+            Desbloquear os 5 hooks completos
           </Button>
         </div>
       )}
 
-      {/* Pre-generation state hint */}
+      {/* Primary action button - before generation */}
       {!hooks && !isLoading && (
-        <p className="text-xs text-muted-foreground text-center">
-          Experimenta gerar hooks para o teu próximo vídeo
-        </p>
+        <Button 
+          onClick={generateHooks}
+          disabled={!tema.trim()}
+          className={`w-full h-11 text-sm font-semibold transition-all ${
+            tema.trim() 
+              ? 'shadow-md hover:shadow-lg bg-primary hover:bg-primary/90' 
+              : 'opacity-70'
+          }`}
+          size="lg"
+        >
+          <Zap className="h-4 w-4 mr-2" />
+          Gerar hooks grátis
+        </Button>
       )}
     </div>
   );
