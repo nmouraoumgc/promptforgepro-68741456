@@ -52,7 +52,7 @@ const App = () => (
             <Route path="/packs/tiktok" element={<TikTokPack />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/purchase-success" element={<PurchaseSuccess />} />
-            <Route path="/conta" element={<Account />} />
+            <Route path="/account" element={<Account />} />
             <Route path="/planos" element={<Plans />} />
             <Route path="/admin" element={<Admin />} />
           </Route>
