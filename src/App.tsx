@@ -16,6 +16,7 @@ import Settings from "@/pages/Settings";
 import Pricing from "@/pages/Pricing";
 import TikTokPack from "@/pages/TikTokPack";
 import Checkout from "@/pages/Checkout";
+import PurchaseSuccess from "@/pages/PurchaseSuccess";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +41,7 @@ const App = () => (
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/packs/tiktok" element={<TikTokPack />} />
             <Route path="/checkout" element={<Checkout />} />
+            <Route path="/purchase-success" element={<PurchaseSuccess />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -1,10 +1,13 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Check, Shield, Lock, Sparkles } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const valueItems = [
   "Todos os Prompt Packs premium",
@@ -16,12 +19,38 @@ const valueItems = [
 const Checkout = () => {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    // Stripe integration will be added here
-    setTimeout(() => setIsLoading(false), 2000);
+
+    try {
+      // Send welcome email
+      const appUrl = window.location.origin + "/packs";
+      
+      const { error } = await supabase.functions.invoke("send-welcome-email", {
+        body: { email, appUrl },
+      });
+
+      if (error) {
+        console.error("Email error:", error);
+        // Continue to success even if email fails
+      }
+
+      // Navigate to success page
+      navigate("/purchase-success");
+    } catch (error) {
+      console.error("Checkout error:", error);
+      toast({
+        title: "Erro no checkout",
+        description: "Por favor tenta novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
