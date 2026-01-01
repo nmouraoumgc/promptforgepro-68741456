@@ -110,8 +110,7 @@ export function PackPreview({ pack, onUnlock }: PackPreviewProps) {
                     </>
                   ) : (
                     <>
-                      <Zap className="h-4 w-4 mr-2" />
-                      Gerar hooks grátis
+                      ⚡ Gerar hooks grátis
                     </>
                   )}
                 </Button>
@@ -125,10 +124,9 @@ export function PackPreview({ pack, onUnlock }: PackPreviewProps) {
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="flex items-center gap-2 text-primary"
+                  className="text-primary"
                 >
-                  <Zap className="h-4 w-4" />
-                  <span className="text-sm font-medium">Hooks gerados com sucesso</span>
+                  <span className="text-sm font-medium">⚡ Hooks gerados com sucesso</span>
                 </motion.div>
 
                 {/* Generated Hooks */}
@@ -141,7 +139,10 @@ export function PackPreview({ pack, onUnlock }: PackPreviewProps) {
                       transition={{ delay: i * 0.1 }}
                       className="p-3 bg-background rounded-lg border border-border"
                     >
-                      <p className="text-sm text-foreground font-medium">{hook}</p>
+                      <p className="text-sm text-foreground font-medium">
+                        <span className="text-muted-foreground mr-2">{i + 1}.</span>
+                        {hook}
+                      </p>
                     </motion.div>
                   ))}
 
@@ -149,10 +150,9 @@ export function PackPreview({ pack, onUnlock }: PackPreviewProps) {
                   {[3, 4, 5].map((num) => (
                     <div
                       key={num}
-                      className="p-3 bg-muted/30 rounded-lg border border-border/50 flex items-center gap-2"
+                      className="p-3 bg-muted/30 rounded-lg border border-border/50"
                     >
-                      <Lock className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground">Hook premium oculto</span>
+                      <span className="text-sm text-muted-foreground">🔒 Hook premium oculto</span>
                     </div>
                   ))}
                 </div>
@@ -192,14 +192,11 @@ export function PackPreview({ pack, onUnlock }: PackPreviewProps) {
       {/* Limit Reached State */}
       {!hasAccess && hasGenerated && (
         <Card className="p-4 border-border/50 bg-muted/30">
-          <div className="flex items-center gap-3">
-            <Lock className="h-5 w-5 text-muted-foreground" />
-            <div>
-              <p className="font-semibold text-foreground">Limite gratuito atingido</p>
-              <p className="text-sm text-muted-foreground">
-                Desbloqueia o pack para gerar hooks ilimitados e aceder a todo o conteúdo.
-              </p>
-            </div>
+          <div>
+            <p className="font-semibold text-foreground">🔒 Limite gratuito atingido</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Desbloqueia o pack para gerar hooks ilimitados e aceder a todo o conteúdo.
+            </p>
           </div>
         </Card>
       )}
@@ -216,8 +213,7 @@ export function PackPreview({ pack, onUnlock }: PackPreviewProps) {
             size="lg"
             className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
           >
-            <Sparkles className="h-4 w-4 mr-2" />
-            Desbloquear versão completa
+            ✨ Desbloquear versão completa
           </Button>
           <p className="text-center text-xs text-muted-foreground">
             Inclui todos os hooks, scripts, estruturas e CTAs do {pack.name}.
