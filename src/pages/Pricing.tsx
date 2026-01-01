@@ -8,7 +8,7 @@ import { PlanType } from '@/types/plans';
 const plans = [
   {
     id: 'free' as PlanType,
-    name: 'Gratuito',
+    name: 'Free',
     description: 'Para explorar e testar',
     price: '0€',
     priceDetail: 'para sempre',
@@ -26,13 +26,12 @@ const plans = [
     name: 'Premium',
     description: 'Acesso completo aos Prompt Packs',
     price: '19€',
-    priceDetail: 'pagamento único',
+    priceDetail: '— pagamento único',
     features: [
-      'Todos os Prompt Packs incluídos',
-      'TikTok Viral Pack completo',
-      'Templates prontos a usar',
-      'Scripts e estruturas profissionais',
-      'Atualizações futuras gratuitas',
+      'Todos os Prompt Packs premium',
+      'Hooks, scripts, estruturas e CTAs',
+      'Templates profissionais',
+      'Atualizações futuras incluídas',
     ],
     cta: 'Desbloquear acesso completo',
     highlight: true,
@@ -52,6 +51,7 @@ const plans = [
     ],
     cta: 'Subscrever Pro',
     highlight: false,
+    isPaidPlan: true,
   },
 ];
 
@@ -132,7 +132,7 @@ export default function Pricing() {
                   </div>
                   {plan.id === 'premium' && (
                     <p className="text-xs text-muted-foreground mt-1.5">
-                      Pagamento único. Acesso imediato.
+                      Acesso imediato após compra.
                     </p>
                   )}
                 </div>
@@ -153,8 +153,8 @@ export default function Pricing() {
 
                 {/* CTA */}
                 <Button 
-                  className={`w-full ${plan.highlight ? 'shadow-md' : ''}`}
-                  variant={plan.highlight ? 'default' : 'outline'}
+                  className={`w-full ${(plan.highlight || plan.id === 'pro') ? 'shadow-md' : ''}`}
+                  variant={(plan.highlight || plan.id === 'pro') ? 'default' : 'outline'}
                   disabled={isActive}
                   onClick={() => handleSelectPlan(plan.id)}
                 >
@@ -180,7 +180,7 @@ export default function Pricing() {
       {/* Trust note */}
       <footer className="text-center mt-12 md:mt-16 max-w-lg mx-auto">
         <p className="text-sm text-muted-foreground leading-relaxed">
-          Dúvidas? O plano gratuito não expira — usa o tempo que precisares.
+          Dúvidas? O plano Free não expira — usa o tempo que precisares.
         </p>
       </footer>
     </div>
