@@ -39,7 +39,7 @@ export default function Dashboard() {
       to: '/library', 
       icon: Library, 
       label: 'Biblioteca', 
-      description: 'Os teus, organizados',
+      description: 'Os teus prompts, organizados',
       gradient: 'from-accent/20 to-accent/5',
       iconBg: 'bg-accent',
     },
