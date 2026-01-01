@@ -50,15 +50,15 @@ export default function Login() {
         transition={{ duration: 0.5 }}
         className="w-full max-w-md"
       >
-        {/* Logo */}
-        <div className="flex items-center justify-center gap-2 mb-8">
+        {/* Logo - clickable to homepage */}
+        <Link to="/" className="flex items-center justify-center gap-2 mb-8">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
             <Flame className="h-6 w-6 text-primary-foreground" />
           </div>
           <span className="text-xl font-bold text-foreground">
             Prompt<span className="text-primary">Forge</span>
           </span>
-        </div>
+        </Link>
 
         <Card>
           <CardHeader className="text-center">
