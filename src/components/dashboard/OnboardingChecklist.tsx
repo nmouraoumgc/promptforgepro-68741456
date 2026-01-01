@@ -71,6 +71,7 @@ export default function OnboardingChecklist() {
   const progress = (completedSteps.length / onboardingSteps.length) * 100;
   const allComplete = completedSteps.length === onboardingSteps.length;
 
+  // Component is now conditionally rendered by parent, but keep these checks
   if (dismissed || allComplete) return null;
 
   return (
