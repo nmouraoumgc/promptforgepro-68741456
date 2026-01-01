@@ -12,6 +12,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { usePromptStore } from '@/stores/promptStore';
 import ExamplePromptShowcase from '@/components/dashboard/ExamplePromptShowcase';
+import TikTokPreview from '@/components/premium/TikTokPreview';
 
 export default function Dashboard() {
   const { prompts, getFavorites } = usePromptStore();
@@ -94,6 +95,11 @@ export default function Dashboard() {
 
       {/* Example Showcase - Featured, directly below actions */}
       <ExamplePromptShowcase />
+
+      {/* Premium Preview - TikTok Pack */}
+      <div className="max-w-md mx-auto">
+        <TikTokPreview context="builder" />
+      </div>
 
       {/* Ambient Stats + Recent - Secondary content */}
       {prompts.length > 0 && (

@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePlanStore } from '@/stores/planStore';
 import { UpgradePrompt } from '@/components/gating/FeatureGate';
+import { TikTokPackPreviewInline } from '@/components/premium/TikTokPreview';
 
 const packs = [
   { 
@@ -98,7 +99,7 @@ export default function PromptPacks() {
   const { canAccess, setPlan } = usePlanStore();
   const canAccessPacks = canAccess('canAccessPromptPacks');
 
-  // Gate all packs for non-premium users
+  // Gate all packs for non-premium users - but show preview
   if (!canAccessPacks) {
     return (
       <div className="p-6 space-y-6 animate-fade-in">
@@ -108,6 +109,11 @@ export default function PromptPacks() {
           <p className="text-muted-foreground">
             Packs temáticos com prompts testados e otimizados para resultados profissionais
           </p>
+        </div>
+
+        {/* TikTok Preview - inline taste */}
+        <div className="max-w-md mx-auto">
+          <TikTokPackPreviewInline />
         </div>
 
         {/* Preview grid - blurred */}
