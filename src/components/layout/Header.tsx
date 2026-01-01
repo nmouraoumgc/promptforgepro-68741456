@@ -1,5 +1,5 @@
 import { useLocation, Link, useNavigate } from 'react-router-dom';
-import { Sun, Moon, Search, Bell, User, LogIn, LogOut, Settings, ShieldCheck } from 'lucide-react';
+import { Sun, Moon, Search, User, LogIn, LogOut, Settings, ShieldCheck, Flame } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -14,27 +14,12 @@ import { usePromptStore } from '@/stores/promptStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useIsMobile } from '@/hooks/use-mobile';
 
-const pageTitles: Record<string, { title: string; subtitle?: string }> = {
-  '/': { title: 'Dashboard', subtitle: 'Bem-vindo ao PromptForge' },
-  '/builder': { title: 'Criar Prompt', subtitle: 'Construtor guiado passo-a-passo' },
-  '/library': { title: 'Biblioteca', subtitle: 'Todos os teus prompts' },
-  '/optimizer': { title: 'Otimizador', subtitle: 'Melhora os teus prompts com IA' },
-  '/versions': { title: 'Versões', subtitle: 'Histórico e comparação' },
-  '/tester': { title: 'Testar Prompts', subtitle: 'Comparação A/B' },
-  '/learn': { title: 'Aprender', subtitle: 'Tutoriais e guias' },
-  '/packs': { title: 'Prompt Packs', subtitle: 'Templates prontos para usar' },
-  '/settings': { title: 'Definições', subtitle: 'Configurações da aplicação' },
-  '/admin': { title: 'Backoffice', subtitle: 'Gestão de conteúdos' },
-};
-
 export function Header() {
   const location = useLocation();
   const navigate = useNavigate();
   const { darkMode, toggleDarkMode } = usePromptStore();
   const { user, profile, isAdmin, signOut } = useAuthStore();
   const isMobile = useIsMobile();
-  
-  const pageInfo = pageTitles[location.pathname] || { title: 'PromptForge' };
 
   const handleSignOut = async () => {
     await signOut();
@@ -43,13 +28,15 @@ export function Header() {
 
   return (
     <header className="flex h-16 items-center justify-between border-b border-border bg-card px-4 md:px-6">
-      {/* Page Title - offset on mobile for hamburger menu */}
-      <div className={isMobile ? 'ml-12' : ''}>
-        <h1 className="text-lg md:text-xl font-semibold text-foreground">{pageInfo.title}</h1>
-        {pageInfo.subtitle && !isMobile && (
-          <p className="text-sm text-muted-foreground">{pageInfo.subtitle}</p>
-        )}
-      </div>
+      {/* Logo - clickable to Dashboard */}
+      <Link to="/" className={`flex items-center gap-2 ${isMobile ? 'ml-12' : ''}`}>
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
+          <Flame className="h-5 w-5 text-primary-foreground" />
+        </div>
+        <span className="text-lg font-bold text-foreground">
+          Prompt<span className="text-primary">Forge</span>
+        </span>
+      </Link>
 
       {/* Actions */}
       <div className="flex items-center gap-2 md:gap-4">

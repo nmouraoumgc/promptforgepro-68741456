@@ -17,7 +17,8 @@ export default function Account() {
     navigate('/login');
   };
 
-  if (isLoading) {
+  // Only show loading if we're actually loading AND don't have user data yet
+  if (isLoading && !user) {
     return (
       <div className="p-6 md:p-8 lg:p-10 animate-fade-in">
         <div className="max-w-2xl mx-auto">
