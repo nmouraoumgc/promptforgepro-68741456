@@ -169,44 +169,98 @@ function InteractiveHookGenerator({ onUpgrade }: { onUpgrade: () => void }) {
         </div>
       )}
 
-      {/* Generated Output */}
+      {/* Generated Output - 5 hooks list with 2 visible, 3 locked */}
       {hooks && !isLoading && (
         <div className="space-y-4 animate-fade-in">
           {/* Success indicator */}
-          <div className="flex items-center gap-2 text-success">
+          <div className="flex items-center gap-2 text-primary">
             <Zap className="h-4 w-4" />
             <span className="text-xs font-medium">Hooks gerados com sucesso</span>
           </div>
 
-          {/* Hooks output */}
-          <div className="bg-gradient-to-b from-muted/50 to-muted/30 border border-border/50 rounded-lg p-4">
-            <pre className="text-sm whitespace-pre-wrap font-sans text-foreground leading-relaxed">
-              {hooks}
-            </pre>
-          </div>
+          {/* All 5 hooks - 2 visible, 3 locked */}
+          <div className="space-y-2">
+            {/* Hook 1 - Visible */}
+            <div className="bg-gradient-to-r from-muted/60 to-muted/40 border border-border/50 rounded-lg p-3">
+              <div className="flex items-start gap-3">
+                <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded shrink-0">1</span>
+                <p className="text-sm text-foreground leading-relaxed">
+                  {hooks.split('\n').filter(line => line.trim())[0]?.replace(/^[0-9]+[\.\)]\s*/, '') || hooks.split('\n')[0]}
+                </p>
+              </div>
+            </div>
 
-          {/* Lock message - reward → curiosity → frustration */}
-          <div className="flex items-start gap-3 bg-primary/5 border border-primary/20 rounded-lg p-4">
-            <Lock className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-            <div className="space-y-1">
-              <p className="text-sm font-semibold text-foreground">
-                Faltam 3 hooks profissionais
-              </p>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Desbloqueia para aceder à versão completa.
-              </p>
+            {/* Hook 2 - Visible */}
+            <div className="bg-gradient-to-r from-muted/60 to-muted/40 border border-border/50 rounded-lg p-3">
+              <div className="flex items-start gap-3">
+                <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded shrink-0">2</span>
+                <p className="text-sm text-foreground leading-relaxed">
+                  {hooks.split('\n').filter(line => line.trim())[1]?.replace(/^[0-9]+[\.\)]\s*/, '') || ''}
+                </p>
+              </div>
+            </div>
+
+            {/* Hook 3 - Locked */}
+            <div className="bg-muted/20 border border-border/30 rounded-lg p-3 opacity-60">
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-bold text-muted-foreground bg-muted/50 px-2 py-0.5 rounded shrink-0">3</span>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Lock className="h-3.5 w-3.5" />
+                  <span className="text-sm">Hook premium oculto</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Hook 4 - Locked */}
+            <div className="bg-muted/20 border border-border/30 rounded-lg p-3 opacity-60">
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-bold text-muted-foreground bg-muted/50 px-2 py-0.5 rounded shrink-0">4</span>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Lock className="h-3.5 w-3.5" />
+                  <span className="text-sm">Hook premium oculto</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Hook 5 - Locked */}
+            <div className="bg-muted/20 border border-border/30 rounded-lg p-3 opacity-60">
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-bold text-muted-foreground bg-muted/50 px-2 py-0.5 rounded shrink-0">5</span>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Lock className="h-3.5 w-3.5" />
+                  <span className="text-sm">Hook premium oculto</span>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Upgrade CTA - strong visual */}
+          {/* Secondary button - disabled state after generation */}
           <Button 
-            onClick={onUpgrade}
-            className="w-full h-11 text-sm font-semibold shadow-md hover:shadow-lg transition-shadow"
-            size="lg"
+            variant="secondary"
+            disabled
+            className="w-full h-10 text-sm font-medium opacity-70"
+            size="default"
           >
-            <Sparkles className="h-4 w-4 mr-2" />
-            Desbloquear os 5 hooks completos
+            <Lock className="h-4 w-4 mr-2" />
+            Desbloqueia para gerar mais
           </Button>
+
+          {/* Primary Upgrade CTA */}
+          <div className="space-y-2">
+            <Button 
+              onClick={onUpgrade}
+              className="w-full h-11 text-sm font-semibold shadow-md hover:shadow-lg transition-shadow"
+              size="lg"
+            >
+              <Sparkles className="h-4 w-4 mr-2" />
+              Desbloquear os 5 hooks completos
+            </Button>
+            
+            {/* Micro-copy below CTA */}
+            <p className="text-xs text-muted-foreground text-center leading-relaxed">
+              Inclui acesso a todos os prompts, scripts, estruturas e CTAs do pack.
+            </p>
+          </div>
         </div>
       )}
 
