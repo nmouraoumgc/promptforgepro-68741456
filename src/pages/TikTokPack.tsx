@@ -26,298 +26,189 @@ const categories = [
 const packPrompts: Record<string, PackPrompt[]> = {
   hooks: [
     {
-      id: 'hook-curiosity',
-      title: 'Hook de Curiosidade',
-      description: 'Cria uma abertura que desperta curiosidade imediata',
-      content: `Cria um hook de 3 segundos para TikTok sobre {{tema}}.
+      id: 'hook-choque',
+      title: 'Hook de choque controlado',
+      description: 'Hooks curtos para parar o scroll nos primeiros 3 segundos',
+      content: `Cria 5 hooks curtos para um vídeo de TikTok sobre {{tema}}, pensados para parar o scroll nos primeiros 3 segundos.
 
-[OBJETIVO]
-Parar o scroll e gerar curiosidade instantânea.
+Regras:
+- Começa cada hook com uma frase forte ou inesperada
+- Usa linguagem simples e direta
+- Não reveles tudo no início
+- Fala para {{publico_alvo}}
 
-[INSTRUÇÕES]
-- Começa com uma pergunta provocadora OU facto surpreendente
-- Tom: {{tom}} (ex: direto, misterioso, chocante)
-- Público-alvo: {{publico}}
-- Máximo 15 palavras
-
-[FORMATO DO OUTPUT]
-3 variações do hook, ordenadas por impacto.
-Cada uma com explicação de 1 linha sobre o gatilho usado.`,
-      variables: ['tema', 'tom', 'publico'],
+Formato:
+Lista numerada, uma frase por hook.`,
+      variables: ['tema', 'publico_alvo'],
     },
     {
-      id: 'hook-controversy',
-      title: 'Hook Controverso',
-      description: 'Declaração ousada que gera reação imediata',
-      content: `Gera um hook controverso (mas respeitoso) para TikTok sobre {{tema}}.
+      id: 'hook-promessa',
+      title: 'Hook com promessa clara',
+      description: 'Hooks com benefício claro e específico',
+      content: `Cria 5 hooks para um vídeo de TikTok onde prometes um benefício claro relacionado com {{tema}}.
 
-[OBJETIVO]
-Provocar reação emocional nos primeiros 2-3 segundos.
+Regras:
+- O benefício tem de ser específico
+- Evita frases vagas
+- Usa tom {{tom}}
 
-[INSTRUÇÕES]
-- Usa uma afirmação ousada que desafia o senso comum
-- Evita ofensas ou desinformação
-- Tom: confiante e direto
-- Público: {{publico}}
-
-[RESTRIÇÕES]
-- Mantém-te factualmente correto
-- Nada que possa ser cancelado
-
-[OUTPUT]
-2 opções de hook + 1 frase de transição para o conteúdo.`,
-      variables: ['tema', 'publico'],
-    },
-    {
-      id: 'hook-pattern-interrupt',
-      title: 'Pattern Interrupt',
-      description: 'Quebra o padrão esperado para captar atenção',
-      content: `Cria um hook de "pattern interrupt" para TikTok sobre {{tema}}.
-
-[CONTEXTO]
-Pattern interrupt = algo inesperado que força o cérebro a prestar atenção.
-
-[INSTRUÇÕES]
-- Começa com algo visualmente ou verbalmente inesperado
-- Pode ser: número específico, confissão, contradição
-- Tom: {{tom}}
-- Duração: 2-4 segundos falados
-
-[EXEMPLOS DE ESTRUTURA]
-- "Nunca devias fazer X... a menos que..."
-- "Gastei 10.000€ para aprender isto de graça"
-- "Toda a gente diz X. Está errado."
-
-[OUTPUT]
-3 hooks + sugestão de expressão facial/energia.`,
+Formato:
+Lista curta, pronta a ser lida em voz alta.`,
       variables: ['tema', 'tom'],
+    },
+    {
+      id: 'hook-curiosidade',
+      title: 'Hook de curiosidade',
+      description: 'Hooks que fazem o espectador querer saber mais',
+      content: `Cria 5 hooks baseados em curiosidade para um vídeo de TikTok sobre {{tema}}.
+
+Regras:
+- Faz o espectador querer saber "o resto"
+- Usa perguntas ou afirmações incompletas
+- Não uses clickbait óbvio
+
+Formato:
+5 frases curtas.`,
+      variables: ['tema'],
     },
   ],
   structure: [
     {
-      id: 'structure-3act',
-      title: 'Estrutura 3 Atos (30-60s)',
+      id: 'estrutura-classica',
+      title: 'Estrutura clássica TikTok',
       description: 'Hook → Desenvolvimento → Fecho',
-      content: `Estrutura um vídeo TikTok de 30-60 segundos sobre {{tema}}.
+      content: `Cria uma estrutura completa para um vídeo de TikTok sobre {{tema}}.
 
-[ESTRUTURA OBRIGATÓRIA]
-1. HOOK (0-3s): Captar atenção
-2. CORPO (3-45s): Entregar valor
-3. FECHO (45-60s): CTA claro
+Inclui:
+1. Hook (até 3 segundos)
+2. Desenvolvimento do conteúdo
+3. Fecho com mensagem final clara
 
-[INSTRUÇÕES]
-- Hook: pergunta ou facto surpreendente
-- Corpo: 3 pontos principais, ritmo rápido
-- Fecho: ação específica (comentar, guardar, seguir)
-- Tom: {{tom}}
-- Público: {{publico}}
+Regras:
+- Linguagem simples
+- Ritmo rápido
+- Fala para {{publico_alvo}}
 
-[OUTPUT]
-Guião completo com marcações de tempo.
-Sugestões de cortes visuais entre secções.`,
-      variables: ['tema', 'tom', 'publico'],
+Formato:
+Texto dividido por secções.`,
+      variables: ['tema', 'publico_alvo'],
     },
     {
-      id: 'structure-listicle',
-      title: 'Listicle Rápido (15-30s)',
-      description: 'Lista numerada de alto impacto',
-      content: `Cria um vídeo TikTok estilo lista sobre {{tema}}.
+      id: 'estrutura-educativa',
+      title: 'Estrutura educativa curta',
+      description: 'Vídeo educativo até 30 segundos',
+      content: `Cria uma estrutura de vídeo educativo curto (até 30 segundos) para TikTok sobre {{tema}}.
 
-[FORMATO]
-"X coisas que..." / "X erros que..." / "X formas de..."
+Objetivo:
+Ensinar algo útil de forma simples.
 
-[INSTRUÇÕES]
-- Hook: número + promessa clara
-- Itens: 3-5 pontos, máximo 5 segundos cada
-- Transições rápidas entre pontos
-- Último ponto = o mais forte
-- Tom: {{tom}}
+Inclui:
+- Hook
+- 2 a 3 pontos principais
+- Fecho claro
 
-[OUTPUT]
-- Hook de abertura
-- Lista de {{numero}} itens com texto para cada
-- Frase de fecho com CTA`,
-      variables: ['tema', 'tom', 'numero'],
-    },
-    {
-      id: 'structure-storytelling',
-      title: 'Mini-Storytelling',
-      description: 'História pessoal com lição',
-      content: `Estrutura uma micro-história para TikTok sobre {{tema}}.
-
-[FÓRMULA]
-Situação → Conflito → Resolução → Lição
-
-[INSTRUÇÕES]
-- Situação (3s): contexto rápido
-- Conflito (10s): o problema/desafio
-- Resolução (10s): como resolveste
-- Lição (5s): o takeaway universal
-- Tom: {{tom}}, autêntico
-
-[RESTRIÇÕES]
-- Máximo 45 segundos total
-- Fala na primeira pessoa
-- Evita jargão
-
-[OUTPUT]
-Guião narrativo com pausas marcadas.`,
+Tom: {{tom}}`,
       variables: ['tema', 'tom'],
+    },
+    {
+      id: 'estrutura-storytelling',
+      title: 'Estrutura storytelling',
+      description: 'Micro-história com conflito e resolução',
+      content: `Cria uma estrutura de storytelling curto para um vídeo de TikTok sobre {{tema}}.
+
+Inclui:
+- Situação inicial
+- Conflito ou desafio
+- Resolução ou aprendizagem
+
+Regras:
+- Frases curtas
+- Linguagem natural
+- Ritmo rápido`,
+      variables: ['tema'],
     },
   ],
   scripts: [
     {
-      id: 'script-educational',
-      title: 'Script Educativo',
-      description: 'Ensina algo útil em menos de 1 minuto',
-      content: `Escreve um guião educativo para TikTok sobre {{tema}}.
+      id: 'script-educativo',
+      title: 'Script educativo',
+      description: 'Guião pronto para vídeo educativo',
+      content: `Escreve um script pronto a gravar para um vídeo educativo de TikTok sobre {{tema}}.
 
-[OBJETIVO]
-Ensinar {{publico}} a fazer/entender {{tema}} de forma clara e rápida.
+Regras:
+- Frases curtas
+- Linguagem falada
+- Sem jargão técnico
+- Duração aproximada: {{duracao}} segundos
 
-[ESTRUTURA DO GUIÃO]
-HOOK: "Vou ensinar-te a {{resultado}} em 30 segundos"
-PASSO 1: [ação simples]
-PASSO 2: [ação seguinte]
-PASSO 3: [ação final]
-FECHO: "Guarda isto e agradece-me depois"
-
-[TOM]
-{{tom}}, confiante, direto
-
-[OUTPUT]
-Guião palavra-por-palavra pronto para gravar.
-Indicações de ritmo entre parênteses.`,
-      variables: ['tema', 'publico', 'resultado', 'tom'],
+Formato:
+Texto contínuo, como se estivesse a falar para a câmara.`,
+      variables: ['tema', 'duracao'],
     },
     {
-      id: 'script-authority',
-      title: 'Script de Autoridade',
-      description: 'Posiciona-te como especialista',
-      content: `Cria um guião que estabelece autoridade sobre {{tema}}.
+      id: 'script-autoridade',
+      title: 'Script de autoridade',
+      description: 'Transmite confiança e credibilidade',
+      content: `Escreve um script para um vídeo de TikTok onde assumes autoridade sobre {{tema}}.
 
-[OBJETIVO]
-Mostrar expertise sem parecer arrogante.
+Objetivo:
+Transmitir confiança e credibilidade.
 
-[ESTRUTURA]
-1. Credencial subtil: "Depois de {{experiencia}}..."
-2. Insight exclusivo: algo que a maioria não sabe
-3. Prova social ou resultado
-4. Oferta de valor: "Fica para mais..."
-
-[TOM]
-Confiante mas acessível. {{tom}}.
-
-[RESTRIÇÕES]
-- Não te gabares diretamente
-- Mostra, não digas
-- Máximo 45 segundos
-
-[OUTPUT]
-Guião completo + sugestão de thumbnail/primeiro frame.`,
-      variables: ['tema', 'experiencia', 'tom'],
+Regras:
+- Tom seguro, mas acessível
+- Evita arrogância
+- Fala diretamente para {{publico_alvo}}`,
+      variables: ['tema', 'publico_alvo'],
     },
     {
-      id: 'script-personal-brand',
-      title: 'Script Pessoal/Marca',
-      description: 'Storytelling autêntico de marca',
-      content: `Escreve um guião de storytelling pessoal para TikTok.
+      id: 'script-pessoal',
+      title: 'Script pessoal / marca pessoal',
+      description: 'Partilha experiência ou opinião autêntica',
+      content: `Escreve um script pessoal para TikTok sobre {{tema}}, como se estivesses a partilhar uma experiência ou opinião.
 
-[CONTEXTO]
-Tema: {{tema}}
-Marca/Pessoa: {{marca}}
-Objetivo: criar conexão emocional
-
-[ESTRUTURA]
-1. Momento vulnerável ou real
-2. A jornada/transformação
-3. Onde estás agora
-4. Convite à comunidade
-
-[TOM]
-Autêntico, {{tom}}, sem filtros (mas estratégico)
-
-[OUTPUT]
-Guião de 30-45 segundos.
-Marcações de emoção/expressão.
-Sugestão de música ou som trending.`,
-      variables: ['tema', 'marca', 'tom'],
+Regras:
+- Tom humano e natural
+- Linguagem simples
+- Não soar a discurso preparado`,
+      variables: ['tema'],
     },
   ],
   cta: [
     {
-      id: 'cta-comments',
-      title: 'CTA para Comentários',
-      description: 'Gera engagement nos comentários',
-      content: `Cria CTAs para gerar comentários num vídeo sobre {{tema}}.
+      id: 'cta-comentarios',
+      title: 'CTA para comentários',
+      description: 'Incentiva engagement nos comentários',
+      content: `Cria 3 formas diferentes de terminar um vídeo de TikTok sobre {{tema}} incentivando comentários.
 
-[OBJETIVO]
-Maximizar comentários para boost de algoritmo.
-
-[TIPOS DE CTA]
-1. Pergunta polarizadora: "Concordas ou não?"
-2. Escolha A/B: "Qual preferes: X ou Y?"
-3. Desafio: "Aposto que não consegues..."
-4. Confissão: "Comenta se já te aconteceu"
-
-[INSTRUÇÕES]
-- Gera 4 CTAs (um de cada tipo)
-- Tom: {{tom}}
-- Relacionados com {{tema}}
-
-[OUTPUT]
-4 frases de CTA prontas a usar.
-Cada uma com emoji sugerido.`,
-      variables: ['tema', 'tom'],
+Regras:
+- Perguntas simples
+- Fáceis de responder
+- Naturais no contexto do vídeo`,
+      variables: ['tema'],
     },
     {
-      id: 'cta-watch-time',
-      title: 'Aumentar Watch Time',
-      description: 'Técnicas para manter até ao fim',
-      content: `Cria elementos para aumentar watch time num vídeo sobre {{tema}}.
+      id: 'cta-retencao',
+      title: 'CTA para retenção',
+      description: 'Incentiva ver até ao fim ou seguir',
+      content: `Cria 3 frases de fecho para um vídeo de TikTok sobre {{tema}} que incentivem o espectador a ver até ao fim ou a seguir a conta.
 
-[TÉCNICAS A USAR]
-1. Open loop no início: "No final mostro..."
-2. Teaser mid-roll: "Espera pelo ponto 3..."
-3. Payoff final: recompensa por ficar
-
-[INSTRUÇÕES]
-- Gera frases para cada técnica
-- Tom: {{tom}}
-- Público: {{publico}}
-
-[RESTRIÇÕES]
-- Cumpre a promessa (não clickbait vazio)
-- Natural, não forçado
-
-[OUTPUT]
-3 frases (uma por técnica) + onde inserir no vídeo.`,
-      variables: ['tema', 'tom', 'publico'],
+Regras:
+- Linguagem direta
+- Sem pedir "segue-me" de forma genérica`,
+      variables: ['tema'],
     },
     {
-      id: 'cta-closing',
-      title: 'Fechos Memoráveis',
-      description: 'Últimas palavras que ficam',
-      content: `Gera frases de fecho impactantes para vídeo sobre {{tema}}.
+      id: 'cta-final',
+      title: 'CTA final forte',
+      description: 'Fecho curto e impactante',
+      content: `Cria um fecho final curto e forte para um vídeo de TikTok sobre {{tema}}.
 
-[OBJETIVO]
-Deixar impressão duradoura + ação clara.
+Objetivo:
+Deixar uma ideia clara na cabeça do espectador.
 
-[ESTILOS DE FECHO]
-1. Inspiracional: "Lembra-te..."
-2. Direto: "Faz isto agora:"
-3. Social proof: "Junta-te a X pessoas que..."
-4. Misterioso: "No próximo vídeo..."
-
-[INSTRUÇÕES]
-- 4 opções de fecho (uma por estilo)
-- Tom: {{tom}}
-- Inclui CTA secundário (seguir, guardar, etc.)
-
-[OUTPUT]
-4 frases de fecho completas.
-Sugestão de gesto ou expressão para cada.`,
-      variables: ['tema', 'tom'],
+Formato:
+1 frase impactante.`,
+      variables: ['tema'],
     },
   ],
 };
