@@ -1,9 +1,13 @@
-import { Check, Sparkles, Zap, Lightbulb } from 'lucide-react';
+import { useState } from 'react';
+import { Check, Sparkles, Zap, Lightbulb, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { usePlanStore } from '@/stores/planStore';
+import { useAuthStore } from '@/stores/authStore';
 import { PlanType } from '@/types/plans';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const mainPlans = [
   {
@@ -55,11 +59,55 @@ const proPlan = {
 
 export default function Pricing() {
   const { currentPlan, setPlan } = usePlanStore();
+  const { user } = useAuthStore();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [isLoadingPro, setIsLoadingPro] = useState(false);
 
-  const handleSelectPlan = (planId: PlanType) => {
+  const handleSelectPlan = async (planId: PlanType) => {
     if (planId === 'premium') {
       navigate('/checkout');
+    } else if (planId === 'pro') {
+      if (!user) {
+        toast({
+          title: "Autenticação necessária",
+          description: "Tens de iniciar sessão para subscrever o plano Pro.",
+          variant: "destructive",
+        });
+        navigate('/login');
+        return;
+      }
+      
+      setIsLoadingPro(true);
+      try {
+        const { data, error } = await supabase.functions.invoke("create-subscription");
+        
+        if (error) {
+          throw new Error(error.message);
+        }
+        
+        if (data?.error) {
+          toast({
+            title: "Erro",
+            description: data.message || data.error,
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        if (data?.url) {
+          window.location.href = data.url;
+        }
+      } catch (error) {
+        console.error("Subscription error:", error);
+        toast({
+          title: "Erro ao criar subscrição",
+          description: "Por favor tenta novamente.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoadingPro(false);
+      }
     } else {
       setPlan(planId);
     }
@@ -215,13 +263,18 @@ export default function Pricing() {
             {/* CTA */}
             <Button 
               className="shrink-0 shadow-md"
-              disabled={currentPlan === 'pro'}
+              disabled={currentPlan === 'pro' || isLoadingPro}
               onClick={() => handleSelectPlan('pro')}
             >
               {currentPlan === 'pro' ? (
                 <>
                   <Check className="h-4 w-4 mr-2" />
                   Plano atual
+                </>
+              ) : isLoadingPro ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  A redirecionar...
                 </>
               ) : (
                 <>
