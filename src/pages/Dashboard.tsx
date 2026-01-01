@@ -18,6 +18,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { usePromptStore } from '@/stores/promptStore';
+import ExamplePromptShowcase from '@/components/dashboard/ExamplePromptShowcase';
+import OnboardingChecklist from '@/components/dashboard/OnboardingChecklist';
 
 export default function Dashboard() {
   const { prompts, getFavorites, userProfile } = usePromptStore();
@@ -36,15 +38,15 @@ export default function Dashboard() {
   };
 
   const quickActions = [
-    { to: '/builder', icon: Wand2, label: 'Criar Prompt', description: 'Construtor guiado', color: 'bg-primary text-primary-foreground' },
-    { to: '/library', icon: Library, label: 'Biblioteca', description: 'Ver todos os prompts', color: 'bg-accent text-accent-foreground' },
-    { to: '/optimizer', icon: Sparkles, label: 'Otimizar', description: 'Melhorar com IA', color: 'bg-success text-success-foreground' },
-    { to: '/tester', icon: FlaskConical, label: 'Testar A/B', description: 'Comparar prompts', color: 'bg-info text-info-foreground' },
+    { to: '/builder', icon: Wand2, label: 'Criar Prompt', description: 'Construtor guiado passo-a-passo', color: 'bg-primary text-primary-foreground' },
+    { to: '/library', icon: Library, label: 'Biblioteca', description: 'Gere os teus prompts', color: 'bg-accent text-accent-foreground' },
+    { to: '/optimizer', icon: Sparkles, label: 'Otimizar', description: 'Melhora com sugestões IA', color: 'bg-success text-success-foreground' },
+    { to: '/tester', icon: FlaskConical, label: 'Comparar A/B', description: 'Testa diferentes versões', color: 'bg-info text-info-foreground' },
   ];
 
   const getProfileGreeting = () => {
     const greetings: Record<string, string> = {
-      'beginner': 'Pronto para criar prompts incríveis?',
+      'beginner': 'Pronto para dominar a arte dos prompts?',
       'content-creator': 'Hora de criar conteúdo que converte!',
       'developer': 'Vamos otimizar o teu workflow de código!',
       'designer': 'Prepara-te para gerar visuais impressionantes!',
@@ -55,6 +57,12 @@ export default function Dashboard() {
 
   return (
     <div className="p-4 md:p-6 space-y-4 md:space-y-6 animate-fade-in">
+      {/* Example Prompt Showcase - "Aha Moment" */}
+      <ExamplePromptShowcase />
+
+      {/* Onboarding Checklist */}
+      <OnboardingChecklist />
+
       {/* Hero Section */}
       <div className="relative overflow-hidden rounded-xl md:rounded-2xl bg-card p-4 md:p-8 border border-border">
         <div className="absolute inset-0 opacity-50" style={{ background: 'var(--gradient-glow)' }} />
@@ -163,11 +171,12 @@ export default function Dashboard() {
             {recentPrompts.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 md:py-12 text-center">
                 <Wand2 className="h-10 w-10 md:h-12 md:w-12 text-muted-foreground/50 mb-4" />
-                <p className="text-sm md:text-base text-muted-foreground mb-4">Ainda não criaste nenhum prompt</p>
+                <p className="text-sm md:text-base font-medium mb-2">Cria o teu primeiro prompt em menos de 30 segundos</p>
+                <p className="text-xs text-muted-foreground mb-4">O construtor guiado ajuda-te passo a passo</p>
                 <Link to="/builder">
                   <Button size="sm">
                     <Wand2 className="mr-2 h-4 w-4" />
-                    Criar primeiro prompt
+                    Começar agora
                   </Button>
                 </Link>
               </div>
@@ -203,19 +212,19 @@ export default function Dashboard() {
               <Zap className="h-4 w-4 md:h-5 md:w-5 text-primary" />
               Dicas Rápidas
             </CardTitle>
-            <CardDescription className="text-xs md:text-sm">Melhora os teus prompts</CardDescription>
+            <CardDescription className="text-xs md:text-sm">Afina os teus prompts como um profissional</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 md:space-y-4 p-4 md:p-6 pt-0 md:pt-0">
             <div className="rounded-lg bg-muted/50 p-3 md:p-4">
-              <p className="font-medium text-xs md:text-sm mb-1">💡 Sê específico</p>
+              <p className="font-medium text-xs md:text-sm mb-1">💡 Define o objetivo claramente</p>
               <p className="text-xs text-muted-foreground">
-                Prompts vagos geram resultados genéricos. Adiciona detalhes sobre formato, tom e contexto.
+                Prompts vagos geram resultados genéricos. Especifica o que queres alcançar.
               </p>
             </div>
             <div className="rounded-lg bg-muted/50 p-3 md:p-4">
-              <p className="font-medium text-xs md:text-sm mb-1">🎯 Define o output</p>
+              <p className="font-medium text-xs md:text-sm mb-1">🎯 Controla o formato do output</p>
               <p className="text-xs text-muted-foreground">
-                Diz explicitamente o que esperas: lista, parágrafo, código, etc.
+                Diz explicitamente o que esperas: lista, parágrafo, código comentado, etc.
               </p>
             </div>
             <div className="rounded-lg bg-muted/50 p-3 md:p-4">
@@ -227,7 +236,7 @@ export default function Dashboard() {
             <Link to="/learn" className="block">
               <Button variant="outline" className="w-full text-sm">
                 <BookOpen className="mr-2 h-4 w-4" />
-                Ver mais dicas
+                Explorar mais dicas
               </Button>
             </Link>
           </CardContent>
