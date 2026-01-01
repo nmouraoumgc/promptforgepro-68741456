@@ -31,7 +31,7 @@ export default function Dashboard() {
       to: '/builder', 
       icon: Wand2, 
       label: 'Criar Prompt', 
-      description: 'Construtor guiado',
+      description: 'Do zero à excelência',
       gradient: 'from-primary/20 to-primary/5',
       iconBg: 'bg-primary',
     },
@@ -39,7 +39,7 @@ export default function Dashboard() {
       to: '/library', 
       icon: Library, 
       label: 'Biblioteca', 
-      description: 'Gerir prompts',
+      description: 'Os teus, organizados',
       gradient: 'from-accent/20 to-accent/5',
       iconBg: 'bg-accent',
     },
@@ -47,7 +47,7 @@ export default function Dashboard() {
       to: '/optimizer', 
       icon: Sparkles, 
       label: 'Otimizar', 
-      description: 'Melhorar com IA',
+      description: 'Versões mais fortes',
       gradient: 'from-success/20 to-success/5',
       iconBg: 'bg-success',
     },
@@ -55,7 +55,7 @@ export default function Dashboard() {
       to: '/tester', 
       icon: FlaskConical, 
       label: 'Testar A/B', 
-      description: 'Comparar versões',
+      description: 'Descobre o melhor',
       gradient: 'from-info/20 to-info/5',
       iconBg: 'bg-info',
     },
@@ -64,11 +64,11 @@ export default function Dashboard() {
   return (
     <div className="p-6 md:p-8 lg:p-10 space-y-8 md:space-y-10 animate-fade-in max-w-6xl mx-auto">
       {/* Hero Greeting */}
-      <header className="text-center space-y-2 pt-4 md:pt-8">
+      <header className="text-center space-y-3 pt-4 md:pt-8">
         <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
           Olá, Prompt Master!
         </h1>
-        <p className="text-muted-foreground text-base md:text-lg">
+        <p className="text-foreground/70 text-base md:text-lg font-medium">
           O que vais criar hoje?
         </p>
       </header>
