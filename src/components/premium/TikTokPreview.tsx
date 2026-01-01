@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Lock, Sparkles, Zap } from 'lucide-react';
+import { Lock, Sparkles, Zap, Loader2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { usePlanStore } from '@/stores/planStore';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface TikTokPreviewProps {
   context?: 'builder' | 'optimizer' | 'packs';
@@ -31,7 +34,6 @@ export default function TikTokPreview({ context = 'builder', topic }: TikTokPrev
   const isPremium = canAccess('canAccessPromptPacks');
 
   useEffect(() => {
-    // Check if already shown this session
     const shown = sessionStorage.getItem(SESSION_KEY);
     if (shown) {
       setHasShownThisSession(true);
@@ -39,7 +41,6 @@ export default function TikTokPreview({ context = 'builder', topic }: TikTokPrev
   }, []);
 
   useEffect(() => {
-    // Only show for non-premium users, once per session
     if (!isPremium && !hasShownThisSession) {
       setIsVisible(true);
     } else {
@@ -55,71 +56,32 @@ export default function TikTokPreview({ context = 'builder', topic }: TikTokPrev
 
   if (!isVisible) return null;
 
-  // Sample output - only 2 hooks (limited preview)
-  const sampleOutput = topic 
-    ? `1. "${topic.charAt(0).toUpperCase() + topic.slice(1)}? A maioria das pessoas faz isto mal."\n\n2. "Vou contar-te o que ninguém te diz sobre ${topic.toLowerCase()}..."`
-    : `1. "Sabes porque 90% das pessoas falham nisto?"\n\n2. "Vou mostrar-te algo que vai mudar a tua perspetiva..."`;
-
   return (
     <Card className="border-primary/20 bg-gradient-to-b from-primary/5 to-transparent overflow-hidden">
       <CardContent className="p-5 space-y-4">
-        {/* Header */}
         <div className="flex items-start gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 shrink-0">
             <Zap className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <p className="font-semibold text-sm">Hook de choque controlado</p>
+            <p className="font-semibold text-sm">Experimenta o TikTok Pack</p>
             <p className="text-xs text-muted-foreground">
-              Do TikTok Viral Prompt Pack
+              Gera hooks profissionais gratuitamente
             </p>
           </div>
         </div>
 
-        {/* Sample output */}
-        <div className="space-y-2">
-          <p className="text-xs text-muted-foreground">Resultado exemplo:</p>
-          <div className="bg-muted/40 border border-border/40 rounded-lg p-3">
-            <pre className="text-sm whitespace-pre-wrap font-sans text-foreground/90 leading-relaxed">
-              {sampleOutput}
-            </pre>
-          </div>
-        </div>
+        <InteractiveHookGenerator onUpgrade={() => setPlan('premium')} />
 
-        {/* Premium lock message */}
-        <div className="flex items-start gap-3 bg-card/50 border border-border/30 rounded-lg p-3">
-          <Lock className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-          <div className="space-y-1">
-            <p className="text-sm font-medium">Prompt Premium</p>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Este é um exemplo do TikTok Viral Prompt Pack.
-              <br />
-              O prompt original gera 5 hooks — aqui vês apenas 2.
-            </p>
-          </div>
-        </div>
+        <Button 
+          variant="ghost" 
+          size="sm"
+          onClick={handleDismiss}
+          className="w-full text-muted-foreground hover:text-foreground text-xs"
+        >
+          Fechar preview
+        </Button>
 
-        {/* CTA */}
-        <div className="flex items-center gap-3">
-          <Button 
-            onClick={() => setPlan('premium')}
-            className="flex-1"
-            size="sm"
-          >
-            <Sparkles className="h-4 w-4 mr-2" />
-            Desbloquear com Premium
-          </Button>
-          <Button 
-            variant="ghost" 
-            size="sm"
-            onClick={handleDismiss}
-            className="text-muted-foreground hover:text-foreground"
-          >
-            Agora não
-          </Button>
-        </div>
-
-        {/* Link to pack */}
         <Link 
           to="/packs/tiktok" 
           className="block text-center text-xs text-muted-foreground hover:text-primary transition-colors"
@@ -128,6 +90,131 @@ export default function TikTokPreview({ context = 'builder', topic }: TikTokPrev
         </Link>
       </CardContent>
     </Card>
+  );
+}
+
+// Interactive Hook Generator Component
+function InteractiveHookGenerator({ onUpgrade }: { onUpgrade: () => void }) {
+  const [tema, setTema] = useState('');
+  const [hooks, setHooks] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasGenerated, setHasGenerated] = useState(false);
+  const { toast } = useToast();
+
+  const generateHooks = async () => {
+    if (!tema.trim()) {
+      toast({ 
+        title: 'Tema obrigatório', 
+        description: 'Escreve o tema do teu vídeo',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    setHooks(null);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-hooks', {
+        body: { tema, isPremium: false }
+      });
+
+      if (error) throw error;
+
+      if (data.error) {
+        toast({ 
+          title: 'Erro', 
+          description: data.error,
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      setHooks(data.hooks);
+      setHasGenerated(true);
+    } catch (error) {
+      console.error('Error generating hooks:', error);
+      toast({ 
+        title: 'Erro ao gerar hooks', 
+        description: 'Tenta novamente em alguns segundos.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      {/* Input */}
+      <div className="space-y-2">
+        <label className="text-xs font-medium text-muted-foreground">
+          Tema do vídeo
+        </label>
+        <div className="flex gap-2">
+          <Input
+            placeholder="Ex: produtividade, fitness, finanças..."
+            value={tema}
+            onChange={(e) => setTema(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && !isLoading && generateHooks()}
+            className="text-sm h-9"
+            disabled={isLoading}
+          />
+          <Button 
+            onClick={generateHooks}
+            disabled={isLoading || !tema.trim()}
+            size="sm"
+            className="shrink-0 h-9"
+          >
+            {isLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              'Gerar hooks'
+            )}
+          </Button>
+        </div>
+      </div>
+
+      {/* Generated Output */}
+      {hooks && (
+        <div className="space-y-3 animate-fade-in">
+          <div className="bg-muted/40 border border-border/40 rounded-lg p-3">
+            <p className="text-xs text-muted-foreground mb-2">Resultado:</p>
+            <pre className="text-sm whitespace-pre-wrap font-sans text-foreground/90 leading-relaxed">
+              {hooks}
+            </pre>
+          </div>
+
+          {/* Limited notice */}
+          <div className="flex items-start gap-3 bg-card/50 border border-primary/20 rounded-lg p-3">
+            <Lock className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Versão limitada — 2 de 5 hooks</p>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Desbloqueia o pack para ver todos os hooks e aceder a mais 11 prompts profissionais.
+              </p>
+            </div>
+          </div>
+
+          {/* Upgrade CTA */}
+          <Button 
+            onClick={onUpgrade}
+            className="w-full"
+            size="sm"
+          >
+            <Sparkles className="h-4 w-4 mr-2" />
+            Desbloquear com Premium
+          </Button>
+        </div>
+      )}
+
+      {/* Pre-generation state hint */}
+      {!hooks && !isLoading && (
+        <p className="text-xs text-muted-foreground text-center">
+          Experimenta gerar hooks para o teu próximo vídeo
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -149,25 +236,7 @@ export function TikTokPackPreviewInline() {
           </div>
         </div>
 
-        {/* Mini sample */}
-        <div className="bg-muted/30 rounded-lg p-3 border border-border/30">
-          <p className="text-xs text-muted-foreground mb-2">Hook de choque controlado:</p>
-          <p className="text-sm italic text-foreground/80">
-            "Sabes porque 90% das pessoas falham nisto?"
-          </p>
-          <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
-            <Lock className="h-3 w-3" />
-            Versão limitada — 2 de 5 hooks
-          </p>
-        </div>
-
-        <Button 
-          onClick={() => setPlan('premium')}
-          className="w-full"
-          size="sm"
-        >
-          Desbloquear com Premium
-        </Button>
+        <InteractiveHookGenerator onUpgrade={() => setPlan('premium')} />
       </CardContent>
     </Card>
   );

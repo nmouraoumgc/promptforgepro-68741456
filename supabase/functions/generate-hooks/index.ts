@@ -1,0 +1,104 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const { tema, isPremium } = await req.json();
+    
+    if (!tema || tema.trim().length === 0) {
+      return new Response(
+        JSON.stringify({ error: "O tema é obrigatório" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) {
+      throw new Error("LOVABLE_API_KEY is not configured");
+    }
+
+    // Hook de choque controlado prompt
+    const hookCount = isPremium ? 5 : 2;
+    const systemPrompt = `És um especialista em criação de conteúdo viral para TikTok. 
+Geras hooks curtos, impactantes e em português de Portugal.
+Os hooks devem parar o scroll nos primeiros 3 segundos.
+Usa linguagem simples, direta e curiosa.
+Não reveles tudo no início - deixa suspense.`;
+
+    const userPrompt = `Cria ${hookCount} hooks curtos para um vídeo de TikTok sobre "${tema}", pensados para parar o scroll nos primeiros 3 segundos.
+
+Regras:
+- Começa cada hook com uma frase forte ou inesperada
+- Usa linguagem simples e direta
+- Não reveles tudo no início
+- Máximo 15 palavras por hook
+
+Formato:
+Responde APENAS com os hooks numerados, um por linha. Sem introdução nem explicação.`;
+
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+        max_tokens: 500,
+        temperature: 0.8,
+      }),
+    });
+
+    if (!response.ok) {
+      if (response.status === 429) {
+        return new Response(
+          JSON.stringify({ error: "Limite de pedidos excedido. Tenta novamente em alguns segundos." }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      if (response.status === 402) {
+        return new Response(
+          JSON.stringify({ error: "Créditos insuficientes. Adiciona créditos à tua conta." }),
+          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      const errorText = await response.text();
+      console.error("AI gateway error:", response.status, errorText);
+      return new Response(
+        JSON.stringify({ error: "Erro ao gerar hooks. Tenta novamente." }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content || "";
+
+    return new Response(
+      JSON.stringify({ 
+        hooks: content,
+        limited: !isPremium,
+        totalHooks: isPremium ? 5 : 2,
+        maxHooks: 5
+      }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  } catch (error) {
+    console.error("generate-hooks error:", error);
+    return new Response(
+      JSON.stringify({ error: error instanceof Error ? error.message : "Erro desconhecido" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+});
