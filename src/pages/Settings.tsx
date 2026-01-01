@@ -1,10 +1,12 @@
-import { Moon, Sun, User, Crown, Check } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Sun, User, Crown, Check, ArrowRight } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { usePromptStore } from '@/stores/promptStore';
 import { usePlanStore } from '@/stores/planStore';
-import { PLAN_INFO, PlanType } from '@/types/plans';
+import { PLAN_INFO } from '@/types/plans';
 
 export default function Settings() {
   const { darkMode, toggleDarkMode, userProfile, setUserProfile } = usePromptStore();
@@ -18,47 +20,39 @@ export default function Settings() {
     { value: 'business', label: '💼 Empresarial', description: 'Templates profissionais' },
   ] as const;
 
-  const plans: { value: PlanType; features: string[] }[] = [
-    { value: 'free', features: ['Criar prompts ilimitados', '3 otimizações por prompt', 'Score básico'] },
-    { value: 'pro', features: ['Otimizações ilimitadas', 'Histórico de versões', 'Teste A/B', 'Score detalhado', 'Exportar prompts'] },
-    { value: 'premium', features: ['Tudo do Pro', 'Prompt Packs', 'Templates profissionais', 'Acesso antecipado'] },
-  ];
-
   return (
     <div className="p-6 space-y-6 animate-fade-in max-w-2xl">
-      {/* Plan Selection */}
+      {/* Current Plan */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2"><Crown className="h-5 w-5" />Plano</CardTitle>
-          <CardDescription>Gere o teu plano e funcionalidades</CardDescription>
+          <CardTitle className="flex items-center gap-2"><Crown className="h-5 w-5" />Plano Atual</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
-          {plans.map(plan => (
-            <div
-              key={plan.value}
-              onClick={() => setPlan(plan.value)}
-              className={`p-4 rounded-lg border cursor-pointer transition-all ${
-                currentPlan === plan.value 
-                  ? 'border-primary bg-primary/5' 
-                  : 'border-border hover:border-primary/50'
-              }`}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <span className={`font-semibold ${PLAN_INFO[plan.value].color}`}>
-                    {PLAN_INFO[plan.value].name}
-                  </span>
-                  <Badge variant="outline" className="text-xs">{PLAN_INFO[plan.value].tagline}</Badge>
-                </div>
-                {currentPlan === plan.value && <Check className="h-4 w-4 text-primary" />}
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
+                currentPlan === 'free' 
+                  ? 'bg-muted' 
+                  : currentPlan === 'pro' 
+                  ? 'bg-info/10' 
+                  : 'bg-primary/10'
+              }`}>
+                <Crown className={`h-5 w-5 ${PLAN_INFO[currentPlan].color}`} />
               </div>
-              <div className="flex flex-wrap gap-x-3 gap-y-1">
-                {plan.features.map((f, i) => (
-                  <span key={i} className="text-xs text-muted-foreground">• {f}</span>
-                ))}
+              <div>
+                <p className={`font-semibold ${PLAN_INFO[currentPlan].color}`}>
+                  {PLAN_INFO[currentPlan].name}
+                </p>
+                <p className="text-sm text-muted-foreground">{PLAN_INFO[currentPlan].tagline}</p>
               </div>
             </div>
-          ))}
+            <Link to="/pricing">
+              <Button variant="outline" size="sm" className="gap-2">
+                Ver planos
+                <ArrowRight className="h-3 w-3" />
+              </Button>
+            </Link>
+          </div>
         </CardContent>
       </Card>
 

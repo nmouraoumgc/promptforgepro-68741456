@@ -13,6 +13,7 @@ import PromptTester from "@/pages/PromptTester";
 import Learn from "@/pages/Learn";
 import PromptPacks from "@/pages/PromptPacks";
 import Settings from "@/pages/Settings";
+import Pricing from "@/pages/Pricing";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +35,7 @@ const App = () => (
             <Route path="/learn" element={<Learn />} />
             <Route path="/packs" element={<PromptPacks />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/pricing" element={<Pricing />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
