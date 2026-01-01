@@ -234,31 +234,29 @@ function InteractiveHookGenerator({ onUpgrade }: { onUpgrade: () => void }) {
             </div>
           </div>
 
-          {/* Secondary button - disabled state after generation */}
-          <Button 
-            variant="secondary"
-            disabled
-            className="w-full h-10 text-sm font-medium opacity-70"
-            size="default"
-          >
-            <Lock className="h-4 w-4 mr-2" />
-            Desbloqueia para gerar mais
-          </Button>
+          {/* Passive lock message - non-clickable */}
+          <div className="flex items-start gap-2.5 py-2 text-muted-foreground">
+            <Lock className="h-4 w-4 mt-0.5 shrink-0" />
+            <div className="space-y-0.5">
+              <p className="text-sm font-medium">Limite gratuito atingido</p>
+              <p className="text-xs">Desbloqueia o pack para gerar hooks ilimitados.</p>
+            </div>
+          </div>
 
-          {/* Primary Upgrade CTA */}
+          {/* Single Primary CTA */}
           <div className="space-y-2">
             <Button 
               onClick={onUpgrade}
-              className="w-full h-11 text-sm font-semibold shadow-md hover:shadow-lg transition-shadow"
-              size="lg"
+              className="w-full h-10 text-sm font-semibold shadow-md hover:shadow-lg transition-shadow"
+              size="default"
             >
               <Sparkles className="h-4 w-4 mr-2" />
-              Desbloquear os 5 hooks completos
+              Desbloquear versão completa
             </Button>
             
             {/* Micro-copy below CTA */}
             <p className="text-xs text-muted-foreground text-center leading-relaxed">
-              Inclui acesso a todos os prompts, scripts, estruturas e CTAs do pack.
+              Inclui todos os prompts, scripts, estruturas e CTAs do pack.
             </p>
           </div>
         </div>
