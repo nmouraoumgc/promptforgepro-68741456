@@ -1,7 +1,8 @@
-import { Lock, Crown, Zap } from 'lucide-react';
+import { Lock, Crown, Zap, LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { usePlanStore } from '@/stores/planStore';
+import { useAuthStore } from '@/stores/authStore';
 import { PlanType } from '@/types/plans';
 import { useNavigate } from 'react-router-dom';
 
@@ -224,5 +225,61 @@ export function ProContextualUpsell({ context }: ProContextualUpsellProps) {
         Conhecer plano Pro
       </Button>
     </div>
+  );
+}
+
+// Auth Gate - requires login to use features
+interface AuthGateProps {
+  children: React.ReactNode;
+  fallback?: React.ReactNode;
+  message?: string;
+}
+
+export function AuthGate({ children, fallback, message }: AuthGateProps) {
+  const { user } = useAuthStore();
+  const navigate = useNavigate();
+  
+  if (user) {
+    return <>{children}</>;
+  }
+  
+  if (fallback) {
+    return <>{fallback}</>;
+  }
+  
+  return (
+    <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
+      <div className="h-12 w-12 rounded-full flex items-center justify-center mb-4 bg-muted">
+        <LogIn className="h-6 w-6 text-muted-foreground" />
+      </div>
+      <h3 className="font-semibold mb-1">Login necessário</h3>
+      <p className="text-sm text-muted-foreground mb-4 max-w-sm">
+        {message || 'Cria uma conta gratuita para usar esta funcionalidade.'}
+      </p>
+      <div className="flex gap-2">
+        <Button variant="outline" onClick={() => navigate('/login')}>
+          Login
+        </Button>
+        <Button onClick={() => navigate('/signup')}>
+          Sign Up
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// Inline Auth Badge for buttons
+export function AuthRequired({ className = '' }: { className?: string }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className={`inline-flex items-center gap-1 text-xs font-medium text-muted-foreground ${className}`}>
+          <LogIn className="h-3 w-3" />
+        </span>
+      </TooltipTrigger>
+      <TooltipContent>
+        <p>Requer login</p>
+      </TooltipContent>
+    </Tooltip>
   );
 }
