@@ -18,17 +18,20 @@ import {
   Menu,
   X,
   CreditCard,
+  ShieldCheck,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useAuthStore } from '@/stores/authStore';
 
 interface NavItem {
   to: string;
   icon: React.ElementType;
   label: string;
   description?: string;
+  adminOnly?: boolean;
 }
 
 const mainNavItems: NavItem[] = [
@@ -45,6 +48,7 @@ const secondaryNavItems: NavItem[] = [
   { to: '/packs', icon: Package, label: 'Packs', description: 'Templates prontos' },
   { to: '/planos', icon: CreditCard, label: 'Planos', description: 'Gerir plano' },
   { to: '/settings', icon: Settings, label: 'Definições', description: 'Configurações' },
+  { to: '/admin', icon: ShieldCheck, label: 'Admin', description: 'Backoffice', adminOnly: true },
 ];
 
 export function Sidebar() {
@@ -52,6 +56,12 @@ export function Sidebar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
   const isMobile = useIsMobile();
+  const { isAdmin } = useAuthStore();
+
+  // Filter items based on admin status
+  const filteredSecondaryItems = secondaryNavItems.filter(
+    (item) => !item.adminOnly || isAdmin
+  );
 
   const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => (
     <>
@@ -126,7 +136,7 @@ export function Sidebar() {
             </span>
           )}
           <div className="mt-2 space-y-1">
-            {secondaryNavItems.map((item) => (
+            {filteredSecondaryItems.map((item) => (
               <SidebarNavItem
                 key={item.to}
                 item={item}
