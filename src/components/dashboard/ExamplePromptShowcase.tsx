@@ -1,10 +1,9 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, Eye, Sparkles, Target, FileText, Lock, Lightbulb } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Eye, Sparkles, Target, FileText, Lightbulb } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { motion, AnimatePresence } from 'framer-motion';
 
 const examplePrompt = {
   objective: 'Criar um post viral para Instagram sobre sustentabilidade que gere engagement e partilhas',
@@ -43,89 +42,34 @@ Texto completo pronto para publicar, com sugestão de emojis estratégicos e 5 h
 };
 
 export default function ExamplePromptShowcase() {
-  const [isExpanded, setIsExpanded] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
   return (
     <>
-      <Card className="border-primary/30 bg-gradient-to-br from-primary/5 to-transparent overflow-hidden">
-        <CardHeader className="pb-3">
+      <Card className="h-full border-border/50 hover:border-primary/30 transition-colors">
+        <CardContent className="p-5 space-y-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                <Sparkles className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <CardTitle className="text-base md:text-lg">Vê um Prompt de Alta Qualidade em Ação</CardTitle>
-                <p className="text-sm text-muted-foreground">Descobre o que torna um prompt verdadeiramente eficaz</p>
-              </div>
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium">Exemplo</span>
             </div>
-            <Badge variant="secondary" className="bg-success/10 text-success border-success/20">
-              Score: {examplePrompt.score.overall}%
+            <Badge variant="secondary" className="text-xs bg-success/10 text-success border-0">
+              {examplePrompt.score.overall}%
             </Badge>
           </div>
-        </CardHeader>
-        
-        <CardContent className="space-y-4">
-          {/* Collapsed preview */}
-          <div 
-            className="rounded-lg bg-muted/50 p-4 cursor-pointer hover:bg-muted/70 transition-colors"
-            onClick={() => setIsExpanded(!isExpanded)}
-          >
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <Target className="h-4 w-4 text-primary" />
-                <span className="text-sm font-medium">Objetivo</span>
-              </div>
-              {isExpanded ? (
-                <ChevronUp className="h-4 w-4 text-muted-foreground" />
-              ) : (
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
-              )}
-            </div>
-            <p className="text-sm text-muted-foreground">{examplePrompt.objective}</p>
-          </div>
 
-          <AnimatePresence>
-            {isExpanded && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="space-y-3"
-              >
-                <div className="rounded-lg bg-muted/50 p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <FileText className="h-4 w-4 text-info" />
-                    <span className="text-sm font-medium">Prompt Final</span>
-                  </div>
-                  <pre className="text-xs text-muted-foreground whitespace-pre-wrap font-mono max-h-48 overflow-y-auto">
-                    {examplePrompt.finalPrompt}
-                  </pre>
-                </div>
-
-                {/* Score breakdown */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                  {Object.entries(examplePrompt.score)
-                    .filter(([key]) => key !== 'overall')
-                    .map(([key, value]) => (
-                      <div key={key} className="rounded-lg bg-muted/30 p-3 text-center">
-                        <p className="text-lg font-bold text-primary">{value}%</p>
-                        <p className="text-xs text-muted-foreground capitalize">{key === 'clarity' ? 'Clareza' : key === 'specificity' ? 'Especificidade' : key === 'structure' ? 'Estrutura' : 'Criatividade'}</p>
-                      </div>
-                    ))}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          <p className="text-sm text-muted-foreground line-clamp-3">
+            {examplePrompt.objective}
+          </p>
 
           <Button 
             onClick={() => setShowModal(true)} 
-            className="w-full gap-2"
-            variant={isExpanded ? 'default' : 'outline'}
+            variant="ghost"
+            size="sm"
+            className="w-full text-xs gap-2 text-muted-foreground hover:text-foreground"
           >
-            <Eye className="h-4 w-4" />
-            Ver como este prompt foi criado
+            <Eye className="h-3 w-3" />
+            Ver detalhes
           </Button>
         </CardContent>
       </Card>
@@ -136,7 +80,7 @@ export default function ExamplePromptShowcase() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Lightbulb className="h-5 w-5 text-warning" />
-              Anatomia de um Prompt de Alta Qualidade
+              Anatomia de um Prompt Eficaz
             </DialogTitle>
             <DialogDescription>
               Compreende a estrutura que garante resultados consistentes
