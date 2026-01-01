@@ -100,16 +100,20 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   },
 }));
 
-// Initialize auth listener
-supabase.auth.onAuthStateChange(async (event, session) => {
+// Initialize auth listener - avoid async deadlock
+supabase.auth.onAuthStateChange((event, session) => {
   const store = useAuthStore.getState();
   
+  // Synchronous updates first
   store.setSession(session);
   store.setUser(session?.user ?? null);
   
+  // Defer async operations with setTimeout to prevent deadlock
   if (session?.user) {
-    await store.fetchProfile();
-    await store.checkAdminRole();
+    setTimeout(() => {
+      store.fetchProfile();
+      store.checkAdminRole();
+    }, 0);
   } else {
     store.setProfile(null);
     store.setIsAdmin(false);
