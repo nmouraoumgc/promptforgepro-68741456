@@ -313,9 +313,13 @@ export default function TikTokPack() {
 
         {/* Categories Tabs */}
         <Tabs defaultValue="hooks" className="space-y-6">
-          <TabsList className="grid grid-cols-4 w-full max-w-lg mx-auto">
+          <TabsList className="flex w-full max-w-lg mx-auto h-auto p-1">
             {categories.map((cat) => (
-              <TabsTrigger key={cat.id} value={cat.id} className="text-xs md:text-sm">
+              <TabsTrigger 
+                key={cat.id} 
+                value={cat.id} 
+                className="flex-1 text-[11px] md:text-sm px-2 py-2 whitespace-nowrap"
+              >
                 {cat.label}
               </TabsTrigger>
             ))}
