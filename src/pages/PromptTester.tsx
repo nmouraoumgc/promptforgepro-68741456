@@ -5,10 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { usePlanStore } from '@/stores/planStore';
-import { ProContextualUpsell } from '@/components/gating/FeatureGate';
+import { useAuthStore } from '@/stores/authStore';
+import { ProContextualUpsell, AuthGate } from '@/components/gating/FeatureGate';
 
 export default function PromptTester() {
   const { canAccess } = usePlanStore();
+  const { user } = useAuthStore();
   const [promptA, setPromptA] = useState('');
   const [promptB, setPromptB] = useState('');
   const [responseA, setResponseA] = useState('');
@@ -16,7 +18,18 @@ export default function PromptTester() {
   const [winner, setWinner] = useState<'A' | 'B' | null>(null);
   const [isTesting, setIsTesting] = useState(false);
 
-  // Gate A/B testing for free users
+  // Require authentication first
+  if (!user) {
+    return (
+      <div className="p-6 animate-fade-in">
+        <Card>
+          <AuthGate message="Cria uma conta gratuita para testar e comparar prompts." />
+        </Card>
+      </div>
+    );
+  }
+
+  // Gate A/B testing for non-premium users
   if (!canAccess('canAccessABTesting')) {
     return (
       <div className="p-6 animate-fade-in">
