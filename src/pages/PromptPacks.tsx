@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Package, Crown, Sparkles, Eye, ChevronDown, ChevronUp, Zap, Lock } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Crown, Sparkles, Eye, ChevronDown, ChevronUp, Zap, Lock, ArrowRight } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,9 +13,11 @@ const packs = [
   { 
     name: 'TikTok Viral', 
     description: 'Scripts e hooks para vídeos virais', 
-    count: 15, 
+    count: 12, 
     icon: '🎬', 
-    premium: false,
+    premium: true,
+    featured: true,
+    link: '/packs/tiktok',
     benefit: 'Criado para maximizar retenção nos primeiros 3 segundos',
     examplePrompt: 'Cria um hook para TikTok sobre [tema] que comece com uma pergunta provocadora e mantenha o espectador até ao fim...',
     beforeAfter: {
@@ -222,12 +225,18 @@ export default function PromptPacks() {
                   >
                     <Eye className="h-4 w-4" />
                   </Button>
-                  <Button 
-                    variant="default" 
-                    size="sm"
-                  >
-                    Explorar Pack
-                  </Button>
+                  {pack.link ? (
+                    <Link to={pack.link}>
+                      <Button variant="default" size="sm" className="gap-1">
+                        Explorar
+                        <ArrowRight className="h-3 w-3" />
+                      </Button>
+                    </Link>
+                  ) : (
+                    <Button variant="default" size="sm">
+                      Explorar Pack
+                    </Button>
+                  )}
                 </div>
               </div>
             </CardContent>
