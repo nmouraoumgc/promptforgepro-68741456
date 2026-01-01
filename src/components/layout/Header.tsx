@@ -20,6 +20,8 @@ export function Header() {
   const { darkMode, toggleDarkMode } = usePromptStore();
   const { user, profile, isAdmin, signOut } = useAuthStore();
   const isMobile = useIsMobile();
+  
+  const isHomePage = location.pathname === '/';
 
   const handleSignOut = async () => {
     await signOut();
@@ -30,9 +32,11 @@ export function Header() {
     <header className="flex h-16 items-center justify-between border-b border-border bg-card px-4 md:px-6">
       {/* Logo - clickable to Dashboard */}
       <Link to="/" className={`flex items-center gap-2 ${isMobile ? 'ml-12' : ''}`}>
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-          <Flame className="h-5 w-5 text-primary-foreground" />
-        </div>
+        {isHomePage && (
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
+            <Flame className="h-5 w-5 text-primary-foreground" />
+          </div>
+        )}
         <span className="text-lg font-bold text-foreground">
           Prompt<span className="text-primary">Forge</span>
         </span>
