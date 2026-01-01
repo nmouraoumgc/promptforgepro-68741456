@@ -12,9 +12,9 @@ import VersionHistory from "@/pages/VersionHistory";
 import PromptTester from "@/pages/PromptTester";
 import Learn from "@/pages/Learn";
 import PromptPacks from "@/pages/PromptPacks";
+import PackDetail from "@/pages/PackDetail";
 import Settings from "@/pages/Settings";
 import Pricing from "@/pages/Pricing";
-import TikTokPack from "@/pages/TikTokPack";
 import Checkout from "@/pages/Checkout";
 import PurchaseSuccess from "@/pages/PurchaseSuccess";
 import Login from "@/pages/Login";
@@ -47,9 +47,9 @@ const App = () => (
             <Route path="/tester" element={<PromptTester />} />
             <Route path="/learn" element={<Learn />} />
             <Route path="/packs" element={<PromptPacks />} />
+            <Route path="/packs/:slug" element={<PackDetail />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/pricing" element={<Pricing />} />
-            <Route path="/packs/tiktok" element={<TikTokPack />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/purchase-success" element={<PurchaseSuccess />} />
             <Route path="/account" element={<Account />} />
