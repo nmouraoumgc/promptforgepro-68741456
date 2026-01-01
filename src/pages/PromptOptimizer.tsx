@@ -7,7 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { OptimizationVariant } from '@/types/prompt';
 import { usePlanStore } from '@/stores/planStore';
-import { OptimizationLimitNotice } from '@/components/gating/FeatureGate';
+import { useAuthStore } from '@/stores/authStore';
+import { OptimizationLimitNotice, AuthGate } from '@/components/gating/FeatureGate';
 import ActionableScore from '@/components/optimizer/ActionableScore';
 import ImprovementsList from '@/components/optimizer/ImprovementsList';
 
@@ -35,7 +36,19 @@ export default function PromptOptimizer() {
   const [selectedOptimization, setSelectedOptimization] = useState<OptimizationVariant | null>(null);
   const [currentPromptId] = useState(() => `prompt-${Date.now()}`); // Track optimizations per session
   const { toast } = useToast();
+  const { user } = useAuthStore();
   const { currentPlan, canOptimize, incrementOptimizationCount, getOptimizationCount } = usePlanStore();
+
+  // Require authentication to use the optimizer
+  if (!user) {
+    return (
+      <div className="p-6 animate-fade-in">
+        <Card>
+          <AuthGate message="Cria uma conta gratuita para otimizar os teus prompts." />
+        </Card>
+      </div>
+    );
+  }
 
   const optimizePrompt = async () => {
     if (!inputPrompt.trim()) {

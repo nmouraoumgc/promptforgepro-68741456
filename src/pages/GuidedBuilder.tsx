@@ -24,6 +24,8 @@ import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { usePromptStore } from '@/stores/promptStore';
+import { useAuthStore } from '@/stores/authStore';
+import { AuthGate } from '@/components/gating/FeatureGate';
 import { 
   BUILDER_STEPS, 
   OUTPUT_TYPES, 
@@ -44,6 +46,7 @@ const stepIcons = {
 export default function GuidedBuilder() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuthStore();
   const { 
     builderState, 
     updateBuilderState, 
@@ -494,6 +497,17 @@ export default function GuidedBuilder() {
         return null;
     }
   };
+
+  // Require authentication to use the builder
+  if (!user) {
+    return (
+      <div className="p-6 animate-fade-in">
+        <Card>
+          <AuthGate message="Cria uma conta gratuita para começar a construir prompts profissionais." />
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 animate-fade-in">

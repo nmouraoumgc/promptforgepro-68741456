@@ -4,16 +4,29 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { usePromptStore } from '@/stores/promptStore';
 import { usePlanStore } from '@/stores/planStore';
-import { ProContextualUpsell } from '@/components/gating/FeatureGate';
+import { useAuthStore } from '@/stores/authStore';
+import { ProContextualUpsell, AuthGate } from '@/components/gating/FeatureGate';
 import { format } from 'date-fns';
 import { pt } from 'date-fns/locale';
 
 export default function VersionHistory() {
   const { prompts, revertToVersion } = usePromptStore();
   const { canAccess } = usePlanStore();
+  const { user } = useAuthStore();
   const promptsWithVersions = prompts.filter(p => p.versions.length > 1);
 
-  // Gate version history for free users
+  // Require authentication first
+  if (!user) {
+    return (
+      <div className="p-6 animate-fade-in">
+        <Card>
+          <AuthGate message="Cria uma conta gratuita para aceder ao histórico de versões." />
+        </Card>
+      </div>
+    );
+  }
+
+  // Gate version history for non-premium users
   if (!canAccess('canAccessVersionHistory')) {
     return (
       <div className="p-6 animate-fade-in">

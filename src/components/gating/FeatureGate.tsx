@@ -181,12 +181,12 @@ export function OptimizationLimitNotice({ promptId }: OptimizationLimitProps) {
   );
 }
 
-// Contextual Pro upsell for specific features
-interface ProContextualUpsellProps {
+// Contextual upsell for specific features - now directs to Premium
+interface ContextualUpsellProps {
   context: 'ab-testing' | 'version-history' | 'export' | 'high-usage';
 }
 
-const proContextMessages: Record<ProContextualUpsellProps['context'], { title: string; description: string }> = {
+const contextMessages: Record<ContextualUpsellProps['context'], { title: string; description: string }> = {
   'ab-testing': {
     title: 'Testes A/B',
     description: 'Compara variações e descobre qual prompt funciona melhor.',
@@ -205,24 +205,24 @@ const proContextMessages: Record<ProContextualUpsellProps['context'], { title: s
   },
 };
 
-export function ProContextualUpsell({ context }: ProContextualUpsellProps) {
+export function ProContextualUpsell({ context }: ContextualUpsellProps) {
   const navigate = useNavigate();
-  const message = proContextMessages[context];
+  const message = contextMessages[context];
   
   return (
     <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
-      <div className="h-12 w-12 rounded-full flex items-center justify-center mb-4 bg-muted">
-        <Zap className="h-6 w-6 text-muted-foreground" />
+      <div className="h-12 w-12 rounded-full flex items-center justify-center mb-4 bg-primary/10">
+        <Crown className="h-6 w-6 text-primary" />
       </div>
       <h3 className="font-semibold mb-1">{message.title}</h3>
       <p className="text-sm text-muted-foreground mb-2 max-w-sm">
         {message.description}
       </p>
       <p className="text-sm text-muted-foreground mb-4 max-w-sm">
-        O plano Pro desbloqueia controlo avançado.
+        Esta funcionalidade está incluída no plano Premium.
       </p>
       <Button onClick={() => navigate('/pricing')}>
-        Conhecer plano Pro
+        Ver Plano Premium
       </Button>
     </div>
   );
@@ -230,7 +230,7 @@ export function ProContextualUpsell({ context }: ProContextualUpsellProps) {
 
 // Auth Gate - requires login to use features
 interface AuthGateProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   fallback?: React.ReactNode;
   message?: string;
 }
@@ -239,8 +239,12 @@ export function AuthGate({ children, fallback, message }: AuthGateProps) {
   const { user } = useAuthStore();
   const navigate = useNavigate();
   
-  if (user) {
+  if (user && children) {
     return <>{children}</>;
+  }
+  
+  if (user && !children) {
+    return null;
   }
   
   if (fallback) {
