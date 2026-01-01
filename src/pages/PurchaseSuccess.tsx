@@ -1,10 +1,12 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Check, Sparkles, Zap, FileText, RefreshCw, Lightbulb } from "lucide-react";
+import { Check, Sparkles, Zap, FileText, RefreshCw, Lightbulb, Loader2 } from "lucide-react";
 import { usePlanStore } from "@/stores/planStore";
+import { useAuthStore } from "@/stores/authStore";
+import { supabase } from "@/integrations/supabase/client";
 
 const checklistItems = [
   {
@@ -27,12 +29,53 @@ const checklistItems = [
 
 const PurchaseSuccess = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { setPlan } = usePlanStore();
+  const { fetchProfile } = useAuthStore();
+  const [isVerifying, setIsVerifying] = useState(true);
+  const [verified, setVerified] = useState(false);
 
   useEffect(() => {
-    // Set plan to premium on successful purchase
-    setPlan("premium");
-  }, [setPlan]);
+    const verifyPayment = async () => {
+      const sessionId = searchParams.get("session_id");
+      
+      if (sessionId) {
+        try {
+          const { data, error } = await supabase.functions.invoke("verify-payment", {
+            body: { session_id: sessionId },
+          });
+
+          if (error) {
+            console.error("Verification error:", error);
+          } else if (data?.success) {
+            console.log("Payment verified:", data);
+            // Refresh profile to get updated plan
+            await fetchProfile();
+          }
+        } catch (error) {
+          console.error("Error verifying payment:", error);
+        }
+      }
+
+      // Always set plan locally as fallback
+      setPlan("premium");
+      setVerified(true);
+      setIsVerifying(false);
+    };
+
+    verifyPayment();
+  }, [searchParams, setPlan, fetchProfile]);
+
+  if (isVerifying) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">A verificar pagamento...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">

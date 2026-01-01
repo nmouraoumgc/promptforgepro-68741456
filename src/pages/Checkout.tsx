@@ -1,13 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { Check, Shield, Lock, Sparkles } from "lucide-react";
+import { Check, Shield, CreditCard, Sparkles, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuthStore } from "@/stores/authStore";
 
 const valueItems = [
   "Todos os Prompt Packs premium",
@@ -21,34 +22,59 @@ const Checkout = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user, profile } = useAuthStore();
+
+  // Pre-fill email if user is logged in
+  useEffect(() => {
+    if (user?.email) {
+      setEmail(user.email);
+    }
+  }, [user]);
+
+  // Redirect if already premium
+  useEffect(() => {
+    if (profile?.current_plan === "premium") {
+      navigate("/packs");
+    }
+  }, [profile, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!email) {
+      toast({
+        title: "Email obrigatório",
+        description: "Por favor insere o teu email para continuar.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      // Send welcome email
-      const appUrl = window.location.origin + "/packs";
-      
-      const { error } = await supabase.functions.invoke("send-welcome-email", {
-        body: { email, appUrl },
+      const { data, error } = await supabase.functions.invoke("create-payment", {
+        body: { email },
       });
 
       if (error) {
-        console.error("Email error:", error);
-        // Continue to success even if email fails
+        console.error("Payment error:", error);
+        throw new Error(error.message);
       }
 
-      // Navigate to success page
-      navigate("/purchase-success");
+      if (data?.url) {
+        // Redirect to Stripe Checkout
+        window.location.href = data.url;
+      } else {
+        throw new Error("No checkout URL returned");
+      }
     } catch (error) {
       console.error("Checkout error:", error);
       toast({
         title: "Erro no checkout",
-        description: "Por favor tenta novamente.",
+        description: "Não foi possível iniciar o pagamento. Por favor tenta novamente.",
         variant: "destructive",
       });
-    } finally {
       setIsLoading(false);
     }
   };
@@ -121,17 +147,14 @@ const Checkout = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
+                    disabled={isLoading}
                     className="h-12"
                   />
-                </div>
-
-                {/* Payment placeholder - Stripe will be integrated here */}
-                <div className="space-y-2">
-                  <Label>Cartão de pagamento</Label>
-                  <div className="h-12 rounded-md border border-input bg-muted/50 flex items-center justify-center text-muted-foreground text-sm">
-                    <Lock className="h-4 w-4 mr-2" />
-                    Stripe checkout será integrado aqui
-                  </div>
+                  {user && (
+                    <p className="text-xs text-muted-foreground">
+                      Autenticado como {user.email}
+                    </p>
+                  )}
                 </div>
 
                 <Button
@@ -141,11 +164,14 @@ const Checkout = () => {
                 >
                   {isLoading ? (
                     <span className="flex items-center gap-2">
-                      <span className="animate-spin">⏳</span>
-                      A processar...
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      A redirecionar para Stripe...
                     </span>
                   ) : (
-                    "Desbloquear acesso completo"
+                    <span className="flex items-center gap-2">
+                      <CreditCard className="h-4 w-4" />
+                      Pagar com Stripe
+                    </span>
                   )}
                 </Button>
               </form>
