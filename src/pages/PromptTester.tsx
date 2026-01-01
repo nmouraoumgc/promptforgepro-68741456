@@ -1,17 +1,35 @@
 import { useState } from 'react';
-import { FlaskConical, ArrowLeftRight, Trophy, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { FlaskConical, ArrowLeftRight, Trophy, ThumbsUp } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { usePlanStore } from '@/stores/planStore';
+import { UpgradePrompt } from '@/components/gating/FeatureGate';
 
 export default function PromptTester() {
+  const { canAccess } = usePlanStore();
   const [promptA, setPromptA] = useState('');
   const [promptB, setPromptB] = useState('');
   const [responseA, setResponseA] = useState('');
   const [responseB, setResponseB] = useState('');
   const [winner, setWinner] = useState<'A' | 'B' | null>(null);
   const [isTesting, setIsTesting] = useState(false);
+
+  // Gate A/B testing for free users
+  if (!canAccess('canAccessABTesting')) {
+    return (
+      <div className="p-6 animate-fade-in">
+        <Card>
+          <UpgradePrompt 
+            feature="pro"
+            title="Comparação A/B"
+            description="Testa dois prompts lado a lado e descobre qual gera melhores resultados. Otimiza com dados reais."
+          />
+        </Card>
+      </div>
+    );
+  }
 
   const runTest = async () => {
     if (!promptA || !promptB) return;
@@ -20,6 +38,13 @@ export default function PromptTester() {
     setResponseA('Esta é uma resposta simulada para o Prompt A. Numa versão completa, isto seria gerado por uma IA real baseada no teu prompt.');
     setResponseB('Esta é uma resposta simulada para o Prompt B. Compara as duas respostas para decidir qual prompt funciona melhor.');
     setIsTesting(false);
+
+    // Mark onboarding step as complete
+    const completed = localStorage.getItem('onboarding-completed');
+    const steps = completed ? JSON.parse(completed) : [];
+    if (!steps.includes('compare')) {
+      localStorage.setItem('onboarding-completed', JSON.stringify([...steps, 'compare']));
+    }
   };
 
   const selectWinner = (choice: 'A' | 'B') => {

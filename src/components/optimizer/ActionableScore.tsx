@@ -1,8 +1,10 @@
-import { TrendingUp, Wand2, BookOpen, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { TrendingUp, Wand2, BookOpen, AlertTriangle, CheckCircle2, Lock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Link } from 'react-router-dom';
+import { usePlanStore } from '@/stores/planStore';
+import { ProBadge } from '@/components/gating/FeatureGate';
 
 interface ScoreData {
   overall: number;
@@ -64,6 +66,8 @@ export default function ActionableScore({ score, onAutoFix }: ActionableScorePro
   const { label, color } = getScoreLabel(score.overall);
   const suggestions = getImprovementSuggestions(score);
   const needsImprovement = score.overall < 80;
+  const { canAccess, setPlan } = usePlanStore();
+  const canSeeDetails = canAccess('canSeeDetailedScore');
 
   return (
     <Card>
@@ -74,7 +78,7 @@ export default function ActionableScore({ score, onAutoFix }: ActionableScorePro
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Main score */}
+        {/* Main score - always visible */}
         <div className="text-center p-6 rounded-xl bg-gradient-to-br from-primary/10 to-transparent border border-primary/20">
           <div className="flex items-baseline justify-center gap-1">
             <span className="text-5xl font-bold text-primary">{score.overall}</span>
@@ -85,63 +89,105 @@ export default function ActionableScore({ score, onAutoFix }: ActionableScorePro
           </p>
         </div>
 
-        {/* Score breakdown */}
-        <div className="space-y-3">
-          {Object.entries(score)
-            .filter(([key]) => key !== 'overall')
-            .map(([key, value]) => (
-              <div key={key} className="space-y-1">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">{scoreLabels[key]}</span>
-                  <span className={value < 70 ? 'text-warning' : 'text-foreground'}>{value}%</span>
-                </div>
-                <Progress value={value} className="h-2" />
+        {/* Score breakdown - gated for free users */}
+        {canSeeDetails ? (
+          <>
+            <div className="space-y-3">
+              {Object.entries(score)
+                .filter(([key]) => key !== 'overall')
+                .map(([key, value]) => (
+                  <div key={key} className="space-y-1">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">{scoreLabels[key]}</span>
+                      <span className={value < 70 ? 'text-warning' : 'text-foreground'}>{value}%</span>
+                    </div>
+                    <Progress value={value} className="h-2" />
+                  </div>
+                ))}
+            </div>
+
+            {/* Improvement suggestions */}
+            <div className="rounded-lg bg-muted/50 p-4 space-y-3">
+              <p className="text-sm font-medium flex items-center gap-2">
+                {needsImprovement ? (
+                  <>
+                    <AlertTriangle className="h-4 w-4 text-warning" />
+                    Para aumentar o score:
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="h-4 w-4 text-success" />
+                    Pontos fortes:
+                  </>
+                )}
+              </p>
+              <ul className="space-y-2">
+                {suggestions.map((suggestion, i) => (
+                  <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
+                    <span className={needsImprovement ? 'text-warning' : 'text-success'}>
+                      {needsImprovement ? '→' : '✓'}
+                    </span>
+                    {suggestion}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Action buttons */}
+            <div className="grid grid-cols-2 gap-2">
+              {needsImprovement && onAutoFix && (
+                <Button onClick={onAutoFix} className="gap-2">
+                  <Wand2 className="h-4 w-4" />
+                  Corrigir automaticamente
+                </Button>
+              )}
+              <Link to="/learn" className={needsImprovement ? '' : 'col-span-2'}>
+                <Button variant="outline" className="w-full gap-2">
+                  <BookOpen className="h-4 w-4" />
+                  Aprender a melhorar
+                </Button>
+              </Link>
+            </div>
+          </>
+        ) : (
+          /* Gated content for free users */
+          <div className="space-y-4">
+            {/* Blurred preview */}
+            <div className="relative">
+              <div className="space-y-3 opacity-30 blur-[2px] pointer-events-none select-none">
+                {Object.entries(score)
+                  .filter(([key]) => key !== 'overall')
+                  .slice(0, 2)
+                  .map(([key, value]) => (
+                    <div key={key} className="space-y-1">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">{scoreLabels[key]}</span>
+                        <span>{value}%</span>
+                      </div>
+                      <Progress value={value} className="h-2" />
+                    </div>
+                  ))}
               </div>
-            ))}
-        </div>
+            </div>
 
-        {/* Improvement suggestions */}
-        <div className="rounded-lg bg-muted/50 p-4 space-y-3">
-          <p className="text-sm font-medium flex items-center gap-2">
-            {needsImprovement ? (
-              <>
-                <AlertTriangle className="h-4 w-4 text-warning" />
-                Para aumentar o score:
-              </>
-            ) : (
-              <>
-                <CheckCircle2 className="h-4 w-4 text-success" />
-                Pontos fortes:
-              </>
-            )}
-          </p>
-          <ul className="space-y-2">
-            {suggestions.map((suggestion, i) => (
-              <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
-                <span className={needsImprovement ? 'text-warning' : 'text-success'}>
-                  {needsImprovement ? '→' : '✓'}
-                </span>
-                {suggestion}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Action buttons */}
-        <div className="grid grid-cols-2 gap-2">
-          {needsImprovement && onAutoFix && (
-            <Button onClick={onAutoFix} className="gap-2">
-              <Wand2 className="h-4 w-4" />
-              Corrigir automaticamente
-            </Button>
-          )}
-          <Link to="/learn" className={needsImprovement ? '' : 'col-span-2'}>
-            <Button variant="outline" className="w-full gap-2">
-              <BookOpen className="h-4 w-4" />
-              Aprender a melhorar
-            </Button>
-          </Link>
-        </div>
+            {/* Upgrade prompt */}
+            <div className="flex items-center justify-between p-3 rounded-lg bg-info/5 border border-info/20">
+              <div className="flex items-center gap-2">
+                <Lock className="h-4 w-4 text-info" />
+                <span className="text-sm">Análise detalhada</span>
+                <ProBadge feature="pro" />
+              </div>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="text-xs h-7"
+                onClick={() => setPlan('pro')}
+              >
+                Desbloquear
+              </Button>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

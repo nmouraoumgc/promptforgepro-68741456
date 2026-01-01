@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { Package, Crown, Sparkles, Eye, ChevronDown, ChevronUp, Zap } from 'lucide-react';
+import { Package, Crown, Sparkles, Eye, ChevronDown, ChevronUp, Zap, Lock } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { motion, AnimatePresence } from 'framer-motion';
+import { usePlanStore } from '@/stores/planStore';
+import { UpgradePrompt } from '@/components/gating/FeatureGate';
 
 const packs = [
   { 
@@ -90,6 +92,57 @@ const packs = [
 export default function PromptPacks() {
   const [expandedPack, setExpandedPack] = useState<string | null>(null);
   const [selectedPack, setSelectedPack] = useState<typeof packs[0] | null>(null);
+  const { canAccess, setPlan } = usePlanStore();
+  const canAccessPacks = canAccess('canAccessPromptPacks');
+
+  // Gate all packs for non-premium users
+  if (!canAccessPacks) {
+    return (
+      <div className="p-6 space-y-6 animate-fade-in">
+        {/* Header */}
+        <div className="text-center max-w-2xl mx-auto mb-8">
+          <h1 className="text-2xl md:text-3xl font-bold mb-2">Prompt Packs</h1>
+          <p className="text-muted-foreground">
+            Packs temáticos com prompts testados e otimizados para resultados profissionais
+          </p>
+        </div>
+
+        {/* Preview grid - blurred */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {packs.slice(0, 3).map((pack, i) => (
+            <Card 
+              key={i} 
+              className="relative overflow-hidden opacity-60"
+            >
+              <div className="absolute inset-0 bg-background/60 backdrop-blur-[2px] z-10 flex items-center justify-center">
+                <div className="text-center p-4">
+                  <Lock className="h-6 w-6 text-primary mx-auto mb-2" />
+                  <p className="text-sm font-medium">Premium</p>
+                </div>
+              </div>
+              <CardHeader>
+                <div className="text-4xl mb-2">{pack.icon}</div>
+                <CardTitle>{pack.name}</CardTitle>
+                <CardDescription>{pack.description}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">{pack.count} prompts</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Upgrade CTA */}
+        <Card className="max-w-lg mx-auto">
+          <UpgradePrompt 
+            feature="premium"
+            title="Acede a Prompt Packs Profissionais"
+            description="Desbloqueia packs temáticos com prompts testados para TikTok, Instagram, Midjourney, Email e mais."
+          />
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6 animate-fade-in">
@@ -170,10 +223,10 @@ export default function PromptPacks() {
                     <Eye className="h-4 w-4" />
                   </Button>
                   <Button 
-                    variant={pack.premium ? 'outline' : 'default'} 
+                    variant="default" 
                     size="sm"
                   >
-                    {pack.premium ? 'Desbloqueia resultados profissionais' : 'Explorar Pack'}
+                    Explorar Pack
                   </Button>
                 </div>
               </div>
@@ -189,12 +242,6 @@ export default function PromptPacks() {
             <DialogTitle className="flex items-center gap-3">
               <span className="text-3xl">{selectedPack?.icon}</span>
               {selectedPack?.name}
-              {selectedPack?.premium && (
-                <Badge className="bg-warning text-warning-foreground">
-                  <Crown className="h-3 w-3 mr-1" />
-                  Premium
-                </Badge>
-              )}
             </DialogTitle>
             <DialogDescription>{selectedPack?.description}</DialogDescription>
           </DialogHeader>
@@ -235,17 +282,8 @@ export default function PromptPacks() {
 
               {/* CTA */}
               <Button className="w-full" size="lg">
-                {selectedPack.premium ? (
-                  <>
-                    <Crown className="h-4 w-4 mr-2" />
-                    Desbloqueia {selectedPack.count} prompts profissionais
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="h-4 w-4 mr-2" />
-                    Aceder ao Pack ({selectedPack.count} prompts)
-                  </>
-                )}
+                <Sparkles className="h-4 w-4 mr-2" />
+                Aceder ao Pack ({selectedPack.count} prompts)
               </Button>
             </div>
           )}

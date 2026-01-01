@@ -6,6 +6,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { OptimizationVariant } from '@/types/prompt';
+import { usePlanStore } from '@/stores/planStore';
+import { OptimizationLimitNotice } from '@/components/gating/FeatureGate';
 import ActionableScore from '@/components/optimizer/ActionableScore';
 import ImprovementsList from '@/components/optimizer/ImprovementsList';
 
@@ -31,14 +33,33 @@ export default function PromptOptimizer() {
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [score, setScore] = useState<{ clarity: number; specificity: number; structure: number; creativity: number; overall: number } | null>(null);
   const [selectedOptimization, setSelectedOptimization] = useState<OptimizationVariant | null>(null);
+  const [currentPromptId] = useState(() => `prompt-${Date.now()}`); // Track optimizations per session
   const { toast } = useToast();
+  const { currentPlan, canOptimize, incrementOptimizationCount, getOptimizationCount } = usePlanStore();
 
   const optimizePrompt = async () => {
     if (!inputPrompt.trim()) {
       toast({ title: 'Atenção', description: 'Introduz um prompt para otimizar', variant: 'destructive' });
       return;
     }
+
+    // Check optimization limit for free users
+    if (currentPlan === 'free' && !canOptimize(currentPromptId)) {
+      toast({ 
+        title: 'Limite atingido', 
+        description: 'Upgrade para Pro para otimizações ilimitadas', 
+        variant: 'destructive' 
+      });
+      return;
+    }
+
     setIsOptimizing(true);
+    
+    // Increment optimization count for free users
+    if (currentPlan === 'free') {
+      incrementOptimizationCount(currentPromptId);
+    }
+
     // Simulate API call
     await new Promise(r => setTimeout(r, 1500));
     
@@ -92,8 +113,13 @@ export default function PromptOptimizer() {
     restrictive: { label: 'Mais Controlado', icon: '🎯', description: 'Formato e limites estritos' },
   };
 
+  const remainingOptimizations = currentPlan === 'free' ? 3 - getOptimizationCount(currentPromptId) : null;
+
   return (
     <div className="p-6 space-y-6 animate-fade-in">
+      {/* Optimization limit notice for free users */}
+      <OptimizationLimitNotice promptId={currentPromptId} />
+
       {/* Intro tip */}
       <div className="rounded-lg bg-info/10 border border-info/20 p-4 flex items-start gap-3">
         <Info className="h-5 w-5 text-info shrink-0 mt-0.5" />
