@@ -103,35 +103,46 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 // Initialize auth listener - avoid async deadlock
 supabase.auth.onAuthStateChange((event, session) => {
   const store = useAuthStore.getState();
-  
+
+  // Mark as loading while we resolve profile + roles
+  store.setIsLoading(true);
+
   // Synchronous updates first
   store.setSession(session);
   store.setUser(session?.user ?? null);
-  
+
   // Defer async operations with setTimeout to prevent deadlock
   if (session?.user) {
-    setTimeout(() => {
-      store.fetchProfile();
-      store.checkAdminRole();
+    setTimeout(async () => {
+      try {
+        await Promise.all([store.fetchProfile(), store.checkAdminRole()]);
+      } finally {
+        store.setIsLoading(false);
+      }
     }, 0);
   } else {
     store.setProfile(null);
     store.setIsAdmin(false);
+    store.setIsLoading(false);
   }
-  
-  store.setIsLoading(false);
 });
 
 // Check initial session
-supabase.auth.getSession().then(({ data: { session } }) => {
+supabase.auth.getSession().then(async ({ data: { session } }) => {
   const store = useAuthStore.getState();
+
+  store.setIsLoading(true);
   store.setSession(session);
   store.setUser(session?.user ?? null);
-  
-  if (session?.user) {
-    store.fetchProfile();
-    store.checkAdminRole();
+
+  try {
+    if (session?.user) {
+      await Promise.all([store.fetchProfile(), store.checkAdminRole()]);
+    } else {
+      store.setProfile(null);
+      store.setIsAdmin(false);
+    }
+  } finally {
+    store.setIsLoading(false);
   }
-  
-  store.setIsLoading(false);
 });
