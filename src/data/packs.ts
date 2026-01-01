@@ -265,9 +265,9 @@ export const PACKS: Pack[] = [
   {
     id: 'youtube-growth',
     slug: 'youtube',
-    name: 'YouTube Growth',
-    promise: 'Vídeos que crescem o canal organicamente',
-    description: 'Títulos, thumbnails e scripts otimizados para o algoritmo do YouTube.',
+    name: 'YouTube Growth Prompt Pack',
+    promise: 'Prompts, estruturas e CTAs prontos para crescer o canal organicamente',
+    description: 'Estruturas testadas em conteúdo real — não prompts genéricos.',
     audience: 'YouTubers e educadores',
     outcomeCategory: 'content',
     icon: 'Youtube',
@@ -276,10 +276,9 @@ export const PACKS: Pack[] = [
     previewLimit: 2,
     totalPrompts: 12,
     benefits: [
-      'Títulos com CTR acima da média',
-      'Ideias de thumbnails que param o scroll',
-      'Scripts que mantêm retenção',
-      'Descrições SEO-optimized',
+      'Estruturas completas prontas a usar',
+      'Variações otimizadas para diferentes objetivos',
+      'CTAs e exemplos aplicáveis imediatamente',
     ],
     categories: [
       { id: 'titles', label: 'Títulos', description: 'CTR maximizado', icon: 'Type' },

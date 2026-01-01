@@ -66,6 +66,24 @@ const getPackCopy = (packSlug: string) => {
       ctaMicrocopy: 'Inclui todos os hooks, scripts, estruturas e CTAs do TikTok Viral.',
       trustNote: 'Criado para quem quer publicar com consistência — não apenas "experimentar IA".',
     },
+    youtube: {
+      inputLabel: 'Tema do conteúdo',
+      inputPlaceholder: 'Exemplos: títulos, thumbnails, retenção',
+      generateButton: '⚡ Gerar preview grátis',
+      generateMicrocopy: 'Pré-visualização limitada. Sem cartão.',
+      successMessage: '⚡ Preview gerado com sucesso',
+      lockedLabel: '🔒 Conteúdo premium oculto',
+      limitedViewNote: 'Estás a ver uma versão limitada do pack completo.',
+      unlockBenefits: [
+        'Estruturas completas prontas a usar',
+        'Variações otimizadas para diferentes objetivos',
+        'CTAs e exemplos aplicáveis imediatamente',
+      ],
+      limitTitle: '🔒 Limite gratuito atingido',
+      limitSubtext: 'Desbloqueia o pack para acesso completo e uso ilimitado.',
+      ctaMicrocopy: 'Inclui todo o conteúdo do YouTube Growth Prompt Pack.',
+      trustNote: 'Criado para quem quer resultados consistentes, não apenas experimentar IA.',
+    },
   };
 
   // Default copy for other packs
@@ -111,15 +129,23 @@ export function PackPreview({ pack, onUnlock }: PackPreviewProps) {
     await new Promise(resolve => setTimeout(resolve, 1500));
     
     // Generate pack-specific mock results
-    const mockResults = pack.slug === 'instagram' 
-      ? [
-          `Reel educativo sobre ${tema}: "3 erros que estás a cometer..."`,
-          `Hook de bastidores: "O que ninguém te mostra sobre ${tema}"`,
-        ]
-      : [
-          `${tema}: Aquele escândalo que ninguém esperava…`,
-          `Revelado: O segredo mais chocante do ${tema}!`,
-        ];
+    let mockResults: string[];
+    if (pack.slug === 'instagram') {
+      mockResults = [
+        `Reel educativo sobre ${tema}: "3 erros que estás a cometer..."`,
+        `Hook de bastidores: "O que ninguém te mostra sobre ${tema}"`,
+      ];
+    } else if (pack.slug === 'youtube') {
+      mockResults = [
+        `Título de curiosidade: "O segredo de ${tema} que ninguém te conta"`,
+        `Título SEO: "Como dominar ${tema} em 2024 (Guia Completo)"`,
+      ];
+    } else {
+      mockResults = [
+        `${tema}: Aquele escândalo que ninguém esperava…`,
+        `Revelado: O segredo mais chocante do ${tema}!`,
+      ];
+    }
     
     setGeneratedContent(mockResults);
     setHasGenerated(true);
