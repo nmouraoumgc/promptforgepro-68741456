@@ -1,12 +1,15 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Check, X, Crown, Zap, Sparkles } from 'lucide-react';
+import { Check, X, Crown, Zap, Sparkles, Settings, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuthStore } from '@/stores/authStore';
 import { usePlanStore } from '@/stores/planStore';
 import { PlanType, PLAN_LIMITS, PLAN_INFO } from '@/types/plans';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const planFeatures = [
   { key: 'maxOptimizationsPerPrompt', label: 'Otimizações por prompt', format: (v: number) => v === Infinity ? 'Ilimitadas' : `${v}` },
@@ -25,8 +28,10 @@ const planDetails: Record<PlanType, { price: string; period: string; description
 
 export default function Plans() {
   const navigate = useNavigate();
-  const { profile } = useAuthStore();
+  const { profile, user } = useAuthStore();
   const { currentPlan: localPlan } = usePlanStore();
+  const { toast } = useToast();
+  const [isLoadingPortal, setIsLoadingPortal] = useState(false);
   
   const currentPlan = profile?.current_plan || localPlan;
 
@@ -38,6 +43,48 @@ export default function Plans() {
         return <Zap className="h-5 w-5" />;
       default:
         return <Crown className="h-5 w-5" />;
+    }
+  };
+
+  const handleManageSubscription = async () => {
+    if (!user) {
+      toast({
+        title: "Autenticação necessária",
+        description: "Tens de iniciar sessão para gerir a subscrição.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoadingPortal(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("customer-portal");
+      
+      if (error) {
+        throw new Error(error.message);
+      }
+      
+      if (data?.error) {
+        toast({
+          title: "Erro",
+          description: data.error,
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (data?.url) {
+        window.location.href = data.url;
+      }
+    } catch (error) {
+      console.error("Portal error:", error);
+      toast({
+        title: "Erro ao abrir portal",
+        description: "Por favor tenta novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingPortal(false);
     }
   };
 
@@ -75,11 +122,27 @@ export default function Plans() {
                     <p className="font-semibold">{PLAN_INFO[currentPlan].name}</p>
                   </div>
                 </div>
-                {currentPlan === 'free' && (
-                  <Button onClick={() => navigate('/checkout')}>
-                    Fazer upgrade
-                  </Button>
-                )}
+                <div className="flex gap-2">
+                  {currentPlan === 'pro' && (
+                    <Button 
+                      variant="outline" 
+                      onClick={handleManageSubscription}
+                      disabled={isLoadingPortal}
+                    >
+                      {isLoadingPortal ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Settings className="h-4 w-4 mr-2" />
+                      )}
+                      Gerir subscrição
+                    </Button>
+                  )}
+                  {currentPlan === 'free' && (
+                    <Button onClick={() => navigate('/pricing')}>
+                      Fazer upgrade
+                    </Button>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>

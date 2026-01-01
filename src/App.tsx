@@ -17,6 +17,7 @@ import Settings from "@/pages/Settings";
 import Pricing from "@/pages/Pricing";
 import Checkout from "@/pages/Checkout";
 import PurchaseSuccess from "@/pages/PurchaseSuccess";
+import SubscriptionSuccess from "@/pages/SubscriptionSuccess";
 import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
 import Account from "@/pages/Account";
@@ -52,6 +53,7 @@ const App = () => (
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/purchase-success" element={<PurchaseSuccess />} />
+            <Route path="/subscription-success" element={<SubscriptionSuccess />} />
             <Route path="/account" element={<Account />} />
             <Route path="/planos" element={<Plans />} />
             <Route path="/admin" element={<Admin />} />
