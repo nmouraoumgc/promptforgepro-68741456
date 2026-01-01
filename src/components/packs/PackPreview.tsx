@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Lock, Zap, Sparkles, AlertTriangle } from 'lucide-react';
+import { Lock, Zap, Sparkles, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -14,14 +14,93 @@ interface PackPreviewProps {
   onUnlock?: () => void;
 }
 
+// Pack-specific copy configurations
+const getPackCopy = (packSlug: string) => {
+  const copyConfigs: Record<string, {
+    inputLabel: string;
+    inputPlaceholder: string;
+    generateButton: string;
+    generateMicrocopy: string;
+    successMessage: string;
+    lockedLabel: string;
+    limitedViewNote: string;
+    unlockBenefits: string[];
+    limitTitle: string;
+    limitSubtext: string;
+    ctaMicrocopy: string;
+    trustNote: string;
+  }> = {
+    instagram: {
+      inputLabel: 'Tema do conteúdo',
+      inputPlaceholder: 'Exemplos: negócio local, creator, marca pessoal',
+      generateButton: '⚡ Gerar preview grátis',
+      generateMicrocopy: 'Pré-visualização limitada. Sem cartão.',
+      successMessage: '⚡ Preview gerado com sucesso',
+      lockedLabel: '🔒 Conteúdo premium oculto',
+      limitedViewNote: 'Estás a ver uma versão limitada do pack completo.',
+      unlockBenefits: [
+        'Estruturas completas prontas a usar',
+        'Variações otimizadas para diferentes objetivos',
+        'CTAs e exemplos aplicáveis imediatamente',
+      ],
+      limitTitle: '🔒 Limite gratuito atingido',
+      limitSubtext: 'Desbloqueia o pack para acesso completo e uso ilimitado.',
+      ctaMicrocopy: 'Inclui todo o conteúdo do Instagram Reels Prompt Pack.',
+      trustNote: 'Criado para quem quer resultados consistentes, não apenas experimentar IA.',
+    },
+    tiktok: {
+      inputLabel: 'Tema do vídeo',
+      inputPlaceholder: 'Ex: Big Brother, fitness, dinheiro, produtividade',
+      generateButton: '⚡ Gerar hooks grátis',
+      generateMicrocopy: 'Gera 2 hooks gratuitamente. Sem cartão.',
+      successMessage: '⚡ Hooks gerados com sucesso',
+      lockedLabel: '🔒 Hook premium oculto',
+      limitedViewNote: 'Estás a ver 2 de 5 hooks possíveis para este tema.',
+      unlockBenefits: [
+        '3 hooks com maior taxa de retenção',
+        'Scripts completos prontos a gravar',
+        'CTAs que aumentam comentários e follows',
+      ],
+      limitTitle: '🔒 Limite gratuito atingido',
+      limitSubtext: 'Desbloqueia o pack para gerar hooks ilimitados e aceder a todo o conteúdo.',
+      ctaMicrocopy: 'Inclui todos os hooks, scripts, estruturas e CTAs do TikTok Viral.',
+      trustNote: 'Criado para quem quer publicar com consistência — não apenas "experimentar IA".',
+    },
+  };
+
+  // Default copy for other packs
+  const defaultCopy = {
+    inputLabel: 'Tema do conteúdo',
+    inputPlaceholder: 'Ex: o teu tema ou nicho',
+    generateButton: '⚡ Gerar preview grátis',
+    generateMicrocopy: 'Pré-visualização limitada. Sem cartão.',
+    successMessage: '⚡ Preview gerado com sucesso',
+    lockedLabel: '🔒 Conteúdo premium oculto',
+    limitedViewNote: 'Estás a ver uma versão limitada do pack completo.',
+    unlockBenefits: [
+      'Acesso a todo o conteúdo do pack',
+      'Templates prontos a usar',
+      'Atualizações futuras incluídas',
+    ],
+    limitTitle: '🔒 Limite gratuito atingido',
+    limitSubtext: 'Desbloqueia o pack para acesso completo e uso ilimitado.',
+    ctaMicrocopy: `Inclui todo o conteúdo do pack.`,
+    trustNote: 'Criado para quem quer resultados consistentes, não apenas experimentar IA.',
+  };
+
+  return copyConfigs[packSlug] || defaultCopy;
+};
+
 export function PackPreview({ pack, onUnlock }: PackPreviewProps) {
   const navigate = useNavigate();
   const { canAccess } = usePlanStore();
   const hasAccess = canAccess('canAccessPromptPacks');
   const [tema, setTema] = useState('');
-  const [generatedHooks, setGeneratedHooks] = useState<string[]>([]);
+  const [generatedContent, setGeneratedContent] = useState<string[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [hasGenerated, setHasGenerated] = useState(false);
+
+  const copy = getPackCopy(pack.slug);
 
   const handleGenerate = async () => {
     if (!tema.trim()) return;
@@ -31,12 +110,18 @@ export function PackPreview({ pack, onUnlock }: PackPreviewProps) {
     // Simulate generation with themed results
     await new Promise(resolve => setTimeout(resolve, 1500));
     
-    const mockResults = [
-      `${tema}: Aquele escândalo que ninguém esperava…`,
-      `Revelado: O segredo mais chocante do ${tema}!`,
-    ];
+    // Generate pack-specific mock results
+    const mockResults = pack.slug === 'instagram' 
+      ? [
+          `Reel educativo sobre ${tema}: "3 erros que estás a cometer..."`,
+          `Hook de bastidores: "O que ninguém te mostra sobre ${tema}"`,
+        ]
+      : [
+          `${tema}: Aquele escândalo que ninguém esperava…`,
+          `Revelado: O segredo mais chocante do ${tema}!`,
+        ];
     
-    setGeneratedHooks(mockResults);
+    setGeneratedContent(mockResults);
     setHasGenerated(true);
     setIsGenerating(false);
   };
@@ -58,7 +143,7 @@ export function PackPreview({ pack, onUnlock }: PackPreviewProps) {
           {pack.promise}
         </p>
         <p className="text-sm text-muted-foreground/70 italic">
-          Estruturas testadas em conteúdo real — não prompts genéricos.
+          {pack.description}
         </p>
       </div>
 
@@ -79,10 +164,10 @@ export function PackPreview({ pack, onUnlock }: PackPreviewProps) {
             {/* Input */}
             <div>
               <label className="text-sm font-medium text-foreground block mb-1.5">
-                Tema do vídeo
+                {copy.inputLabel}
               </label>
               <Input
-                placeholder="Ex: Big Brother, fitness, dinheiro, produtividade"
+                placeholder={copy.inputPlaceholder}
                 value={tema}
                 onChange={(e) => setTema(e.target.value)}
                 disabled={hasGenerated}
@@ -109,13 +194,11 @@ export function PackPreview({ pack, onUnlock }: PackPreviewProps) {
                       A gerar...
                     </>
                   ) : (
-                    <>
-                      ⚡ Gerar hooks grátis
-                    </>
+                    <>{copy.generateButton}</>
                   )}
                 </Button>
                 <p className="text-center text-xs text-muted-foreground">
-                  Gera 2 hooks gratuitamente. Sem cartão.
+                  {copy.generateMicrocopy}
                 </p>
               </div>
             ) : (
@@ -126,12 +209,12 @@ export function PackPreview({ pack, onUnlock }: PackPreviewProps) {
                   animate={{ opacity: 1, y: 0 }}
                   className="text-primary"
                 >
-                  <span className="text-sm font-medium">⚡ Hooks gerados com sucesso</span>
+                  <span className="text-sm font-medium">{copy.successMessage}</span>
                 </motion.div>
 
-                {/* Generated Hooks */}
+                {/* Generated Content */}
                 <div className="space-y-2">
-                  {generatedHooks.map((hook, i) => (
+                  {generatedContent.map((item, i) => (
                     <motion.div
                       key={i}
                       initial={{ opacity: 0, y: 10 }}
@@ -141,25 +224,25 @@ export function PackPreview({ pack, onUnlock }: PackPreviewProps) {
                     >
                       <p className="text-sm text-foreground font-medium">
                         <span className="text-muted-foreground mr-2">{i + 1}.</span>
-                        {hook}
+                        {item}
                       </p>
                     </motion.div>
                   ))}
 
-                  {/* Locked Hooks */}
+                  {/* Locked Content */}
                   {[3, 4, 5].map((num) => (
                     <div
                       key={num}
                       className="p-3 bg-muted/30 rounded-lg border border-border/50"
                     >
-                      <span className="text-sm text-muted-foreground">🔒 Hook premium oculto</span>
+                      <span className="text-sm text-muted-foreground">{copy.lockedLabel}</span>
                     </div>
                   ))}
                 </div>
 
-                {/* Counter */}
+                {/* Limited View Note */}
                 <p className="text-center text-sm text-muted-foreground">
-                  Estás a ver 2 de 5 hooks possíveis para este tema.
+                  {copy.limitedViewNote}
                 </p>
               </div>
             )}
@@ -167,23 +250,23 @@ export function PackPreview({ pack, onUnlock }: PackPreviewProps) {
         </Card>
       )}
 
-      {/* Loss Aversion Block */}
+      {/* Benefits Block - What you get when unlocking */}
       {!hasAccess && hasGenerated && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <Card className="p-4 border-destructive/20 bg-destructive/5">
-            <div className="flex gap-3">
-              <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
-              <div>
-                <h4 className="font-semibold text-foreground mb-2">Estás a perder:</h4>
-                <ul className="space-y-1 text-sm text-muted-foreground">
-                  <li>• 3 hooks com maior taxa de retenção</li>
-                  <li>• Scripts completos prontos a gravar</li>
-                  <li>• CTAs que aumentam comentários e follows</li>
-                </ul>
-              </div>
+          <Card className="p-4 border-primary/20 bg-primary/5">
+            <div className="space-y-3">
+              <h4 className="font-semibold text-foreground">Ao desbloquear recebes:</h4>
+              <ul className="space-y-2">
+                {copy.unlockBenefits.map((benefit, i) => (
+                  <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                    <CheckCircle className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                    <span>{benefit}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
           </Card>
         </motion.div>
@@ -193,9 +276,9 @@ export function PackPreview({ pack, onUnlock }: PackPreviewProps) {
       {!hasAccess && hasGenerated && (
         <Card className="p-4 border-border/50 bg-muted/30">
           <div>
-            <p className="font-semibold text-foreground">🔒 Limite gratuito atingido</p>
+            <p className="font-semibold text-foreground">{copy.limitTitle}</p>
             <p className="text-sm text-muted-foreground mt-1">
-              Desbloqueia o pack para gerar hooks ilimitados e aceder a todo o conteúdo.
+              {copy.limitSubtext}
             </p>
           </div>
         </Card>
@@ -206,17 +289,17 @@ export function PackPreview({ pack, onUnlock }: PackPreviewProps) {
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="space-y-3"
+          className="space-y-3 text-center"
         >
           <Button
             onClick={handleUnlock}
             size="lg"
-            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+            className="w-full max-w-sm mx-auto bg-primary hover:bg-primary/90 text-primary-foreground"
           >
             ✨ Desbloquear versão completa
           </Button>
-          <p className="text-center text-xs text-muted-foreground">
-            Inclui todos os hooks, scripts, estruturas e CTAs do {pack.name}.
+          <p className="text-xs text-muted-foreground">
+            {copy.ctaMicrocopy}
           </p>
         </motion.div>
       )}
@@ -224,7 +307,7 @@ export function PackPreview({ pack, onUnlock }: PackPreviewProps) {
       {/* Trust Note */}
       {!hasAccess && (
         <p className="text-center text-xs text-muted-foreground/60 italic">
-          Criado para quem quer publicar com consistência — não apenas "experimentar IA".
+          {copy.trustNote}
         </p>
       )}
     </div>

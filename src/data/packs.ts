@@ -136,9 +136,9 @@ export const PACKS: Pack[] = [
   {
     id: 'instagram-reels',
     slug: 'instagram',
-    name: 'Instagram Reels',
-    promise: 'Transforma seguidores em clientes fiéis',
-    description: 'Prompts para Reels que constroem autoridade e geram vendas orgânicas.',
+    name: 'Instagram Reels Prompt Pack',
+    promise: 'Prompts, estruturas e CTAs prontos para aumentar alcance e conversões',
+    description: 'Estruturas testadas em conteúdo real — não prompts genéricos.',
     audience: 'Negócios e influenciadores no Instagram',
     outcomeCategory: 'content',
     icon: 'Instagram',
@@ -147,10 +147,9 @@ export const PACKS: Pack[] = [
     previewLimit: 2,
     totalPrompts: 10,
     benefits: [
-      'Reels que aparecem no Explorar',
-      'Carrosséis que educam e vendem',
-      'Captions que geram interação',
-      'Estratégias de hashtags eficazes',
+      'Estruturas completas prontas a usar',
+      'Variações otimizadas para diferentes objetivos',
+      'CTAs e exemplos aplicáveis imediatamente',
     ],
     categories: [
       { id: 'reels', label: 'Reels', description: 'Vídeos de alto impacto', icon: 'Film' },
