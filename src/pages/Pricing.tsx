@@ -1,5 +1,5 @@
-import { Check, Sparkles } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Check, Sparkles, Zap, Lightbulb } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { usePlanStore } from '@/stores/planStore';
@@ -8,73 +8,92 @@ import { PlanType } from '@/types/plans';
 const plans = [
   {
     id: 'free' as PlanType,
-    name: 'Free',
-    label: 'Explorar',
-    description: 'Para descobrir o poder de prompts bem construídos.',
+    name: 'Gratuito',
+    description: 'Para explorar e testar',
     price: '0€',
+    priceDetail: 'para sempre',
     features: [
-      'Criar prompts',
-      'Otimizações limitadas',
-      'Biblioteca básica',
-      'Prompt Score simples',
+      '3 otimizações por prompt',
+      'Biblioteca de prompts',
+      'Guided Builder básico',
+      'Pré-visualização de packs',
     ],
     cta: 'Começar grátis',
     highlight: false,
   },
   {
-    id: 'pro' as PlanType,
-    name: 'Pro',
-    label: 'Profissional',
-    description: 'Para quem usa prompts como ferramenta de trabalho.',
-    price: '9€',
-    period: '/mês',
+    id: 'premium' as PlanType,
+    name: 'Premium',
+    description: 'Acesso completo aos Prompt Packs',
+    price: '19€',
+    priceDetail: 'pagamento único',
     features: [
-      'Otimizações ilimitadas',
-      'Histórico de versões',
-      'Testes A/B',
-      'Prompt Score avançado',
-      'Exportar prompts',
+      'Todos os Prompt Packs incluídos',
+      'TikTok Viral Pack completo',
+      'Templates prontos a usar',
+      'Scripts e estruturas profissionais',
+      'Atualizações futuras gratuitas',
     ],
-    cta: 'Upgrade para Pro',
+    cta: 'Desbloquear acesso completo',
     highlight: true,
   },
   {
-    id: 'premium' as PlanType,
-    name: 'Premium',
-    label: 'Acelerar',
-    description: 'Para quem quer resultados mais rápidos.',
-    price: '19€',
-    period: '/mês',
+    id: 'pro' as PlanType,
+    name: 'Pro',
+    description: 'Para criadores avançados',
+    price: '9€',
+    priceDetail: '/mês',
     features: [
-      'Tudo do Pro',
-      'Prompt Packs premium',
-      'Templates profissionais',
-      'Casos de uso avançados',
-      'Atualizações exclusivas',
+      'Otimizações ilimitadas',
+      'Histórico de versões',
+      'Testes A/B de prompts',
+      'Pontuação detalhada',
+      'Exportação de prompts',
     ],
-    cta: 'Desbloquear Premium',
+    cta: 'Subscrever Pro',
     highlight: false,
   },
 ];
 
 export default function Pricing() {
   const { currentPlan, setPlan } = usePlanStore();
+  const navigate = useNavigate();
 
   const handleSelectPlan = (planId: PlanType) => {
     setPlan(planId);
+    if (planId === 'premium') {
+      navigate('/packs');
+    }
   };
 
   return (
     <div className="p-6 md:p-8 lg:p-10 animate-fade-in">
       {/* Hero */}
-      <header className="text-center max-w-2xl mx-auto mb-12 md:mb-16">
-        <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
-          Escolhe como queres trabalhar com prompts
+      <header className="text-center max-w-2xl mx-auto mb-8">
+        <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-3">
+          Escolhe como queres usar o PromptForge
         </h1>
         <p className="text-muted-foreground text-lg">
-          Começa grátis. Evolui quando fizer sentido.
+          Packs prontos para resultados imediatos ou ferramentas avançadas para quem cria todos os dias.
         </p>
       </header>
+
+      {/* Explanatory Block */}
+      <div className="mb-10 max-w-2xl mx-auto">
+        <div className="bg-muted/50 border border-border rounded-xl p-5">
+          <div className="flex items-start gap-3">
+            <Lightbulb className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+            <div>
+              <p className="font-medium text-sm mb-1">Como funciona</p>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                A maioria dos criadores começa pelos <span className="font-medium text-foreground">Prompt Packs</span> — prontos a usar, com resultados rápidos.
+                <br />
+                Os planos são para quem usa o PromptForge como ferramenta de trabalho contínua.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Pricing Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
@@ -84,24 +103,22 @@ export default function Pricing() {
           return (
             <Card 
               key={plan.id}
-              className={`relative transition-all ${
+              className={`relative flex flex-col transition-all ${
                 plan.highlight 
-                  ? 'border-primary/50 shadow-lg shadow-primary/10' 
-                  : 'border-border'
+                  ? 'border-primary shadow-lg shadow-primary/10 md:scale-[1.02]' 
+                  : 'border-border hover:border-muted-foreground/30'
               } ${isActive ? 'ring-2 ring-primary' : ''}`}
             >
-              <CardHeader className="text-center pb-4">
-                <div className="mb-2">
-                  <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
-                    plan.id === 'free' 
-                      ? 'bg-muted text-muted-foreground' 
-                      : plan.id === 'pro'
-                      ? 'bg-info/10 text-info'
-                      : 'bg-primary/10 text-primary'
-                  }`}>
-                    {plan.label}
+              {plan.highlight && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                  <span className="bg-primary text-primary-foreground text-xs font-semibold px-3 py-1 rounded-full flex items-center gap-1.5 whitespace-nowrap">
+                    <Sparkles className="h-3 w-3" />
+                    Mais popular
                   </span>
                 </div>
+              )}
+
+              <CardHeader className={`text-center pb-4 ${plan.highlight ? 'pt-6' : ''}`}>
                 <CardTitle className="text-2xl">{plan.name}</CardTitle>
                 <CardDescription className="text-sm">
                   {plan.description}
@@ -109,24 +126,25 @@ export default function Pricing() {
                 
                 {/* Price */}
                 <div className="pt-4">
-                  <span className="text-4xl font-bold">{plan.price}</span>
-                  {plan.period && (
-                    <span className="text-muted-foreground text-sm">{plan.period}</span>
+                  <div className="flex items-baseline justify-center gap-1">
+                    <span className="text-4xl font-bold">{plan.price}</span>
+                    <span className="text-muted-foreground text-sm">{plan.priceDetail}</span>
+                  </div>
+                  {plan.id === 'premium' && (
+                    <p className="text-xs text-muted-foreground mt-1.5">
+                      Pagamento único. Acesso imediato.
+                    </p>
                   )}
                 </div>
               </CardHeader>
               
-              <CardContent className="space-y-6">
+              <CardContent className="flex-1 flex flex-col space-y-6">
                 {/* Features */}
-                <ul className="space-y-3">
+                <ul className="space-y-3 flex-1">
                   {plan.features.map((feature, i) => (
-                    <li key={i} className="flex items-center gap-3 text-sm">
-                      <Check className={`h-4 w-4 shrink-0 ${
-                        plan.id === 'free' 
-                          ? 'text-muted-foreground' 
-                          : plan.id === 'pro'
-                          ? 'text-info'
-                          : 'text-primary'
+                    <li key={i} className="flex items-start gap-2.5 text-sm">
+                      <Check className={`h-4 w-4 shrink-0 mt-0.5 ${
+                        plan.highlight ? 'text-primary' : 'text-muted-foreground'
                       }`} />
                       {feature}
                     </li>
@@ -135,7 +153,7 @@ export default function Pricing() {
 
                 {/* CTA */}
                 <Button 
-                  className="w-full"
+                  className={`w-full ${plan.highlight ? 'shadow-md' : ''}`}
                   variant={plan.highlight ? 'default' : 'outline'}
                   disabled={isActive}
                   onClick={() => handleSelectPlan(plan.id)}
@@ -146,7 +164,11 @@ export default function Pricing() {
                       Plano atual
                     </>
                   ) : (
-                    plan.cta
+                    <>
+                      {plan.id === 'pro' && <Zap className="h-4 w-4 mr-2" />}
+                      {plan.highlight && <Sparkles className="h-4 w-4 mr-2" />}
+                      {plan.cta}
+                    </>
                   )}
                 </Button>
               </CardContent>
@@ -158,9 +180,7 @@ export default function Pricing() {
       {/* Trust note */}
       <footer className="text-center mt-12 md:mt-16 max-w-lg mx-auto">
         <p className="text-sm text-muted-foreground leading-relaxed">
-          Podes usar a versão gratuita sem limite de tempo.
-          <br />
-          Faz upgrade apenas quando sentires necessidade.
+          Dúvidas? O plano gratuito não expira — usa o tempo que precisares.
         </p>
       </footer>
     </div>
