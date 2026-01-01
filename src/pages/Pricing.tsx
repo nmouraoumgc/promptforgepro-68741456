@@ -58,9 +58,10 @@ export default function Pricing() {
   const navigate = useNavigate();
 
   const handleSelectPlan = (planId: PlanType) => {
-    setPlan(planId);
     if (planId === 'premium') {
-      navigate('/packs');
+      navigate('/checkout');
+    } else {
+      setPlan(planId);
     }
   };
 

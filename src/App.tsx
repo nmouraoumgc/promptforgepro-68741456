@@ -15,6 +15,7 @@ import PromptPacks from "@/pages/PromptPacks";
 import Settings from "@/pages/Settings";
 import Pricing from "@/pages/Pricing";
 import TikTokPack from "@/pages/TikTokPack";
+import Checkout from "@/pages/Checkout";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,6 +39,7 @@ const App = () => (
             <Route path="/settings" element={<Settings />} />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/packs/tiktok" element={<TikTokPack />} />
+            <Route path="/checkout" element={<Checkout />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
