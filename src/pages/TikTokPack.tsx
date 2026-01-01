@@ -332,29 +332,41 @@ export default function TikTokPack() {
               </div>
 
               {packPrompts[cat.id].map((prompt) => (
-                <Card key={prompt.id} className="overflow-hidden">
+                <Card 
+                  key={prompt.id} 
+                  className="overflow-hidden bg-gradient-to-b from-card to-card/80 border-border/40 hover:border-border/60 transition-all duration-200 hover:shadow-sm"
+                >
                   <CardHeader 
-                    className="cursor-pointer hover:bg-muted/30 transition-colors"
+                    className="cursor-pointer transition-colors active:bg-muted/20"
                     onClick={() => setExpandedPrompt(expandedPrompt === prompt.id ? null : prompt.id)}
                   >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <CardTitle className="text-base">{prompt.title}</CardTitle>
-                        <CardDescription className="text-sm">{prompt.description}</CardDescription>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="flex gap-1">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="space-y-1.5 flex-1">
+                        <CardTitle className="text-[15px] font-semibold text-foreground leading-tight">
+                          {prompt.title}
+                        </CardTitle>
+                        <CardDescription className="text-sm text-muted-foreground/80">
+                          {prompt.description}
+                        </CardDescription>
+                        <div className="flex flex-wrap gap-1.5 pt-2">
                           {prompt.variables.map((v) => (
-                            <Badge key={v} variant="outline" className="text-xs">
+                            <span 
+                              key={v} 
+                              className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-primary/10 text-primary/90 border border-primary/15"
+                            >
                               {`{{${v}}}`}
-                            </Badge>
+                            </span>
                           ))}
                         </div>
-                        {expandedPrompt === prompt.id ? (
-                          <ChevronUp className="h-4 w-4 text-muted-foreground" />
-                        ) : (
-                          <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                        )}
+                      </div>
+                      <div className="flex items-center pt-0.5">
+                        <div className={`p-1.5 rounded-md transition-colors ${expandedPrompt === prompt.id ? 'bg-muted/50' : 'hover:bg-muted/30'}`}>
+                          {expandedPrompt === prompt.id ? (
+                            <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </div>
                       </div>
                     </div>
                   </CardHeader>
@@ -365,18 +377,21 @@ export default function TikTokPack() {
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.2 }}
+                        transition={{ duration: 0.2, ease: 'easeOut' }}
                       >
                         <CardContent className="pt-0 space-y-4">
-                          <pre className="text-sm bg-muted/50 p-4 rounded-lg whitespace-pre-wrap font-mono overflow-x-auto">
-                            {prompt.content}
-                          </pre>
+                          <div className="bg-muted/30 border border-border/30 rounded-lg p-4">
+                            <pre className="text-sm whitespace-pre-wrap font-mono text-foreground/85 leading-relaxed overflow-x-auto">
+                              {prompt.content}
+                            </pre>
+                          </div>
                           <Button 
                             onClick={(e) => {
                               e.stopPropagation();
                               copyPrompt(prompt);
                             }}
-                            className="w-full"
+                            className="w-full transition-all duration-150 active:scale-[0.98]"
+                            variant={copiedId === prompt.id ? "secondary" : "default"}
                           >
                             {copiedId === prompt.id ? (
                               <>
