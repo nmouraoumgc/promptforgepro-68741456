@@ -17,6 +17,7 @@ import {
   PlusCircle,
   Menu,
   X,
+  CreditCard,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -42,6 +43,7 @@ const mainNavItems: NavItem[] = [
 const secondaryNavItems: NavItem[] = [
   { to: '/learn', icon: GraduationCap, label: 'Aprender', description: 'Tutoriais' },
   { to: '/packs', icon: Package, label: 'Packs', description: 'Templates prontos' },
+  { to: '/planos', icon: CreditCard, label: 'Planos', description: 'Gerir plano' },
   { to: '/settings', icon: Settings, label: 'Definições', description: 'Configurações' },
 ];
 
