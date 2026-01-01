@@ -3,12 +3,30 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { usePromptStore } from '@/stores/promptStore';
+import { usePlanStore } from '@/stores/planStore';
+import { UpgradePrompt } from '@/components/gating/FeatureGate';
 import { format } from 'date-fns';
 import { pt } from 'date-fns/locale';
 
 export default function VersionHistory() {
   const { prompts, revertToVersion } = usePromptStore();
+  const { canAccess } = usePlanStore();
   const promptsWithVersions = prompts.filter(p => p.versions.length > 1);
+
+  // Gate version history for free users
+  if (!canAccess('canAccessVersionHistory')) {
+    return (
+      <div className="p-6 animate-fade-in">
+        <Card>
+          <UpgradePrompt 
+            feature="pro"
+            title="Histórico de Versões"
+            description="Acede ao histórico completo de todas as versões dos teus prompts. Reverte alterações e compara evolução."
+          />
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6 animate-fade-in">
