@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { usePlanStore } from '@/stores/planStore';
 import { PlanType } from '@/types/plans';
 
-const plans = [
+const mainPlans = [
   {
     id: 'free' as PlanType,
     name: 'Free',
@@ -19,7 +19,6 @@ const plans = [
       'Pré-visualização de packs',
     ],
     cta: 'Começar grátis',
-    highlight: false,
   },
   {
     id: 'premium' as PlanType,
@@ -36,24 +35,23 @@ const plans = [
     cta: 'Desbloquear acesso completo',
     highlight: true,
   },
-  {
-    id: 'pro' as PlanType,
-    name: 'Pro',
-    description: 'Para criadores avançados',
-    price: '9€',
-    priceDetail: '/mês',
-    features: [
-      'Otimizações ilimitadas',
-      'Histórico de versões',
-      'Testes A/B de prompts',
-      'Pontuação detalhada',
-      'Exportação de prompts',
-    ],
-    cta: 'Subscrever Pro',
-    highlight: false,
-    isPaidPlan: true,
-  },
 ];
+
+const proPlan = {
+  id: 'pro' as PlanType,
+  name: 'Pro',
+  description: 'Para quem usa o PromptForge como ferramenta diária de trabalho',
+  price: '9€',
+  priceDetail: '/mês',
+  features: [
+    'Otimizações ilimitadas',
+    'Histórico de versões',
+    'Testes A/B de prompts',
+    'Pontuação detalhada',
+    'Exportação de prompts',
+  ],
+  cta: 'Subscrever Pro',
+};
 
 export default function Pricing() {
   const { currentPlan, setPlan } = usePlanStore();
@@ -95,9 +93,9 @@ export default function Pricing() {
         </div>
       </div>
 
-      {/* Pricing Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-        {plans.map((plan) => {
+      {/* Main Plans: Free + Premium */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+        {mainPlans.map((plan) => {
           const isActive = currentPlan === plan.id;
           
           return (
@@ -113,7 +111,7 @@ export default function Pricing() {
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                   <span className="bg-primary text-primary-foreground text-xs font-semibold px-3 py-1 rounded-full flex items-center gap-1.5 whitespace-nowrap">
                     <Sparkles className="h-3 w-3" />
-                    Mais popular
+                    Recomendado
                   </span>
                 </div>
               )}
@@ -153,8 +151,8 @@ export default function Pricing() {
 
                 {/* CTA */}
                 <Button 
-                  className={`w-full ${(plan.highlight || plan.id === 'pro') ? 'shadow-md' : ''}`}
-                  variant={(plan.highlight || plan.id === 'pro') ? 'default' : 'outline'}
+                  className={`w-full ${plan.highlight ? 'shadow-md' : ''}`}
+                  variant={plan.highlight ? 'default' : 'outline'}
                   disabled={isActive}
                   onClick={() => handleSelectPlan(plan.id)}
                 >
@@ -165,7 +163,6 @@ export default function Pricing() {
                     </>
                   ) : (
                     <>
-                      {plan.id === 'pro' && <Zap className="h-4 w-4 mr-2" />}
                       {plan.highlight && <Sparkles className="h-4 w-4 mr-2" />}
                       {plan.cta}
                     </>
@@ -175,6 +172,65 @@ export default function Pricing() {
             </Card>
           );
         })}
+      </div>
+
+      {/* Pro Section - Secondary */}
+      <div className="mt-16 max-w-3xl mx-auto">
+        {/* Divider with label */}
+        <div className="flex items-center gap-4 mb-8">
+          <div className="flex-1 h-px bg-border" />
+          <span className="text-sm text-muted-foreground font-medium flex items-center gap-2">
+            <Zap className="h-4 w-4" />
+            Para utilizadores avançados
+          </span>
+          <div className="flex-1 h-px bg-border" />
+        </div>
+
+        {/* Pro Card - Compact horizontal layout */}
+        <Card className={`border-border ${currentPlan === 'pro' ? 'ring-2 ring-primary' : ''}`}>
+          <div className="p-6 flex flex-col md:flex-row md:items-center gap-6">
+            {/* Info */}
+            <div className="flex-1 space-y-2">
+              <div className="flex items-center gap-3">
+                <h3 className="text-xl font-semibold">{proPlan.name}</h3>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-xl font-bold">{proPlan.price}</span>
+                  <span className="text-muted-foreground text-sm">{proPlan.priceDetail}</span>
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {proPlan.description}
+              </p>
+              <div className="flex flex-wrap gap-x-4 gap-y-1 pt-2">
+                {proPlan.features.map((feature, i) => (
+                  <span key={i} className="text-xs text-muted-foreground flex items-center gap-1.5">
+                    <Check className="h-3 w-3 text-muted-foreground" />
+                    {feature}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* CTA */}
+            <Button 
+              className="shrink-0 shadow-md"
+              disabled={currentPlan === 'pro'}
+              onClick={() => handleSelectPlan('pro')}
+            >
+              {currentPlan === 'pro' ? (
+                <>
+                  <Check className="h-4 w-4 mr-2" />
+                  Plano atual
+                </>
+              ) : (
+                <>
+                  <Zap className="h-4 w-4 mr-2" />
+                  {proPlan.cta}
+                </>
+              )}
+            </Button>
+          </div>
+        </Card>
       </div>
 
       {/* Trust note */}

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { usePlanStore } from '@/stores/planStore';
-import { UpgradePrompt } from '@/components/gating/FeatureGate';
+import { ProContextualUpsell } from '@/components/gating/FeatureGate';
 
 export default function PromptTester() {
   const { canAccess } = usePlanStore();
@@ -21,11 +21,7 @@ export default function PromptTester() {
     return (
       <div className="p-6 animate-fade-in">
         <Card>
-          <UpgradePrompt 
-            feature="pro"
-            title="Comparação A/B"
-            description="Testa dois prompts lado a lado e descobre qual gera melhores resultados. Otimiza com dados reais."
-          />
+          <ProContextualUpsell context="ab-testing" />
         </Card>
       </div>
     );
