@@ -3,7 +3,16 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
+import { AppLayout } from "@/components/layout";
+import Dashboard from "@/pages/Dashboard";
+import GuidedBuilder from "@/pages/GuidedBuilder";
+import PromptLibrary from "@/pages/PromptLibrary";
+import PromptOptimizer from "@/pages/PromptOptimizer";
+import VersionHistory from "@/pages/VersionHistory";
+import PromptTester from "@/pages/PromptTester";
+import Learn from "@/pages/Learn";
+import PromptPacks from "@/pages/PromptPacks";
+import Settings from "@/pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -15,8 +24,17 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route element={<AppLayout />}>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/builder" element={<GuidedBuilder />} />
+            <Route path="/library" element={<PromptLibrary />} />
+            <Route path="/optimizer" element={<PromptOptimizer />} />
+            <Route path="/versions" element={<VersionHistory />} />
+            <Route path="/tester" element={<PromptTester />} />
+            <Route path="/learn" element={<Learn />} />
+            <Route path="/packs" element={<PromptPacks />} />
+            <Route path="/settings" element={<Settings />} />
+          </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
