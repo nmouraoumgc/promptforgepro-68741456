@@ -32,3 +32,9 @@ verify_jwt = false
 
 [functions.generate-prompt]
 verify_jwt = false
+
+[functions.voice-to-text]
+verify_jwt = false
+
+[functions.quick-prompt]
+verify_jwt = false
