@@ -7,6 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { usePlanStore } from '@/stores/planStore';
 import { useAuthStore } from '@/stores/authStore';
 import { ProContextualUpsell, AuthGate } from '@/components/gating/FeatureGate';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function PromptTester() {
   const { canAccess } = usePlanStore();
@@ -17,6 +19,7 @@ export default function PromptTester() {
   const [responseB, setResponseB] = useState('');
   const [winner, setWinner] = useState<'A' | 'B' | null>(null);
   const [isTesting, setIsTesting] = useState(false);
+  const { toast } = useToast();
 
   // Require authentication first
   if (!user) {
@@ -43,16 +46,35 @@ export default function PromptTester() {
   const runTest = async () => {
     if (!promptA || !promptB) return;
     setIsTesting(true);
-    await new Promise(r => setTimeout(r, 1500));
-    setResponseA('Esta é uma resposta simulada para o Prompt A. Numa versão completa, isto seria gerado por uma IA real baseada no teu prompt.');
-    setResponseB('Esta é uma resposta simulada para o Prompt B. Compara as duas respostas para decidir qual prompt funciona melhor.');
-    setIsTesting(false);
+    setWinner(null);
 
-    // Mark onboarding step as complete
-    const completed = localStorage.getItem('onboarding-completed');
-    const steps = completed ? JSON.parse(completed) : [];
-    if (!steps.includes('compare')) {
-      localStorage.setItem('onboarding-completed', JSON.stringify([...steps, 'compare']));
+    try {
+      const { data, error } = await supabase.functions.invoke('test-prompts', {
+        body: { promptA, promptB }
+      });
+
+      if (error) throw error;
+
+      if (data.error) {
+        toast({ title: 'Erro', description: data.error, variant: 'destructive' });
+        setIsTesting(false);
+        return;
+      }
+
+      setResponseA(data.responseA);
+      setResponseB(data.responseB);
+
+      // Mark onboarding step as complete
+      const completed = localStorage.getItem('onboarding-completed');
+      const steps = completed ? JSON.parse(completed) : [];
+      if (!steps.includes('compare')) {
+        localStorage.setItem('onboarding-completed', JSON.stringify([...steps, 'compare']));
+      }
+    } catch (error) {
+      console.error('Error testing prompts:', error);
+      toast({ title: 'Erro', description: 'Não foi possível testar os prompts. Tenta novamente.', variant: 'destructive' });
+    } finally {
+      setIsTesting(false);
     }
   };
 

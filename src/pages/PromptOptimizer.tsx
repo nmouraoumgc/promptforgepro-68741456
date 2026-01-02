@@ -11,6 +11,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { OptimizationLimitNotice, AuthGate } from '@/components/gating/FeatureGate';
 import ActionableScore from '@/components/optimizer/ActionableScore';
 import ImprovementsList from '@/components/optimizer/ImprovementsList';
+import { supabase } from '@/integrations/supabase/client';
 
 const mockOptimizations: OptimizationVariant[] = [
   { type: 'shorter', content: '', explanation: 'Versão condensada mantendo a essência', changes: ['Contexto redundante removido', 'Instruções simplificadas'] },
@@ -50,6 +51,8 @@ export default function PromptOptimizer() {
     );
   }
 
+  const [improvements, setImprovements] = useState<string[]>([]);
+
   const optimizePrompt = async () => {
     if (!inputPrompt.trim()) {
       toast({ title: 'Atenção', description: 'Introduz um prompt para otimizar', variant: 'destructive' });
@@ -73,32 +76,37 @@ export default function PromptOptimizer() {
       incrementOptimizationCount(currentPromptId);
     }
 
-    // Simulate API call
-    await new Promise(r => setTimeout(r, 1500));
-    
-    const results = mockOptimizations.map(opt => ({
-      ...opt,
-      content: opt.type === 'shorter' 
-        ? inputPrompt.substring(0, Math.floor(inputPrompt.length * 0.6)) + '...'
-        : opt.type === 'detailed'
-        ? `[CONTEXTO]\n${inputPrompt}\n\n[INSTRUÇÕES]\n- Segue o objetivo definido\n- Mantém consistência\n\n[OUTPUT ESPERADO]\nResultado claro e estruturado.`
-        : opt.type === 'creative'
-        ? `${inputPrompt}\n\nSê criativo e surpreende com abordagens originais. Explora diferentes ângulos e perspetivas inesperadas.`
-        : opt.type === 'technical'
-        ? `OBJETIVO: ${inputPrompt}\n\nESPECIFICAÇÕES:\n- Precisão técnica requerida\n- Terminologia específica\n- Formato estruturado`
-        : `${inputPrompt}\n\nRESTRIÇÕES OBRIGATÓRIAS:\n- Máximo 500 palavras\n- Tom profissional\n- Sem ambiguidades`
-    }));
-    
-    setOptimizations(results);
-    setScore({ clarity: 72, specificity: 65, structure: 80, creativity: 55, overall: 68 });
-    setSelectedOptimization(results[1]); // Select detailed by default
-    setIsOptimizing(false);
+    try {
+      const { data, error } = await supabase.functions.invoke('optimize-prompt', {
+        body: { prompt: inputPrompt }
+      });
 
-    // Mark onboarding step as complete
-    const completed = localStorage.getItem('onboarding-completed');
-    const steps = completed ? JSON.parse(completed) : [];
-    if (!steps.includes('optimize')) {
-      localStorage.setItem('onboarding-completed', JSON.stringify([...steps, 'optimize']));
+      if (error) throw error;
+
+      if (data.error) {
+        toast({ title: 'Erro', description: data.error, variant: 'destructive' });
+        setIsOptimizing(false);
+        return;
+      }
+
+      setOptimizations(data.optimizations || []);
+      setScore(data.score || null);
+      setImprovements(data.improvements || []);
+      if (data.optimizations?.length > 0) {
+        setSelectedOptimization(data.optimizations.find((o: OptimizationVariant) => o.type === 'detailed') || data.optimizations[0]);
+      }
+
+      // Mark onboarding step as complete
+      const completed = localStorage.getItem('onboarding-completed');
+      const steps = completed ? JSON.parse(completed) : [];
+      if (!steps.includes('optimize')) {
+        localStorage.setItem('onboarding-completed', JSON.stringify([...steps, 'optimize']));
+      }
+    } catch (error) {
+      console.error('Error optimizing prompt:', error);
+      toast({ title: 'Erro', description: 'Não foi possível otimizar o prompt. Tenta novamente.', variant: 'destructive' });
+    } finally {
+      setIsOptimizing(false);
     }
   };
 
@@ -211,7 +219,7 @@ export default function PromptOptimizer() {
         <ImprovementsList 
           originalPrompt={inputPrompt}
           optimizedPrompt={selectedOptimization.content}
-          improvements={improvementExamples}
+          improvements={improvements.length > 0 ? improvements : ['Objetivo clarificado', 'Estrutura melhorada', 'Tom especificado']}
         />
       )}
 
