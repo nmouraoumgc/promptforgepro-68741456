@@ -7,10 +7,13 @@ import { Badge } from '@/components/ui/badge';
 import { usePlanStore } from '@/stores/planStore';
 import { useAuthStore } from '@/stores/authStore';
 import { ProContextualUpsell, AuthGate } from '@/components/gating/FeatureGate';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function PromptTester() {
   const { canAccess } = usePlanStore();
   const { user } = useAuthStore();
+  const { toast } = useToast();
   const [promptA, setPromptA] = useState('');
   const [promptB, setPromptB] = useState('');
   const [responseA, setResponseA] = useState('');
@@ -18,7 +21,6 @@ export default function PromptTester() {
   const [winner, setWinner] = useState<'A' | 'B' | null>(null);
   const [isTesting, setIsTesting] = useState(false);
 
-  // Require authentication first
   if (!user) {
     return (
       <div className="p-6 animate-fade-in">
@@ -29,7 +31,6 @@ export default function PromptTester() {
     );
   }
 
-  // Gate A/B testing for non-premium users
   if (!canAccess('canAccessABTesting')) {
     return (
       <div className="p-6 animate-fade-in">
@@ -42,17 +43,56 @@ export default function PromptTester() {
 
   const runTest = async () => {
     if (!promptA || !promptB) return;
+    
     setIsTesting(true);
-    await new Promise(r => setTimeout(r, 1500));
-    setResponseA('Esta é uma resposta simulada para o Prompt A. Numa versão completa, isto seria gerado por uma IA real baseada no teu prompt.');
-    setResponseB('Esta é uma resposta simulada para o Prompt B. Compara as duas respostas para decidir qual prompt funciona melhor.');
-    setIsTesting(false);
+    setResponseA('');
+    setResponseB('');
+    setWinner(null);
 
-    // Mark onboarding step as complete
-    const completed = localStorage.getItem('onboarding-completed');
-    const steps = completed ? JSON.parse(completed) : [];
-    if (!steps.includes('compare')) {
-      localStorage.setItem('onboarding-completed', JSON.stringify([...steps, 'compare']));
+    try {
+      const { data, error } = await supabase.functions.invoke('test-prompts', {
+        body: { promptA: promptA.trim(), promptB: promptB.trim() }
+      });
+
+      if (error) {
+        console.error('Error testing prompts:', error);
+        toast({
+          title: 'Erro ao testar',
+          description: 'Não foi possível executar os prompts. Tenta novamente.',
+          variant: 'destructive',
+        });
+        setIsTesting(false);
+        return;
+      }
+
+      if (data.error) {
+        toast({
+          title: 'Erro',
+          description: data.error,
+          variant: 'destructive',
+        });
+        setIsTesting(false);
+        return;
+      }
+
+      setResponseA(data.responseA);
+      setResponseB(data.responseB);
+
+      // Mark onboarding step as complete
+      const completed = localStorage.getItem('onboarding-completed');
+      const steps = completed ? JSON.parse(completed) : [];
+      if (!steps.includes('compare')) {
+        localStorage.setItem('onboarding-completed', JSON.stringify([...steps, 'compare']));
+      }
+    } catch (err) {
+      console.error('Error:', err);
+      toast({
+        title: 'Erro',
+        description: 'Ocorreu um erro inesperado. Tenta novamente.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsTesting(false);
     }
   };
 
@@ -64,8 +104,13 @@ export default function PromptTester() {
     <div className="p-6 space-y-6 animate-fade-in">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2"><FlaskConical className="h-5 w-5" />Comparação A/B</CardTitle>
-          <CardDescription>Testa dois prompts lado a lado e escolhe o melhor</CardDescription>
+          <CardTitle className="flex items-center gap-2">
+            <FlaskConical className="h-5 w-5" />
+            Comparação A/B com IA
+          </CardTitle>
+          <CardDescription>
+            Testa dois prompts lado a lado com IA real e escolhe o melhor
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -76,12 +121,17 @@ export default function PromptTester() {
                 <span className="font-medium">Prompt A</span>
                 {winner === 'A' && <Trophy className="h-5 w-5 text-warning" />}
               </div>
-              <Textarea placeholder="Escreve o primeiro prompt..." value={promptA} onChange={(e) => setPromptA(e.target.value)} className="min-h-[120px]" />
+              <Textarea 
+                placeholder="Escreve o primeiro prompt..." 
+                value={promptA} 
+                onChange={(e) => setPromptA(e.target.value)} 
+                className="min-h-[120px]" 
+              />
               {responseA && (
                 <Card className="bg-muted/50">
                   <CardContent className="p-4">
-                    <p className="text-sm font-medium mb-2">Resposta:</p>
-                    <p className="text-sm text-muted-foreground">{responseA}</p>
+                    <p className="text-sm font-medium mb-2">Resposta da IA:</p>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{responseA}</p>
                   </CardContent>
                 </Card>
               )}
@@ -99,12 +149,17 @@ export default function PromptTester() {
                 <span className="font-medium">Prompt B</span>
                 {winner === 'B' && <Trophy className="h-5 w-5 text-warning" />}
               </div>
-              <Textarea placeholder="Escreve o segundo prompt..." value={promptB} onChange={(e) => setPromptB(e.target.value)} className="min-h-[120px]" />
+              <Textarea 
+                placeholder="Escreve o segundo prompt..." 
+                value={promptB} 
+                onChange={(e) => setPromptB(e.target.value)} 
+                className="min-h-[120px]" 
+              />
               {responseB && (
                 <Card className="bg-muted/50">
                   <CardContent className="p-4">
-                    <p className="text-sm font-medium mb-2">Resposta:</p>
-                    <p className="text-sm text-muted-foreground">{responseB}</p>
+                    <p className="text-sm font-medium mb-2">Resposta da IA:</p>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{responseB}</p>
                   </CardContent>
                 </Card>
               )}
@@ -119,7 +174,7 @@ export default function PromptTester() {
           <div className="flex justify-center mt-6">
             <Button onClick={runTest} disabled={!promptA || !promptB || isTesting} size="lg">
               <ArrowLeftRight className="h-4 w-4 mr-2" />
-              {isTesting ? 'A testar...' : 'Testar Prompts'}
+              {isTesting ? 'A executar com IA...' : 'Testar Prompts com IA'}
             </Button>
           </div>
 
