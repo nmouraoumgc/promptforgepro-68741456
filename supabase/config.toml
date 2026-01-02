@@ -6,15 +6,6 @@ verify_jwt = false
 [functions.generate-pack-preview]
 verify_jwt = false
 
-[functions.optimize-prompt]
-verify_jwt = false
-
-[functions.test-prompts]
-verify_jwt = false
-
-[functions.enhance-prompt]
-verify_jwt = false
-
 [functions.send-welcome-email]
 verify_jwt = false
 
