@@ -11,35 +11,20 @@ import { useAuthStore } from '@/stores/authStore';
 import { OptimizationLimitNotice, AuthGate } from '@/components/gating/FeatureGate';
 import ActionableScore from '@/components/optimizer/ActionableScore';
 import ImprovementsList from '@/components/optimizer/ImprovementsList';
-
-const mockOptimizations: OptimizationVariant[] = [
-  { type: 'shorter', content: '', explanation: 'Versão condensada mantendo a essência', changes: ['Contexto redundante removido', 'Instruções simplificadas'] },
-  { type: 'detailed', content: '', explanation: 'Mais contexto e especificações', changes: ['Exemplos adicionados', 'Restrições expandidas'] },
-  { type: 'creative', content: '', explanation: 'Mais liberdade para respostas originais', changes: ['Criatividade incentivada', 'Menos restrições'] },
-  { type: 'technical', content: '', explanation: 'Linguagem mais precisa e técnica', changes: ['Termos específicos', 'Estrutura formal'] },
-  { type: 'restrictive', content: '', explanation: 'Controlo máximo sobre o output', changes: ['Formato estrito', 'Limites claros'] },
-];
-
-const improvementExamples = [
-  'Objetivo clarificado com resultado esperado',
-  'Formato de output definido explicitamente',
-  'Ambiguidade reduzida nas instruções',
-  'Tom e estilo especificados',
-  'Público-alvo identificado',
-];
+import { supabase } from '@/integrations/supabase/client';
 
 export default function PromptOptimizer() {
   const [inputPrompt, setInputPrompt] = useState('');
   const [optimizations, setOptimizations] = useState<OptimizationVariant[]>([]);
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [score, setScore] = useState<{ clarity: number; specificity: number; structure: number; creativity: number; overall: number } | null>(null);
+  const [improvements, setImprovements] = useState<string[]>([]);
   const [selectedOptimization, setSelectedOptimization] = useState<OptimizationVariant | null>(null);
-  const [currentPromptId] = useState(() => `prompt-${Date.now()}`); // Track optimizations per session
+  const [currentPromptId] = useState(() => `prompt-${Date.now()}`);
   const { toast } = useToast();
   const { user } = useAuthStore();
   const { currentPlan, canOptimize, incrementOptimizationCount, getOptimizationCount } = usePlanStore();
 
-  // Require authentication to use the optimizer
   if (!user) {
     return (
       <div className="p-6 animate-fade-in">
@@ -56,7 +41,6 @@ export default function PromptOptimizer() {
       return;
     }
 
-    // Check optimization limit for free users
     if (currentPlan === 'free' && !canOptimize(currentPromptId)) {
       toast({ 
         title: 'Limite atingido', 
@@ -68,38 +52,76 @@ export default function PromptOptimizer() {
 
     setIsOptimizing(true);
     
-    // Increment optimization count for free users
     if (currentPlan === 'free') {
       incrementOptimizationCount(currentPromptId);
     }
 
-    // Simulate API call
-    await new Promise(r => setTimeout(r, 1500));
-    
-    const results = mockOptimizations.map(opt => ({
-      ...opt,
-      content: opt.type === 'shorter' 
-        ? inputPrompt.substring(0, Math.floor(inputPrompt.length * 0.6)) + '...'
-        : opt.type === 'detailed'
-        ? `[CONTEXTO]\n${inputPrompt}\n\n[INSTRUÇÕES]\n- Segue o objetivo definido\n- Mantém consistência\n\n[OUTPUT ESPERADO]\nResultado claro e estruturado.`
-        : opt.type === 'creative'
-        ? `${inputPrompt}\n\nSê criativo e surpreende com abordagens originais. Explora diferentes ângulos e perspetivas inesperadas.`
-        : opt.type === 'technical'
-        ? `OBJETIVO: ${inputPrompt}\n\nESPECIFICAÇÕES:\n- Precisão técnica requerida\n- Terminologia específica\n- Formato estruturado`
-        : `${inputPrompt}\n\nRESTRIÇÕES OBRIGATÓRIAS:\n- Máximo 500 palavras\n- Tom profissional\n- Sem ambiguidades`
-    }));
-    
-    setOptimizations(results);
-    setScore({ clarity: 72, specificity: 65, structure: 80, creativity: 55, overall: 68 });
-    setSelectedOptimization(results[1]); // Select detailed by default
-    setIsOptimizing(false);
+    try {
+      const { data, error } = await supabase.functions.invoke('optimize-prompt', {
+        body: { prompt: inputPrompt.trim() }
+      });
 
-    // Mark onboarding step as complete
-    const completed = localStorage.getItem('onboarding-completed');
-    const steps = completed ? JSON.parse(completed) : [];
-    if (!steps.includes('optimize')) {
-      localStorage.setItem('onboarding-completed', JSON.stringify([...steps, 'optimize']));
+      if (error) {
+        console.error('Error optimizing prompt:', error);
+        toast({
+          title: 'Erro ao otimizar',
+          description: 'Não foi possível otimizar o prompt. Tenta novamente.',
+          variant: 'destructive',
+        });
+        setIsOptimizing(false);
+        return;
+      }
+
+      if (data.error) {
+        toast({
+          title: 'Erro',
+          description: data.error,
+          variant: 'destructive',
+        });
+        setIsOptimizing(false);
+        return;
+      }
+
+      // Map variations to expected format
+      const mappedVariations: OptimizationVariant[] = data.variations.map((v: any) => ({
+        type: v.type,
+        content: v.content,
+        explanation: getExplanation(v.type),
+        changes: v.changes
+      }));
+
+      setOptimizations(mappedVariations);
+      setScore(data.score);
+      setImprovements(data.score?.improvements || []);
+      setSelectedOptimization(mappedVariations.find(o => o.type === 'detailed') || mappedVariations[0]);
+
+      // Mark onboarding step as complete
+      const completed = localStorage.getItem('onboarding-completed');
+      const steps = completed ? JSON.parse(completed) : [];
+      if (!steps.includes('optimize')) {
+        localStorage.setItem('onboarding-completed', JSON.stringify([...steps, 'optimize']));
+      }
+    } catch (err) {
+      console.error('Error:', err);
+      toast({
+        title: 'Erro',
+        description: 'Ocorreu um erro inesperado. Tenta novamente.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsOptimizing(false);
     }
+  };
+
+  const getExplanation = (type: string): string => {
+    const explanations: Record<string, string> = {
+      shorter: 'Versão condensada mantendo a essência',
+      detailed: 'Mais contexto e especificações',
+      creative: 'Mais liberdade para respostas originais',
+      technical: 'Linguagem mais precisa e técnica',
+      restrictive: 'Controlo máximo sobre o output',
+    };
+    return explanations[type] || '';
   };
 
   const handleAutoFix = () => {
@@ -107,8 +129,7 @@ export default function PromptOptimizer() {
       const detailed = optimizations.find(o => o.type === 'detailed');
       if (detailed) {
         setInputPrompt(detailed.content);
-        setScore({ clarity: 88, specificity: 85, structure: 92, creativity: 70, overall: 84 });
-        toast({ title: 'Prompt melhorado!', description: 'As correções automáticas foram aplicadas' });
+        toast({ title: 'Prompt melhorado!', description: 'A versão detalhada foi aplicada' });
       }
     }
   };
@@ -130,30 +151,27 @@ export default function PromptOptimizer() {
 
   return (
     <div className="p-6 space-y-6 animate-fade-in">
-      {/* Optimization limit notice for free users */}
       <OptimizationLimitNotice promptId={currentPromptId} />
 
-      {/* Intro tip */}
       <div className="rounded-lg bg-info/10 border border-info/20 p-4 flex items-start gap-3">
         <Info className="h-5 w-5 text-info shrink-0 mt-0.5" />
         <div>
           <p className="text-sm font-medium">Como funciona a otimização?</p>
           <p className="text-xs text-muted-foreground mt-1">
-            Cola o teu prompt e obtém variações otimizadas com explicações detalhadas do que foi melhorado. 
-            Cada alteração vem acompanhada de uma justificação para te ajudar a aprender.
+            Cola o teu prompt e a IA gera variações otimizadas com análise detalhada. 
+            Cada alteração é gerada por IA para te dar opções reais e aplicáveis.
           </p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Input */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5" />
               Prompt Original
             </CardTitle>
-            <CardDescription>Cola ou define o prompt que queres otimizar</CardDescription>
+            <CardDescription>Cola ou escreve o prompt que queres otimizar</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -164,26 +182,25 @@ export default function PromptOptimizer() {
                 className="min-h-[200px]" 
               />
               <p className="text-xs text-muted-foreground">
-                💡 Este campo define o ponto de partida. Quanto mais detalhes, melhores as otimizações.
+                💡 Quanto mais detalhes, melhores as otimizações geradas pela IA.
               </p>
             </div>
             <Button onClick={optimizePrompt} disabled={isOptimizing} className="w-full">
               {isOptimizing ? (
                 <>
                   <Zap className="h-4 w-4 mr-2 animate-pulse" />
-                  A analisar e otimizar...
+                  A analisar com IA...
                 </>
               ) : (
                 <>
                   <Sparkles className="h-4 w-4 mr-2" />
-                  Otimizar Prompt
+                  Otimizar com IA
                 </>
               )}
             </Button>
           </CardContent>
         </Card>
 
-        {/* Score */}
         {score ? (
           <ActionableScore score={score} onAutoFix={handleAutoFix} />
         ) : (
@@ -199,27 +216,25 @@ export default function PromptOptimizer() {
               <div className="text-center py-12 text-muted-foreground">
                 <Sparkles className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p className="font-medium">Otimiza um prompt para ver o score</p>
-                <p className="text-xs mt-2">O score analisa clareza, especificidade, estrutura e criatividade</p>
+                <p className="text-xs mt-2">A IA analisa clareza, especificidade, estrutura e criatividade</p>
               </div>
             </CardContent>
           </Card>
         )}
       </div>
 
-      {/* Improvements explanation */}
-      {selectedOptimization && inputPrompt && (
+      {selectedOptimization && inputPrompt && improvements.length > 0 && (
         <ImprovementsList 
           originalPrompt={inputPrompt}
           optimizedPrompt={selectedOptimization.content}
-          improvements={improvementExamples}
+          improvements={improvements}
         />
       )}
 
-      {/* Optimizations */}
       {optimizations.length > 0 && (
         <div className="space-y-4">
           <div>
-            <h3 className="text-lg font-semibold">Variações Otimizadas</h3>
+            <h3 className="text-lg font-semibold">Variações Geradas por IA</h3>
             <p className="text-sm text-muted-foreground">Clica numa variação para ver os detalhes e comparar</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -233,11 +248,11 @@ export default function PromptOptimizer() {
               >
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base flex items-center gap-2">
-                    <span>{typeLabels[opt.type].icon}</span>
-                    {typeLabels[opt.type].label}
+                    <span>{typeLabels[opt.type]?.icon}</span>
+                    {typeLabels[opt.type]?.label}
                   </CardTitle>
                   <CardDescription className="text-xs">
-                    {typeLabels[opt.type].description}
+                    {typeLabels[opt.type]?.description}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">

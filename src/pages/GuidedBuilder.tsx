@@ -14,7 +14,8 @@ import {
   Sparkles,
   CheckCircle,
   Wand2,
-  Copy
+  Copy,
+  Zap
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -38,6 +39,7 @@ import {
 } from '@/types/prompt';
 import { cn } from '@/lib/utils';
 import LivePromptPreview from '@/components/builder/LivePromptPreview';
+import { supabase } from '@/integrations/supabase/client';
 
 const stepIcons = {
   Target, Layers, Cpu, Palette, Users, Lock, Sparkles, CheckCircle
@@ -60,6 +62,7 @@ export default function GuidedBuilder() {
   const [generatedPrompt, setGeneratedPrompt] = useState('');
   const [constraints, setConstraints] = useState<string[]>([]);
   const [newConstraint, setNewConstraint] = useState('');
+  const [isEnhancing, setIsEnhancing] = useState(false);
 
   const canProceed = () => {
     switch (builderState.step) {
@@ -140,6 +143,61 @@ export default function GuidedBuilder() {
     }
     
     setGeneratedPrompt(prompt);
+  };
+
+  const enhanceWithAI = async () => {
+    if (!generatedPrompt) return;
+    
+    setIsEnhancing(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('enhance-prompt', {
+        body: { 
+          prompt: generatedPrompt,
+          context: {
+            objective: builderState.objective,
+            outputType: builderState.outputType,
+            tone: builderState.tone,
+            targetAudience: builderState.targetAudience,
+            creativityLevel: builderState.creativityLevel
+          }
+        }
+      });
+
+      if (error) {
+        console.error('Error enhancing prompt:', error);
+        toast({
+          title: 'Erro ao melhorar',
+          description: 'Não foi possível melhorar o prompt. Tenta novamente.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      if (data.error) {
+        toast({
+          title: 'Erro',
+          description: data.error,
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      setGeneratedPrompt(data.enhancedPrompt);
+      toast({
+        title: 'Prompt melhorado!',
+        description: 'A IA otimizou o teu prompt.',
+      });
+    } catch (err) {
+      console.error('Error:', err);
+      toast({
+        title: 'Erro',
+        description: 'Ocorreu um erro inesperado.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsEnhancing(false);
+    }
   };
 
   const savePrompt = () => {
@@ -470,10 +528,30 @@ export default function GuidedBuilder() {
                     <Sparkles className="h-5 w-5 text-primary" />
                     Prompt Gerado
                   </CardTitle>
-                  <Button variant="outline" size="sm" onClick={copyToClipboard}>
-                    <Copy className="h-4 w-4 mr-2" />
-                    Copiar
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={enhanceWithAI}
+                      disabled={isEnhancing}
+                    >
+                      {isEnhancing ? (
+                        <>
+                          <Zap className="h-4 w-4 mr-2 animate-pulse" />
+                          A melhorar...
+                        </>
+                      ) : (
+                        <>
+                          <Zap className="h-4 w-4 mr-2" />
+                          Melhorar com IA
+                        </>
+                      )}
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={copyToClipboard}>
+                      <Copy className="h-4 w-4 mr-2" />
+                      Copiar
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <pre className="whitespace-pre-wrap font-mono text-sm bg-muted p-4 rounded-lg">
