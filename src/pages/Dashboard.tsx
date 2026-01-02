@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { 
   Wand2, 
-  Library, 
+  Zap, 
   Sparkles, 
   FlaskConical,
   Star,
@@ -37,12 +37,12 @@ export default function Dashboard() {
       iconBg: 'bg-primary',
     },
     { 
-      to: '/library', 
-      icon: Library, 
-      label: 'Biblioteca', 
-      description: 'Os teus prompts, organizados',
-      gradient: 'from-accent/20 to-accent/5',
-      iconBg: 'bg-accent',
+      to: '/quick', 
+      icon: Zap, 
+      label: 'Quick Prompt', 
+      description: 'Rápido e direto ao ponto',
+      gradient: 'from-warning/20 to-warning/5',
+      iconBg: 'bg-warning',
     },
     { 
       to: '/optimizer', 
