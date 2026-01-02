@@ -14,7 +14,8 @@ import {
   Sparkles,
   CheckCircle,
   Wand2,
-  Copy
+  Copy,
+  Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -38,6 +39,7 @@ import {
 } from '@/types/prompt';
 import { cn } from '@/lib/utils';
 import LivePromptPreview from '@/components/builder/LivePromptPreview';
+import { supabase } from '@/integrations/supabase/client';
 
 const stepIcons = {
   Target, Layers, Cpu, Palette, Users, Lock, Sparkles, CheckCircle
@@ -58,6 +60,7 @@ export default function GuidedBuilder() {
   } = usePromptStore();
 
   const [generatedPrompt, setGeneratedPrompt] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
   const [constraints, setConstraints] = useState<string[]>([]);
   const [newConstraint, setNewConstraint] = useState('');
 
@@ -88,58 +91,41 @@ export default function GuidedBuilder() {
     updateBuilderState({ constraints: updated });
   };
 
-  const generatePrompt = () => {
+  const generatePrompt = async () => {
     const { objective, outputType, targetModel, tone, targetAudience, constraints, creativityLevel, format, language } = builderState;
     
-    let prompt = '';
+    setIsGenerating(true);
     
-    // Context
-    prompt += `[CONTEXTO]\n`;
-    prompt += `Objetivo: ${objective}\n`;
-    if (targetAudience) prompt += `Público-alvo: ${targetAudience}\n`;
-    prompt += `\n`;
-    
-    // Instructions
-    prompt += `[INSTRUÇÕES]\n`;
-    prompt += `Gera ${outputType === 'text' ? 'um texto' : outputType === 'image' ? 'uma imagem' : outputType === 'code' ? 'código' : outputType === 'video' ? 'um vídeo' : 'áudio'} que:\n`;
-    prompt += `- Cumpra o objetivo definido acima\n`;
-    if (tone) prompt += `- Use um tom ${TONE_STYLES.find(t => t.value === tone)?.label.toLowerCase()}\n`;
-    if (creativityLevel > 70) prompt += `- Seja criativo e original nas abordagens\n`;
-    if (creativityLevel < 30) prompt += `- Siga uma estrutura conservadora e previsível\n`;
-    prompt += `\n`;
-    
-    // Constraints
-    if (constraints.length > 0 || format || language !== 'pt') {
-      prompt += `[RESTRIÇÕES]\n`;
-      if (format) prompt += `- Formato: ${format}\n`;
-      if (language !== 'pt') prompt += `- Idioma: ${language}\n`;
-      constraints.forEach(c => {
-        prompt += `- ${c}\n`;
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-prompt', {
+        body: { 
+          objective, 
+          outputType, 
+          targetModel, 
+          tone, 
+          targetAudience, 
+          constraints, 
+          creativityLevel,
+          format,
+          language 
+        }
       });
-      prompt += `\n`;
+
+      if (error) throw error;
+
+      if (data.error) {
+        toast({ title: 'Erro', description: data.error, variant: 'destructive' });
+        setIsGenerating(false);
+        return;
+      }
+
+      setGeneratedPrompt(data.prompt);
+    } catch (error) {
+      console.error('Error generating prompt:', error);
+      toast({ title: 'Erro', description: 'Não foi possível gerar o prompt. Tenta novamente.', variant: 'destructive' });
+    } finally {
+      setIsGenerating(false);
     }
-    
-    // Output expectation
-    prompt += `[OUTPUT ESPERADO]\n`;
-    switch (outputType) {
-      case 'text':
-        prompt += `Entrega um texto bem estruturado, claro e pronto para usar.`;
-        break;
-      case 'image':
-        prompt += `Descrição detalhada para geração de imagem com estilo, composição e elementos visuais claros.`;
-        break;
-      case 'code':
-        prompt += `Código funcional, comentado e seguindo boas práticas.`;
-        break;
-      case 'video':
-        prompt += `Descrição de cena, movimentos de câmara, timing e elementos visuais.`;
-        break;
-      case 'audio':
-        prompt += `Especificações de tom, ritmo, instrumentação e mood.`;
-        break;
-    }
-    
-    setGeneratedPrompt(prompt);
   };
 
   const savePrompt = () => {
@@ -456,9 +442,18 @@ export default function GuidedBuilder() {
 
             {/* Generate Button */}
             {!generatedPrompt && (
-              <Button onClick={generatePrompt} size="lg" className="w-full gap-2">
-                <Wand2 className="h-5 w-5" />
-                Gerar Prompt
+              <Button onClick={generatePrompt} size="lg" className="w-full gap-2" disabled={isGenerating}>
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    A gerar com IA...
+                  </>
+                ) : (
+                  <>
+                    <Wand2 className="h-5 w-5" />
+                    Gerar Prompt com IA
+                  </>
+                )}
               </Button>
             )}
 
