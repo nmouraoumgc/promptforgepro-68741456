@@ -5,6 +5,7 @@ import {
   Flame,
   Home,
   Wand2,
+  Zap,
   Library,
   Sparkles,
   GitBranch,
@@ -36,6 +37,7 @@ interface NavItem {
 
 const mainNavItems: NavItem[] = [
   { to: '/', icon: Home, label: 'Dashboard', description: 'Visão geral' },
+  { to: '/quick', icon: Zap, label: 'Quick Prompt', description: 'Rápido com voz' },
   { to: '/builder', icon: Wand2, label: 'Criar Prompt', description: 'Criador guiado' },
   { to: '/library', icon: Library, label: 'Biblioteca', description: 'Os teus prompts' },
   { to: '/optimizer', icon: Sparkles, label: 'Otimizador', description: 'Melhorar prompts' },

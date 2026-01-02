@@ -10,6 +10,7 @@ import PromptLibrary from "@/pages/PromptLibrary";
 import PromptOptimizer from "@/pages/PromptOptimizer";
 import VersionHistory from "@/pages/VersionHistory";
 import PromptTester from "@/pages/PromptTester";
+import QuickPrompt from "@/pages/QuickPrompt";
 import Learn from "@/pages/Learn";
 import PromptPacks from "@/pages/PromptPacks";
 import PackDetail from "@/pages/PackDetail";
@@ -42,6 +43,7 @@ const App = () => (
           <Route element={<AppLayout />}>
             <Route path="/" element={<Dashboard />} />
             <Route path="/builder" element={<GuidedBuilder />} />
+            <Route path="/quick" element={<QuickPrompt />} />
             <Route path="/library" element={<PromptLibrary />} />
             <Route path="/optimizer" element={<PromptOptimizer />} />
             <Route path="/versions" element={<VersionHistory />} />
