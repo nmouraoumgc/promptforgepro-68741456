@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Lock, Zap, Sparkles, CheckCircle } from 'lucide-react';
+import { Zap, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Pack } from '@/types/packs';
 import { usePlanStore } from '@/stores/planStore';
 import { useNavigate } from 'react-router-dom';
-
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 interface PackPreviewProps {
   pack: Pack;
   onUnlock?: () => void;
@@ -129,6 +130,7 @@ const getPackCopy = (packSlug: string) => {
 
 export function PackPreview({ pack, onUnlock }: PackPreviewProps) {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const { canAccess } = usePlanStore();
   const hasAccess = canAccess('canAccessPromptPacks');
   const [tema, setTema] = useState('');
@@ -143,36 +145,48 @@ export function PackPreview({ pack, onUnlock }: PackPreviewProps) {
     
     setIsGenerating(true);
     
-    // Simulate generation with themed results
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    // Generate pack-specific mock results
-    let mockResults: string[];
-    if (pack.slug === 'instagram') {
-      mockResults = [
-        `Reel educativo sobre ${tema}: "3 erros que estás a cometer..."`,
-        `Hook de bastidores: "O que ninguém te mostra sobre ${tema}"`,
-      ];
-    } else if (pack.slug === 'youtube') {
-      mockResults = [
-        `Título de curiosidade: "O segredo de ${tema} que ninguém te conta"`,
-        `Título SEO: "Como dominar ${tema} em 2024 (Guia Completo)"`,
-      ];
-    } else if (pack.slug === 'copywriting') {
-      mockResults = [
-        `Headline de benefício: "Descobre como ${tema} pode transformar o teu negócio"`,
-        `Headline de curiosidade: "O erro fatal que está a custar vendas em ${tema}"`,
-      ];
-    } else {
-      mockResults = [
-        `${tema}: Aquele escândalo que ninguém esperava…`,
-        `Revelado: O segredo mais chocante do ${tema}!`,
-      ];
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-pack-preview', {
+        body: { 
+          tema: tema.trim(), 
+          packSlug: pack.slug,
+          isPremium: hasAccess 
+        }
+      });
+
+      if (error) {
+        console.error('Error generating preview:', error);
+        toast({
+          title: 'Erro ao gerar',
+          description: 'Não foi possível gerar o conteúdo. Tenta novamente.',
+          variant: 'destructive',
+        });
+        setIsGenerating(false);
+        return;
+      }
+
+      if (data.error) {
+        toast({
+          title: 'Erro',
+          description: data.error,
+          variant: 'destructive',
+        });
+        setIsGenerating(false);
+        return;
+      }
+
+      setGeneratedContent(data.results || []);
+      setHasGenerated(true);
+    } catch (err) {
+      console.error('Error:', err);
+      toast({
+        title: 'Erro',
+        description: 'Ocorreu um erro inesperado. Tenta novamente.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsGenerating(false);
     }
-    
-    setGeneratedContent(mockResults);
-    setHasGenerated(true);
-    setIsGenerating(false);
   };
 
   const handleUnlock = () => {

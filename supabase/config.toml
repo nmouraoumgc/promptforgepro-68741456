@@ -3,6 +3,9 @@ project_id = "hkmxtamqvekycbbzoeaw"
 [functions.generate-hooks]
 verify_jwt = false
 
+[functions.generate-pack-preview]
+verify_jwt = false
+
 [functions.send-welcome-email]
 verify_jwt = false
 
