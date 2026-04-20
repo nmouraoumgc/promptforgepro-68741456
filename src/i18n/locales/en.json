@@ -133,5 +133,33 @@
     "tipsDesc": "Improve your prompts with these techniques",
     "lessonsTitle": "Lessons",
     "lessonsDesc": "Learn to create professional prompts"
+  },
+  "showcase": {
+    "cardTitle": "High-Quality Prompt Example",
+    "viewDetails": "View details",
+    "modalTitle": "Anatomy of an Effective Prompt",
+    "modalDesc": "Understand the structure that ensures consistent results",
+    "objectiveTitle": "1. Clear Objective",
+    "objectiveCheck": "✓ Specific, measurable and with a defined expected outcome",
+    "structureTitle": "2. Prompt Structure",
+    "contextLabel": "[CONTEXT]",
+    "contextDesc": "Defines who you are, what you want and who the content is for",
+    "instructionsLabel": "[INSTRUCTIONS]",
+    "instructionsDesc": "Specific steps the AI must follow",
+    "restrictionsLabel": "[CONSTRAINTS]",
+    "restrictionsDesc": "Clear limits: format, tone, what to avoid",
+    "outputLabel": "[EXPECTED OUTPUT]",
+    "outputDesc": "Exact description of the final result",
+    "whyHighScore": "3. Why the Score is High ({{score}}%)",
+    "ctaTitle": "Ready to create prompts like this?",
+    "ctaButton": "Start Building",
+    "objective": "Create a viral Instagram post about sustainability that drives engagement and shares",
+    "improvements": [
+      "Detailed context with specific target audience",
+      "Sequential and clear instructions",
+      "Well-defined constraints (format, tone, limits)",
+      "Explicit expected output",
+      "Emotional hook defined for retention"
+    ]
   }
 }
