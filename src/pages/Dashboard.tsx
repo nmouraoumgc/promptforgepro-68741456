@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { 
   Wand2, 
   Zap, 
@@ -15,6 +16,7 @@ import ExamplePromptShowcase from '@/components/dashboard/ExamplePromptShowcase'
 
 
 export default function Dashboard() {
+  const { t } = useTranslation();
   const { prompts, getFavorites } = usePromptStore();
   const favorites = getFavorites();
   const recentPrompts = prompts.slice(-3).reverse();
@@ -31,32 +33,32 @@ export default function Dashboard() {
     { 
       to: '/builder', 
       icon: Wand2, 
-      label: 'Criar Prompt', 
-      description: 'Do zero à excelência',
+      label: t('dashboard.actions.create'), 
+      description: t('dashboard.actions.createDesc'),
       gradient: 'from-primary/20 to-primary/5',
       iconBg: 'bg-primary',
     },
     { 
       to: '/quick', 
       icon: Zap, 
-      label: 'Quick Prompt', 
-      description: 'Rápido e direto ao ponto',
+      label: t('dashboard.actions.quick'), 
+      description: t('dashboard.actions.quickDesc'),
       gradient: 'from-warning/20 to-warning/5',
       iconBg: 'bg-warning',
     },
     { 
       to: '/optimizer', 
       icon: Sparkles, 
-      label: 'Otimizar', 
-      description: 'Versões mais fortes',
+      label: t('dashboard.actions.optimize'), 
+      description: t('dashboard.actions.optimizeDesc'),
       gradient: 'from-success/20 to-success/5',
       iconBg: 'bg-success',
     },
     { 
       to: '/tester', 
       icon: FlaskConical, 
-      label: 'Testar A/B', 
-      description: 'Descobre o melhor',
+      label: t('dashboard.actions.test'), 
+      description: t('dashboard.actions.testDesc'),
       gradient: 'from-info/20 to-info/5',
       iconBg: 'bg-info',
     },
@@ -67,10 +69,10 @@ export default function Dashboard() {
       {/* Hero Greeting */}
       <header className="text-center space-y-3 pt-4 md:pt-8">
         <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
-          Olá, Prompt Master!
+          {t('dashboard.greeting')}
         </h1>
         <p className="text-foreground/70 text-base md:text-lg font-medium">
-          O que vais criar hoje?
+          {t('dashboard.subtitle')}
         </p>
       </header>
 
@@ -101,13 +103,13 @@ export default function Dashboard() {
       {prompts.length > 0 && (
         <div className="space-y-4">
           <div className="flex items-center justify-center gap-6 md:gap-10 text-sm text-muted-foreground">
-            <span>{stats.total} prompts</span>
+            <span>{t('dashboard.stats.prompts', { count: stats.total })}</span>
             <span className="w-1 h-1 rounded-full bg-border" />
-            <span>{stats.favorites} favoritos</span>
+            <span>{t('dashboard.stats.favorites', { count: stats.favorites })}</span>
             {stats.avgScore > 0 && (
               <>
                 <span className="w-1 h-1 rounded-full bg-border hidden sm:block" />
-                <span className="hidden sm:inline">{stats.avgScore}% score médio</span>
+                <span className="hidden sm:inline">{t('dashboard.stats.avgScore', { score: stats.avgScore })}</span>
               </>
             )}
           </div>
@@ -117,11 +119,11 @@ export default function Dashboard() {
             <div className="flex items-center justify-between p-4 pb-0">
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Clock className="h-4 w-4" />
-                <span className="text-sm font-medium">Recentes</span>
+                <span className="text-sm font-medium">{t('dashboard.recent')}</span>
               </div>
               <Link to="/library">
                 <span className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
-                  Ver todos <ArrowRight className="h-3 w-3" />
+                  {t('common.viewAll')} <ArrowRight className="h-3 w-3" />
                 </span>
               </Link>
             </div>

@@ -30,22 +30,26 @@ serve(async (req) => {
       );
     }
 
-    // Detect language from input or use provided language
-    const isEnglish = language === 'en' || /^[a-zA-Z\s.,!?'"()-]+$/.test(request.trim());
+    // Use explicit language preference if provided, otherwise auto-detect from input
+    const explicitLang = language === 'en' || language === 'pt' ? language : null;
+    const isEnglish = explicitLang
+      ? explicitLang === 'en'
+      : /^[a-zA-Z\s.,!?'"()-]+$/.test(request.trim());
     const outputLanguage = isEnglish ? 'English' : 'Portuguese (Portugal)';
 
     const systemPrompt = `You are an expert prompt engineer. Your task is to create high-quality, effective prompts for AI models.
 
-Given a user's request (which can be in Portuguese or English), generate a professional, well-structured prompt that:
+Given a user's request, generate a professional, well-structured prompt that:
 - Is clear and specific
 - Has well-defined sections (context, instructions, expected output)
 - Is optimized for getting the best results from AI models
 - Is formatted in a readable way
 
-IMPORTANT: 
-- Respond in ${outputLanguage}
-- Generate ONLY the final prompt, without explanations or additional text
-- The prompt should be ready to use immediately`;
+CRITICAL LANGUAGE RULE:
+- The ENTIRE generated prompt MUST be written in ${outputLanguage}.
+- Do NOT mix languages. Do NOT add translations.
+- Generate ONLY the final prompt, without explanations or additional text.
+- The prompt should be ready to use immediately.`;
 
     const userRequest = `Create a prompt based on this request:\n\n"${request}"`;
 

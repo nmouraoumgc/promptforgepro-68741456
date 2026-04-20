@@ -1,4 +1,5 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Zap, Mic, MicOff, Copy, Sparkles, Loader2, RotateCcw } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,13 +13,15 @@ import { cn } from '@/lib/utils';
 export default function QuickPrompt() {
   const { user } = useAuthStore();
   const { toast } = useToast();
-  
+  const { t, i18n } = useTranslation();
+  const language = (i18n.resolvedLanguage || i18n.language || 'pt').slice(0, 2);
+
   const [request, setRequest] = useState('');
   const [generatedPrompt, setGeneratedPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
-  
+
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
 
@@ -27,7 +30,7 @@ export default function QuickPrompt() {
     return (
       <div className="p-6 animate-fade-in">
         <Card>
-          <AuthGate message="Cria uma conta gratuita para usar o Quick Prompt. / Create a free account to use Quick Prompt." />
+          <AuthGate message={t('quickPrompt.authRequired')} />
         </Card>
       </div>
     );
@@ -35,46 +38,25 @@ export default function QuickPrompt() {
 
   const startRecording = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true
-        }
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
       });
-      
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: 'audio/webm;codecs=opus'
-      });
-      
+      const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
       audioChunksRef.current = [];
-      
       mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-        }
+        if (event.data.size > 0) audioChunksRef.current.push(event.data);
       };
-      
       mediaRecorder.onstop = async () => {
-        stream.getTracks().forEach(track => track.stop());
+        stream.getTracks().forEach((track) => track.stop());
         await processAudio();
       };
-      
       mediaRecorderRef.current = mediaRecorder;
       mediaRecorder.start();
       setIsRecording(true);
-      
-      toast({
-        title: '🎙️ A gravar...',
-        description: 'Fala agora. Clica novamente para parar. / Speak now. Click again to stop.',
-      });
+      toast({ title: t('quickPrompt.recordingToast'), description: t('quickPrompt.recordingDesc') });
     } catch (error) {
       console.error('Error accessing microphone:', error);
-      toast({
-        title: 'Erro',
-        description: 'Não foi possível aceder ao microfone. Verifica as permissões. / Could not access microphone. Check permissions.',
-        variant: 'destructive',
-      });
+      toast({ title: t('common.error'), description: t('quickPrompt.micError'), variant: 'destructive' });
     }
   };
 
@@ -87,98 +69,60 @@ export default function QuickPrompt() {
 
   const processAudio = async () => {
     if (audioChunksRef.current.length === 0) return;
-    
     setIsTranscribing(true);
-    
     try {
       const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-      
-      // Convert blob to base64
       const reader = new FileReader();
       const base64Audio = await new Promise<string>((resolve, reject) => {
-        reader.onloadend = () => {
-          const base64 = (reader.result as string).split(',')[1];
-          resolve(base64);
-        };
+        reader.onloadend = () => resolve((reader.result as string).split(',')[1]);
         reader.onerror = reject;
         reader.readAsDataURL(audioBlob);
       });
-      
       const { data, error } = await supabase.functions.invoke('voice-to-text', {
-        body: { audio: base64Audio }
+        body: { audio: base64Audio, language },
       });
-      
       if (error) throw error;
-      
       if (data.error) {
-        toast({ title: 'Erro', description: data.error, variant: 'destructive' });
+        toast({ title: t('common.error'), description: data.error, variant: 'destructive' });
         return;
       }
-      
       if (data.text) {
-        setRequest(prev => prev ? `${prev} ${data.text}` : data.text);
-        toast({
-          title: '✓ Transcrição concluída',
-          description: 'O texto foi adicionado ao pedido. / Text has been added to the request.',
-        });
+        setRequest((prev) => (prev ? `${prev} ${data.text}` : data.text));
+        toast({ title: t('quickPrompt.transcribed'), description: t('quickPrompt.transcribedDesc') });
       }
     } catch (error) {
       console.error('Error transcribing audio:', error);
-      toast({
-        title: 'Erro',
-        description: 'Não foi possível transcrever o áudio. Tenta novamente. / Could not transcribe audio. Try again.',
-        variant: 'destructive',
-      });
+      toast({ title: t('common.error'), description: t('quickPrompt.transcribeError'), variant: 'destructive' });
     } finally {
       setIsTranscribing(false);
     }
   };
 
   const handleMicClick = () => {
-    if (isRecording) {
-      stopRecording();
-    } else {
-      startRecording();
-    }
+    if (isRecording) stopRecording();
+    else startRecording();
   };
 
   const generatePrompt = async () => {
     if (!request.trim()) {
-      toast({ 
-        title: 'Atenção', 
-        description: 'Escreve ou dita o que precisas. / Write or speak what you need.', 
-        variant: 'destructive' 
-      });
+      toast({ title: t('common.warning'), description: t('quickPrompt.needText'), variant: 'destructive' });
       return;
     }
-
     setIsGenerating(true);
-
     try {
       const { data, error } = await supabase.functions.invoke('quick-prompt', {
-        body: { request }
+        body: { request, language },
       });
-
       if (error) throw error;
-
       if (data.error) {
-        toast({ title: 'Erro', description: data.error, variant: 'destructive' });
+        toast({ title: t('common.error'), description: data.error, variant: 'destructive' });
         return;
       }
-
       setGeneratedPrompt(data.prompt);
-      
-      toast({
-        title: data.language === 'en' ? '✓ Prompt generated!' : '✓ Prompt gerado!',
-        description: data.language === 'en' ? 'Your prompt is ready to use.' : 'O teu prompt está pronto a usar.',
-      });
+      toast({ title: t('quickPrompt.generated'), description: t('quickPrompt.generatedDesc') });
     } catch (error) {
       console.error('Error generating prompt:', error);
-      toast({ 
-        title: 'Erro', 
-        description: 'Não foi possível gerar o prompt. Tenta novamente. / Could not generate prompt. Try again.', 
-        variant: 'destructive' 
-      });
+      toast({ title: t('common.error'), description: t('quickPrompt.generateError'), variant: 'destructive' });
     } finally {
       setIsGenerating(false);
     }
@@ -186,10 +130,7 @@ export default function QuickPrompt() {
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(generatedPrompt);
-    toast({ 
-      title: 'Copiado! / Copied!', 
-      description: 'Prompt copiado para a área de transferência. / Prompt copied to clipboard.' 
-    });
+    toast({ title: t('common.copied'), description: t('quickPrompt.copiedDesc') });
   };
 
   const reset = () => {
@@ -203,14 +144,10 @@ export default function QuickPrompt() {
       <div className="text-center space-y-2">
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary">
           <Zap className="h-5 w-5" />
-          <span className="font-semibold">Quick Prompt</span>
+          <span className="font-semibold">{t('quickPrompt.badge')}</span>
         </div>
-        <h1 className="text-2xl font-bold">Gera prompts instantâneos</h1>
-        <p className="text-muted-foreground">
-          Escreve ou dita o que precisas e recebe um prompt otimizado em segundos.
-          <br />
-          <span className="text-sm">Write or speak what you need and get an optimized prompt in seconds.</span>
-        </p>
+        <h1 className="text-2xl font-bold">{t('quickPrompt.title')}</h1>
+        <p className="text-muted-foreground">{t('quickPrompt.description')}</p>
       </div>
 
       {/* Input Card */}
@@ -218,16 +155,14 @@ export default function QuickPrompt() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5" />
-            O que precisas? / What do you need?
+            {t('quickPrompt.inputTitle')}
           </CardTitle>
-          <CardDescription>
-            Descreve em poucas palavras o que queres que o prompt faça. Suporta PT e EN.
-          </CardDescription>
+          <CardDescription>{t('quickPrompt.inputDescription')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="relative">
             <Textarea
-              placeholder="Ex: Um email formal para pedir aumento de salário... / A formal email to request a salary raise..."
+              placeholder={t('quickPrompt.placeholder')}
               value={request}
               onChange={(e) => setRequest(e.target.value)}
               className="min-h-[120px] pr-14 text-base"
@@ -237,9 +172,9 @@ export default function QuickPrompt() {
               variant="ghost"
               size="icon"
               className={cn(
-                "absolute right-2 top-2 h-10 w-10 rounded-full transition-all",
-                isRecording && "bg-destructive text-destructive-foreground animate-pulse",
-                isTranscribing && "bg-primary/20"
+                'absolute right-2 top-2 h-10 w-10 rounded-full transition-all',
+                isRecording && 'bg-destructive text-destructive-foreground animate-pulse',
+                isTranscribing && 'bg-primary/20'
               )}
               onClick={handleMicClick}
               disabled={isTranscribing || isGenerating}
@@ -253,17 +188,17 @@ export default function QuickPrompt() {
               )}
             </Button>
           </div>
-          
+
           {isRecording && (
             <div className="flex items-center gap-2 text-sm text-destructive animate-pulse">
               <div className="h-2 w-2 rounded-full bg-destructive" />
-              A gravar... Clica no microfone para parar. / Recording... Click the mic to stop.
+              {t('quickPrompt.recording')}
             </div>
           )}
 
           <div className="flex gap-2">
-            <Button 
-              onClick={generatePrompt} 
+            <Button
+              onClick={generatePrompt}
               disabled={isGenerating || !request.trim() || isRecording}
               className="flex-1"
               size="lg"
@@ -271,12 +206,12 @@ export default function QuickPrompt() {
               {isGenerating ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  A gerar...
+                  {t('quickPrompt.generating')}
                 </>
               ) : (
                 <>
                   <Zap className="h-4 w-4 mr-2" />
-                  Gerar Prompt
+                  {t('quickPrompt.generate')}
                 </>
               )}
             </Button>
@@ -296,15 +231,13 @@ export default function QuickPrompt() {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Sparkles className="h-5 w-5 text-primary" />
-                Prompt Gerado / Generated Prompt
+                {t('quickPrompt.resultTitle')}
               </CardTitle>
-              <CardDescription>
-                Pronto a usar! / Ready to use!
-              </CardDescription>
+              <CardDescription>{t('quickPrompt.resultDesc')}</CardDescription>
             </div>
             <Button variant="outline" size="sm" onClick={copyToClipboard}>
               <Copy className="h-4 w-4 mr-2" />
-              Copiar
+              {t('common.copy')}
             </Button>
           </CardHeader>
           <CardContent>
@@ -322,22 +255,22 @@ export default function QuickPrompt() {
             <div className="flex items-start gap-2">
               <span className="text-lg">🎯</span>
               <div>
-                <p className="font-medium">Sê específico</p>
-                <p className="text-muted-foreground text-xs">Quanto mais detalhe, melhor o resultado.</p>
+                <p className="font-medium">{t('quickPrompt.tipSpecific')}</p>
+                <p className="text-muted-foreground text-xs">{t('quickPrompt.tipSpecificDesc')}</p>
               </div>
             </div>
             <div className="flex items-start gap-2">
               <span className="text-lg">🎙️</span>
               <div>
-                <p className="font-medium">Usa a voz</p>
-                <p className="text-muted-foreground text-xs">Clica no microfone para ditar.</p>
+                <p className="font-medium">{t('quickPrompt.tipVoice')}</p>
+                <p className="text-muted-foreground text-xs">{t('quickPrompt.tipVoiceDesc')}</p>
               </div>
             </div>
             <div className="flex items-start gap-2">
               <span className="text-lg">🌍</span>
               <div>
-                <p className="font-medium">PT ou EN</p>
-                <p className="text-muted-foreground text-xs">Funciona em ambos os idiomas.</p>
+                <p className="font-medium">{t('quickPrompt.tipLanguage')}</p>
+                <p className="text-muted-foreground text-xs">{t('quickPrompt.tipLanguageDesc')}</p>
               </div>
             </div>
           </div>

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Sparkles, Zap, FileText, Copy, Info } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -37,6 +38,8 @@ export default function PromptOptimizer() {
   const [selectedOptimization, setSelectedOptimization] = useState<OptimizationVariant | null>(null);
   const [currentPromptId] = useState(() => `prompt-${Date.now()}`); // Track optimizations per session
   const { toast } = useToast();
+  const { i18n } = useTranslation();
+  const language = (i18n.resolvedLanguage || i18n.language || 'pt').slice(0, 2);
   const { user } = useAuthStore();
   const { currentPlan, canOptimize, incrementOptimizationCount, getOptimizationCount } = usePlanStore();
 
@@ -78,7 +81,7 @@ export default function PromptOptimizer() {
 
     try {
       const { data, error } = await supabase.functions.invoke('optimize-prompt', {
-        body: { prompt: inputPrompt }
+        body: { prompt: inputPrompt, language }
       });
 
       if (error) throw error;

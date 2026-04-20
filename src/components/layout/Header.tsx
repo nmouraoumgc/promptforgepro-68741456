@@ -1,4 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Search, User, LogOut, Settings, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,9 +13,11 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useAuthStore } from '@/stores/authStore';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { LanguageSwitcher } from './LanguageSwitcher';
 
 export function Header() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { user, profile, isAdmin, signOut } = useAuthStore();
   const isMobile = useIsMobile();
 
@@ -38,11 +41,13 @@ export function Header() {
         <div className="relative hidden md:block">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Pesquisar prompts..."
+            placeholder={t('nav.searchPrompts')}
             className="w-64 pl-9"
           />
         </div>
 
+        {/* Language Switcher */}
+        <LanguageSwitcher />
 
         {/* Auth Section */}
         {user ? (
@@ -57,7 +62,7 @@ export function Header() {
                 <div className="flex flex-col space-y-1">
                   <p className="text-sm font-medium">{profile?.email || user.email}</p>
                   <p className="text-xs text-muted-foreground capitalize">
-                    Plano {profile?.current_plan || 'free'}
+                    {t('header.plan', { plan: profile?.current_plan || 'free' })}
                   </p>
                 </div>
               </DropdownMenuLabel>
@@ -65,31 +70,31 @@ export function Header() {
               {isAdmin && (
                 <DropdownMenuItem onClick={() => navigate('/admin')}>
                   <ShieldCheck className="mr-2 h-4 w-4" />
-                  Backoffice Admin
+                  {t('header.adminBackoffice')}
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem onClick={() => navigate('/account')}>
                 <User className="mr-2 h-4 w-4" />
-                Minha Conta
+                {t('header.myAccount')}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => navigate('/settings')}>
                 <Settings className="mr-2 h-4 w-4" />
-                Definições
+                {t('header.settings')}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
                 <LogOut className="mr-2 h-4 w-4" />
-                Terminar Sessão
+                {t('header.signOut')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         ) : (
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" asChild>
-              <Link to="/login">Login</Link>
+              <Link to="/login">{t('header.login')}</Link>
             </Button>
             <Button variant="outline" size="sm" asChild>
-              <Link to="/signup">Sign Up</Link>
+              <Link to="/signup">{t('header.signup')}</Link>
             </Button>
           </div>
         )}

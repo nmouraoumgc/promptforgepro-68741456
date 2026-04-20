@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import {
   Flame,
@@ -30,27 +31,27 @@ import { useAuthStore } from '@/stores/authStore';
 interface NavItem {
   to: string;
   icon: React.ElementType;
-  label: string;
-  description?: string;
+  labelKey: string;
+  descriptionKey: string;
   adminOnly?: boolean;
 }
 
 const mainNavItems: NavItem[] = [
-  { to: '/', icon: Home, label: 'Dashboard', description: 'Visão geral' },
-  { to: '/quick', icon: Zap, label: 'Quick Prompt', description: 'Rápido com voz' },
-  { to: '/builder', icon: Wand2, label: 'Criar Prompt', description: 'Criador guiado' },
-  { to: '/library', icon: Library, label: 'Biblioteca', description: 'Os teus prompts' },
-  { to: '/optimizer', icon: Sparkles, label: 'Otimizador', description: 'Melhorar prompts' },
-  { to: '/versions', icon: GitBranch, label: 'Versões', description: 'Histórico' },
-  { to: '/tester', icon: FlaskConical, label: 'Testar', description: 'Comparar A/B' },
+  { to: '/', icon: Home, labelKey: 'nav.dashboard', descriptionKey: 'nav.dashboardDesc' },
+  { to: '/quick', icon: Zap, labelKey: 'nav.quickPrompt', descriptionKey: 'nav.quickPromptDesc' },
+  { to: '/builder', icon: Wand2, labelKey: 'nav.createPrompt', descriptionKey: 'nav.createPromptDesc' },
+  { to: '/library', icon: Library, labelKey: 'nav.library', descriptionKey: 'nav.libraryDesc' },
+  { to: '/optimizer', icon: Sparkles, labelKey: 'nav.optimizer', descriptionKey: 'nav.optimizerDesc' },
+  { to: '/versions', icon: GitBranch, labelKey: 'nav.versions', descriptionKey: 'nav.versionsDesc' },
+  { to: '/tester', icon: FlaskConical, labelKey: 'nav.tester', descriptionKey: 'nav.testerDesc' },
 ];
 
 const secondaryNavItems: NavItem[] = [
-  { to: '/learn', icon: GraduationCap, label: 'Aprender', description: 'Tutoriais' },
-  { to: '/packs', icon: Package, label: 'Packs', description: 'Templates prontos' },
-  { to: '/planos', icon: CreditCard, label: 'Planos', description: 'Gerir plano' },
-  { to: '/settings', icon: Settings, label: 'Definições', description: 'Configurações' },
-  { to: '/admin', icon: ShieldCheck, label: 'Admin', description: 'Backoffice', adminOnly: true },
+  { to: '/learn', icon: GraduationCap, labelKey: 'nav.learn', descriptionKey: 'nav.learnDesc' },
+  { to: '/packs', icon: Package, labelKey: 'nav.packs', descriptionKey: 'nav.packsDesc' },
+  { to: '/planos', icon: CreditCard, labelKey: 'nav.plans', descriptionKey: 'nav.plansDesc' },
+  { to: '/settings', icon: Settings, labelKey: 'nav.settings', descriptionKey: 'nav.settingsDesc' },
+  { to: '/admin', icon: ShieldCheck, labelKey: 'nav.admin', descriptionKey: 'nav.adminDesc', adminOnly: true },
 ];
 
 export function Sidebar() {
@@ -59,6 +60,7 @@ export function Sidebar() {
   const location = useLocation();
   const isMobile = useIsMobile();
   const { isAdmin } = useAuthStore();
+  const { t } = useTranslation();
 
   // Filter items based on admin status
   const filteredSecondaryItems = secondaryNavItems.filter(
@@ -105,7 +107,7 @@ export function Sidebar() {
             )}
           >
             <PlusCircle className="h-4 w-4" />
-            {(!collapsed || isMobile) && <span>Novo Prompt</span>}
+            {(!collapsed || isMobile) && <span>{t('nav.newPrompt')}</span>}
           </Button>
         </NavLink>
       </div>
@@ -115,7 +117,7 @@ export function Sidebar() {
         <div className="py-2">
           {(!collapsed || isMobile) && (
             <span className="px-3 text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/50">
-              Principal
+              {t('nav.main')}
             </span>
           )}
           <div className="mt-2 space-y-1">
@@ -134,7 +136,7 @@ export function Sidebar() {
         <div className="py-2">
           {(!collapsed || isMobile) && (
             <span className="px-3 text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/50">
-              Mais
+              {t('nav.more')}
             </span>
           )}
           <div className="mt-2 space-y-1">
@@ -154,10 +156,8 @@ export function Sidebar() {
       {/* Footer */}
       <div className="border-t border-sidebar-border p-3">
         {(!collapsed || isMobile) && (
-          <p className="text-center text-xs text-sidebar-foreground/50">
-            Melhores prompts,
-            <br />
-            melhores resultados.
+          <p className="text-center text-xs text-sidebar-foreground/50 whitespace-pre-line">
+            {t('common.tagline')}
           </p>
         )}
       </div>
@@ -210,6 +210,10 @@ function SidebarNavItem({
   isActive: boolean;
   onNavigate?: () => void;
 }) {
+  const { t } = useTranslation();
+  const label = t(item.labelKey);
+  const description = t(item.descriptionKey);
+
   const content = (
     <NavLink
       to={item.to}
@@ -223,7 +227,7 @@ function SidebarNavItem({
       )}
     >
       <item.icon className="h-5 w-5 shrink-0" />
-      {!collapsed && <span>{item.label}</span>}
+      {!collapsed && <span>{label}</span>}
     </NavLink>
   );
 
@@ -232,9 +236,9 @@ function SidebarNavItem({
       <Tooltip delayDuration={0}>
         <TooltipTrigger asChild>{content}</TooltipTrigger>
         <TooltipContent side="right" className="flex flex-col">
-          <span className="font-medium">{item.label}</span>
-          {item.description && (
-            <span className="text-xs text-muted-foreground">{item.description}</span>
+          <span className="font-medium">{label}</span>
+          {description && (
+            <span className="text-xs text-muted-foreground">{description}</span>
           )}
         </TooltipContent>
       </Tooltip>

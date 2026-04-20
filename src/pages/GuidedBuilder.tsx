@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ChevronLeft, 
@@ -91,6 +92,9 @@ export default function GuidedBuilder() {
     updateBuilderState({ constraints: updated });
   };
 
+  const { i18n } = useTranslation();
+  const uiLanguage = (i18n.resolvedLanguage || i18n.language || 'pt').slice(0, 2);
+
   const generatePrompt = async () => {
     const { objective, outputType, targetModel, tone, targetAudience, constraints, creativityLevel, format, language } = builderState;
     
@@ -107,7 +111,7 @@ export default function GuidedBuilder() {
           constraints, 
           creativityLevel,
           format,
-          language 
+          language: language || uiLanguage,
         }
       });
 
