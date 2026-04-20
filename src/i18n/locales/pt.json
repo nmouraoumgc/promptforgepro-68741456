@@ -133,5 +133,33 @@
     "tipsDesc": "Melhora os teus prompts com estas técnicas",
     "lessonsTitle": "Lições",
     "lessonsDesc": "Aprende a criar prompts profissionais"
+  },
+  "showcase": {
+    "cardTitle": "Exemplo de Prompt de Alta Qualidade",
+    "viewDetails": "Ver detalhes",
+    "modalTitle": "Anatomia de um Prompt Eficaz",
+    "modalDesc": "Compreende a estrutura que garante resultados consistentes",
+    "objectiveTitle": "1. Objetivo Claro",
+    "objectiveCheck": "✓ Específico, mensurável e com resultado esperado definido",
+    "structureTitle": "2. Estrutura do Prompt",
+    "contextLabel": "[CONTEXTO]",
+    "contextDesc": "Define quem és, o que queres e para quem é o conteúdo",
+    "instructionsLabel": "[INSTRUÇÕES]",
+    "instructionsDesc": "Passos específicos que a IA deve seguir",
+    "restrictionsLabel": "[RESTRIÇÕES]",
+    "restrictionsDesc": "Limites claros: formato, tom, o que evitar",
+    "outputLabel": "[OUTPUT ESPERADO]",
+    "outputDesc": "Descrição exata do resultado final",
+    "whyHighScore": "3. Porque o Score é Alto ({{score}}%)",
+    "ctaTitle": "Pronto para criar prompts assim?",
+    "ctaButton": "Começar a Construir",
+    "objective": "Criar um post viral para Instagram sobre sustentabilidade que gere engagement e partilhas",
+    "improvements": [
+      "Contexto detalhado com público-alvo específico",
+      "Instruções sequenciais e claras",
+      "Restrições bem definidas (formato, tom, limites)",
+      "Output esperado explícito",
+      "Hook emocional definido para retenção"
+    ]
   }
 }
