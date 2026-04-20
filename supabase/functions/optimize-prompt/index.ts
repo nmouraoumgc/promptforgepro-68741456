@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt } = await req.json();
+    const { prompt, language } = await req.json();
 
     if (!prompt || prompt.trim().length === 0) {
       return new Response(
@@ -30,7 +30,44 @@ serve(async (req) => {
       );
     }
 
-    const systemPrompt = `És um especialista em engenharia de prompts. A tua tarefa é analisar e otimizar prompts para IA.
+    const isEnglish = language === 'en';
+    const systemPrompt = isEnglish
+      ? `You are an expert prompt engineer. Your task is to analyze and optimize AI prompts.
+
+Given an original prompt, you must:
+1. Score its quality on these dimensions (0-100):
+   - clarity, specificity, structure, creativity, overall
+
+2. Generate 5 optimized variations:
+   - shorter: shorter and more direct
+   - detailed: more detailed with extra context
+   - creative: encourages more creativity
+   - technical: more technical and precise
+   - restrictive: more controlled and constrained
+
+For each variation include:
+- content: the full optimized prompt
+- explanation: brief explanation of improvements (1 sentence)
+- changes: list of 2-3 specific changes made
+
+3. List 3-5 general improvements identified.
+
+CRITICAL: All textual fields (content, explanation, changes, improvements) MUST be written in English.
+IMPORTANT: Respond ONLY with valid JSON, no markdown or extra text.
+
+Format:
+{
+  "score": { "clarity": 75, "specificity": 60, "structure": 80, "creativity": 65, "overall": 70 },
+  "optimizations": [
+    { "type": "shorter", "content": "...", "explanation": "...", "changes": ["...", "..."] },
+    { "type": "detailed", "content": "...", "explanation": "...", "changes": ["...", "..."] },
+    { "type": "creative", "content": "...", "explanation": "...", "changes": ["...", "..."] },
+    { "type": "technical", "content": "...", "explanation": "...", "changes": ["...", "..."] },
+    { "type": "restrictive", "content": "...", "explanation": "...", "changes": ["...", "..."] }
+  ],
+  "improvements": ["...", "...", "..."]
+}`
+      : `És um especialista em engenharia de prompts. A tua tarefa é analisar e otimizar prompts para IA.
 
 Dado um prompt original, deves:
 1. Avaliar a qualidade do prompt nas seguintes dimensões (0-100):
@@ -54,6 +91,7 @@ Para cada variação, inclui:
 
 3. Lista de 3-5 melhorias gerais identificadas no prompt original.
 
+CRÍTICO: Todos os campos textuais (content, explanation, changes, improvements) DEVEM estar em português (Portugal).
 IMPORTANTE: Responde APENAS com JSON válido, sem markdown ou explicações adicionais.
 
 Formato da resposta:
@@ -81,7 +119,7 @@ Formato da resposta:
         model: 'google/gemini-2.5-flash',
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: `Analisa e otimiza este prompt:\n\n"${prompt}"` }
+          { role: 'user', content: isEnglish ? `Analyze and optimize this prompt:\n\n"${prompt}"` : `Analisa e otimiza este prompt:\n\n"${prompt}"` }
         ],
       }),
     });

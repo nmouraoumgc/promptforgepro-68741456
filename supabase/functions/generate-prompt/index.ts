@@ -59,7 +59,21 @@ serve(async (req) => {
       audio: 'áudio',
     };
 
-    const systemPrompt = `És um especialista em engenharia de prompts. A tua tarefa é criar prompts de alta qualidade baseados nas especificações do utilizador.
+    const isEnglish = language === 'en';
+    const outputLanguage = isEnglish ? 'English' : 'Portuguese (Portugal)';
+
+    const systemPrompt = isEnglish
+      ? `You are an expert prompt engineer. Your task is to create high-quality prompts based on the user's specifications.
+
+Create a professional, optimized prompt that:
+- Is clear and specific
+- Has a well-defined structure with sections
+- Includes context, instructions and output expectations
+- Is formatted in a readable way
+- Is optimized for ${targetModel || 'any AI model'}
+
+The prompt MUST be entirely written in English and ready to use.`
+      : `És um especialista em engenharia de prompts. A tua tarefa é criar prompts de alta qualidade baseados nas especificações do utilizador.
 
 Cria um prompt profissional e otimizado que:
 - Seja claro e específico
@@ -68,33 +82,61 @@ Cria um prompt profissional e otimizado que:
 - Seja formatado de forma legível
 - Esteja otimizado para ${targetModel || 'qualquer modelo de IA'}
 
-O prompt deve estar em português (Portugal) e ser pronto a usar.`;
+O prompt DEVE estar totalmente em português (Portugal) e ser pronto a usar.`;
 
-    let userRequest = `Cria um prompt com estas características:
+    const labels = isEnglish
+      ? {
+          intro: 'Create a prompt with these characteristics:',
+          objective: 'OBJECTIVE',
+          outputType: 'OUTPUT TYPE',
+          tone: 'TONE',
+          audience: 'TARGET AUDIENCE',
+          creativity: 'CREATIVITY LEVEL',
+          format: 'FORMAT',
+          constraints: 'CONSTRAINTS',
+          creativityHigh: 'very creative',
+          creativityLow: 'conservative',
+          creativityMid: 'balanced',
+          outro: '\n\nReturn ONLY the final prompt, without additional explanations.',
+        }
+      : {
+          intro: 'Cria um prompt com estas características:',
+          objective: 'OBJETIVO',
+          outputType: 'TIPO DE OUTPUT',
+          tone: 'TOM',
+          audience: 'PÚBLICO-ALVO',
+          creativity: 'NÍVEL DE CRIATIVIDADE',
+          format: 'FORMATO',
+          constraints: 'RESTRIÇÕES',
+          creativityHigh: 'muito criativo',
+          creativityLow: 'conservador',
+          creativityMid: 'equilibrado',
+          outro: '\n\nGera APENAS o prompt final, sem explicações adicionais.',
+        };
 
-OBJETIVO: ${objective}
-TIPO DE OUTPUT: ${outputTypeLabels[outputType] || 'texto'}`;
+    let userRequest = `${labels.intro}
+
+${labels.objective}: ${objective}
+${labels.outputType}: ${outputTypeLabels[outputType] || (isEnglish ? 'text' : 'texto')}`;
 
     if (tone) {
-      userRequest += `\nTOM: ${toneLabels[tone] || tone}`;
+      userRequest += `\n${labels.tone}: ${toneLabels[tone] || tone}`;
     }
     if (targetAudience) {
-      userRequest += `\nPÚBLICO-ALVO: ${targetAudience}`;
+      userRequest += `\n${labels.audience}: ${targetAudience}`;
     }
     if (creativityLevel !== undefined) {
-      userRequest += `\nNÍVEL DE CRIATIVIDADE: ${creativityLevel}% (${creativityLevel > 70 ? 'muito criativo' : creativityLevel < 30 ? 'conservador' : 'equilibrado'})`;
+      const level = creativityLevel > 70 ? labels.creativityHigh : creativityLevel < 30 ? labels.creativityLow : labels.creativityMid;
+      userRequest += `\n${labels.creativity}: ${creativityLevel}% (${level})`;
     }
     if (format) {
-      userRequest += `\nFORMATO: ${format}`;
-    }
-    if (language && language !== 'pt') {
-      userRequest += `\nIDIOMA: ${language}`;
+      userRequest += `\n${labels.format}: ${format}`;
     }
     if (constraints && constraints.length > 0) {
-      userRequest += `\nRESTRIÇÕES:\n${constraints.map((c: string) => `- ${c}`).join('\n')}`;
+      userRequest += `\n${labels.constraints}:\n${constraints.map((c: string) => `- ${c}`).join('\n')}`;
     }
 
-    userRequest += '\n\nGera APENAS o prompt final, sem explicações adicionais.';
+    userRequest += labels.outro;
 
     console.log('Generating prompt with Lovable AI...');
 
