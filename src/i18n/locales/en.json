@@ -161,5 +161,90 @@
       "Explicit expected output",
       "Emotional hook defined for retention"
     ]
+  },
+  "library": {
+    "searchPlaceholder": "Search prompts...",
+    "newPrompt": "New Prompt",
+    "all": "All",
+    "empty": "No prompts found",
+    "createNew": "Create new prompt",
+    "duplicate": "Duplicate",
+    "delete": "Delete",
+    "duplicated": "Duplicated!",
+    "duplicatedDesc": "Prompt duplicated successfully",
+    "deleted": "Deleted",
+    "deletedDesc": "Prompt removed from library"
+  },
+  "versionHistory": {
+    "title": "Version History",
+    "authRequired": "Create a free account to access version history.",
+    "noVersions": "You don't have any prompts with multiple versions yet",
+    "createVersions": "Edit your prompts to create version history",
+    "versionsCount": "{{count}} versions",
+    "version": "Version {{number}}",
+    "current": "Current",
+    "revert": "Revert"
+  },
+  "tester": {
+    "authRequired": "Create a free account to test and compare prompts.",
+    "title": "A/B Comparison",
+    "description": "Test two prompts side by side and pick the best one",
+    "promptA": "Prompt A",
+    "promptB": "Prompt B",
+    "placeholderA": "Write the first prompt...",
+    "placeholderB": "Write the second prompt...",
+    "response": "Response:",
+    "chooseA": "Choose A",
+    "chooseB": "Choose B",
+    "testing": "Testing...",
+    "runTest": "Test Prompts",
+    "winner": "Prompt {{winner}} selected as winner!",
+    "errorTitle": "Error",
+    "errorDesc": "Could not test the prompts. Try again."
+  },
+  "plans": {
+    "title": "Your plans",
+    "subtitle": "Compare the features available in each plan",
+    "currentPlan": "Current plan",
+    "manageSubscription": "Manage subscription",
+    "upgrade": "Upgrade",
+    "unlock": "Unlock",
+    "viewDetails": "View details",
+    "footer": "Upgrades are made through the checkout page or contextually in the app.",
+    "authNeeded": "Authentication required",
+    "authNeededDesc": "You need to sign in to manage your subscription.",
+    "portalError": "Error opening portal",
+    "portalErrorDesc": "Please try again.",
+    "features": {
+      "optimizations": "Optimizations per prompt",
+      "unlimited": "Unlimited",
+      "versionHistory": "Version history",
+      "abTesting": "A/B testing",
+      "detailedScore": "Detailed score",
+      "exportPrompts": "Export prompts",
+      "premiumPacks": "Premium Prompt Packs"
+    },
+    "details": {
+      "freePeriod": "forever",
+      "freeDesc": "To explore and test",
+      "proPeriod": "/month",
+      "proDesc": "For daily professional use",
+      "premiumPeriod": "one-time",
+      "premiumDesc": "Full access to Packs"
+    }
+  },
+  "account": {
+    "title": "My account",
+    "subtitle": "Manage your account and subscription",
+    "profile": "Profile",
+    "email": "Email",
+    "currentPlan": "Current plan",
+    "freeDesc": "Basic access to features",
+    "proDesc": "Professional tools active",
+    "premiumDesc": "Full access to all Packs",
+    "viewPlans": "View plans",
+    "upgrade": "Upgrade",
+    "actions": "Actions",
+    "signOut": "Sign out"
   }
 }

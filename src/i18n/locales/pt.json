@@ -161,5 +161,90 @@
       "Output esperado explícito",
       "Hook emocional definido para retenção"
     ]
+  },
+  "library": {
+    "searchPlaceholder": "Pesquisar prompts...",
+    "newPrompt": "Novo Prompt",
+    "all": "Todos",
+    "empty": "Nenhum prompt encontrado",
+    "createNew": "Criar novo prompt",
+    "duplicate": "Duplicar",
+    "delete": "Eliminar",
+    "duplicated": "Duplicado!",
+    "duplicatedDesc": "Prompt duplicado com sucesso",
+    "deleted": "Eliminado",
+    "deletedDesc": "Prompt removido da biblioteca"
+  },
+  "versionHistory": {
+    "title": "Histórico de Versões",
+    "authRequired": "Cria uma conta gratuita para aceder ao histórico de versões.",
+    "noVersions": "Ainda não tens prompts com múltiplas versões",
+    "createVersions": "Edita os teus prompts para criar histórico de versões",
+    "versionsCount": "{{count}} versões",
+    "version": "Versão {{number}}",
+    "current": "Atual",
+    "revert": "Reverter"
+  },
+  "tester": {
+    "authRequired": "Cria uma conta gratuita para testar e comparar prompts.",
+    "title": "Comparação A/B",
+    "description": "Testa dois prompts lado a lado e escolhe o melhor",
+    "promptA": "Prompt A",
+    "promptB": "Prompt B",
+    "placeholderA": "Escreve o primeiro prompt...",
+    "placeholderB": "Escreve o segundo prompt...",
+    "response": "Resposta:",
+    "chooseA": "Escolher A",
+    "chooseB": "Escolher B",
+    "testing": "A testar...",
+    "runTest": "Testar Prompts",
+    "winner": "Prompt {{winner}} selecionado como vencedor!",
+    "errorTitle": "Erro",
+    "errorDesc": "Não foi possível testar os prompts. Tenta novamente."
+  },
+  "plans": {
+    "title": "Os teus planos",
+    "subtitle": "Compara as funcionalidades disponíveis em cada plano",
+    "currentPlan": "Plano atual",
+    "manageSubscription": "Gerir subscrição",
+    "upgrade": "Fazer upgrade",
+    "unlock": "Desbloquear",
+    "viewDetails": "Ver detalhes",
+    "footer": "Os upgrades são feitos através da página de checkout ou contextualmente na app.",
+    "authNeeded": "Autenticação necessária",
+    "authNeededDesc": "Tens de iniciar sessão para gerir a subscrição.",
+    "portalError": "Erro ao abrir portal",
+    "portalErrorDesc": "Por favor tenta novamente.",
+    "features": {
+      "optimizations": "Otimizações por prompt",
+      "unlimited": "Ilimitadas",
+      "versionHistory": "Histórico de versões",
+      "abTesting": "Testes A/B",
+      "detailedScore": "Pontuação detalhada",
+      "exportPrompts": "Exportar prompts",
+      "premiumPacks": "Prompt Packs premium"
+    },
+    "details": {
+      "freePeriod": "para sempre",
+      "freeDesc": "Para explorar e testar",
+      "proPeriod": "/mês",
+      "proDesc": "Para uso profissional diário",
+      "premiumPeriod": "único",
+      "premiumDesc": "Acesso completo aos Packs"
+    }
+  },
+  "account": {
+    "title": "A minha conta",
+    "subtitle": "Gere a tua conta e subscrição",
+    "profile": "Perfil",
+    "email": "Email",
+    "currentPlan": "Plano atual",
+    "freeDesc": "Acesso básico às funcionalidades",
+    "proDesc": "Ferramentas profissionais ativas",
+    "premiumDesc": "Acesso completo a todos os Packs",
+    "viewPlans": "Ver planos",
+    "upgrade": "Fazer upgrade",
+    "actions": "Ações",
+    "signOut": "Terminar sessão"
   }
 }
