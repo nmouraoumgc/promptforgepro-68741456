@@ -204,9 +204,11 @@ const Checkout = () => {
 
                 {/* Promo code */}
                 <div className="space-y-2">
-                  <Label htmlFor="promo" className="flex items-center gap-2">
-                    <Ticket className="h-4 w-4" />
-                    Código de promoção (opcional)
+                  <Label htmlFor="promo">
+                    <span className="inline-flex items-center gap-2">
+                      <Ticket className="h-4 w-4" />
+                      Código de promoção (opcional)
+                    </span>
                   </Label>
                   {appliedPromo ? (
                     <div className="flex items-center justify-between gap-2 px-3 h-12 rounded-md border border-primary/40 bg-primary/10">
