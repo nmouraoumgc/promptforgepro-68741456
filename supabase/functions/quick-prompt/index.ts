@@ -1,10 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { authenticateRequest, corsHeaders } from "../_shared/auth.ts";
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -12,7 +8,11 @@ serve(async (req) => {
   }
 
   try {
-    const { request, language } = await req.json();
+    const auth = await authenticateRequest(req);
+    if (auth instanceof Response) return auth;
+
+    const { request: promptRequest, language } = await req.json();
+    const request = promptRequest;
 
     if (!request || request.trim().length === 0) {
       return new Response(
