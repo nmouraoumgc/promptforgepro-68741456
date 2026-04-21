@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 export interface PromoCode {
   id: string;
@@ -24,29 +25,34 @@ interface PromoState {
   deletePromoCode: (id: string) => Promise<void>;
 }
 
-export const usePromoStore = create<PromoState>((set, get) => ({
-  promoCodes: [],
-  isLoading: false,
-  fetchPromoCodes: async () => {
-    // no-op until backend table exists
-  },
-  createPromoCode: async (data) => {
-    const newCode: PromoCode = {
-      ...data,
-      id: crypto.randomUUID(),
-      current_uses: 0,
-      created_at: new Date().toISOString(),
-    };
-    set({ promoCodes: [...get().promoCodes, newCode] });
-  },
-  updatePromoCode: async (id, data) => {
-    set({
-      promoCodes: get().promoCodes.map((p) =>
-        p.id === id ? { ...p, ...data } : p
-      ),
-    });
-  },
-  deletePromoCode: async (id) => {
-    set({ promoCodes: get().promoCodes.filter((p) => p.id !== id) });
-  },
-}));
+export const usePromoStore = create<PromoState>()(
+  persist(
+    (set, get) => ({
+      promoCodes: [],
+      isLoading: false,
+      fetchPromoCodes: async () => {
+        // no-op until backend table exists
+      },
+      createPromoCode: async (data) => {
+        const newCode: PromoCode = {
+          ...data,
+          id: crypto.randomUUID(),
+          current_uses: 0,
+          created_at: new Date().toISOString(),
+        };
+        set({ promoCodes: [...get().promoCodes, newCode] });
+      },
+      updatePromoCode: async (id, data) => {
+        set({
+          promoCodes: get().promoCodes.map((p) =>
+            p.id === id ? { ...p, ...data } : p
+          ),
+        });
+      },
+      deletePromoCode: async (id) => {
+        set({ promoCodes: get().promoCodes.filter((p) => p.id !== id) });
+      },
+    }),
+    { name: 'promo-codes-storage' }
+  )
+);
