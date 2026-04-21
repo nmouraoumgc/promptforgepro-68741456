@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Star, Filter, Grid, List, Plus, Copy, Trash2, Edit, MoreHorizontal } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { Search, Star, Grid, List, Plus, Copy, Trash2, MoreHorizontal } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +13,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
 export default function PromptLibrary() {
+  const { t } = useTranslation();
   const { prompts, toggleFavorite, deletePrompt, duplicatePrompt } = usePromptStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<Category | 'all'>('all');
@@ -27,43 +29,40 @@ export default function PromptLibrary() {
 
   const handleDuplicate = (id: string) => {
     duplicatePrompt(id);
-    toast({ title: 'Duplicado!', description: 'Prompt duplicado com sucesso' });
+    toast({ title: t('library.duplicated'), description: t('library.duplicatedDesc') });
   };
 
   const handleDelete = (id: string) => {
     deletePrompt(id);
-    toast({ title: 'Eliminado', description: 'Prompt removido da biblioteca' });
+    toast({ title: t('library.deleted'), description: t('library.deletedDesc') });
   };
 
   return (
     <div className="p-6 space-y-6 animate-fade-in">
-      {/* Header */}
       <div className="flex flex-col md:flex-row gap-4 justify-between">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Pesquisar prompts..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9" />
+          <Input placeholder={t('library.searchPlaceholder')} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9" />
         </div>
         <div className="flex gap-2">
           <Button variant={viewMode === 'grid' ? 'default' : 'outline'} size="icon" onClick={() => setViewMode('grid')}><Grid className="h-4 w-4" /></Button>
           <Button variant={viewMode === 'list' ? 'default' : 'outline'} size="icon" onClick={() => setViewMode('list')}><List className="h-4 w-4" /></Button>
-          <Link to="/builder"><Button><Plus className="h-4 w-4 mr-2" />Novo Prompt</Button></Link>
+          <Link to="/builder"><Button><Plus className="h-4 w-4 mr-2" />{t('library.newPrompt')}</Button></Link>
         </div>
       </div>
 
-      {/* Categories */}
       <div className="flex gap-2 flex-wrap">
-        <Badge variant={selectedCategory === 'all' ? 'default' : 'outline'} className="cursor-pointer" onClick={() => setSelectedCategory('all')}>Todos</Badge>
+        <Badge variant={selectedCategory === 'all' ? 'default' : 'outline'} className="cursor-pointer" onClick={() => setSelectedCategory('all')}>{t('library.all')}</Badge>
         {CATEGORIES.map(cat => (
           <Badge key={cat.value} variant={selectedCategory === cat.value ? 'default' : 'outline'} className="cursor-pointer" onClick={() => setSelectedCategory(cat.value)}>{cat.label}</Badge>
         ))}
       </div>
 
-      {/* Prompts */}
       {filteredPrompts.length === 0 ? (
         <Card className="py-12">
           <CardContent className="text-center">
-            <p className="text-muted-foreground mb-4">Nenhum prompt encontrado</p>
-            <Link to="/builder"><Button>Criar novo prompt</Button></Link>
+            <p className="text-muted-foreground mb-4">{t('library.empty')}</p>
+            <Link to="/builder"><Button>{t('library.createNew')}</Button></Link>
           </CardContent>
         </Card>
       ) : (
@@ -80,8 +79,8 @@ export default function PromptLibrary() {
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
                       <DropdownMenuContent>
-                        <DropdownMenuItem onClick={() => handleDuplicate(prompt.id)}><Copy className="h-4 w-4 mr-2" />Duplicar</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDelete(prompt.id)} className="text-destructive"><Trash2 className="h-4 w-4 mr-2" />Eliminar</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDuplicate(prompt.id)}><Copy className="h-4 w-4 mr-2" />{t('library.duplicate')}</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDelete(prompt.id)} className="text-destructive"><Trash2 className="h-4 w-4 mr-2" />{t('library.delete')}</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>

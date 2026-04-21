@@ -1,7 +1,8 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { User, Mail, CreditCard, LogOut, Crown, Zap, Sparkles } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -9,6 +10,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { PLAN_INFO } from '@/types/plans';
 
 export default function Account() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, profile, signOut, isLoading } = useAuthStore();
 
@@ -17,7 +19,6 @@ export default function Account() {
     navigate('/login');
   };
 
-  // Only show loading if we're actually loading AND don't have user data yet
   if (isLoading && !user) {
     return (
       <div className="p-6 md:p-8 lg:p-10 animate-fade-in">
@@ -41,35 +42,27 @@ export default function Account() {
 
   const getPlanIcon = () => {
     switch (currentPlan) {
-      case 'premium':
-        return <Sparkles className="h-5 w-5" />;
-      case 'pro':
-        return <Zap className="h-5 w-5" />;
-      default:
-        return <Crown className="h-5 w-5" />;
+      case 'premium': return <Sparkles className="h-5 w-5" />;
+      case 'pro': return <Zap className="h-5 w-5" />;
+      default: return <Crown className="h-5 w-5" />;
     }
   };
 
   return (
     <div className="p-6 md:p-8 lg:p-10 animate-fade-in">
       <div className="max-w-2xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
           <header className="mb-8">
-            <h1 className="text-3xl font-bold tracking-tight mb-2">A minha conta</h1>
-            <p className="text-muted-foreground">Gere a tua conta e subscrição</p>
+            <h1 className="text-3xl font-bold tracking-tight mb-2">{t('account.title')}</h1>
+            <p className="text-muted-foreground">{t('account.subtitle')}</p>
           </header>
 
           <div className="space-y-6">
-            {/* Profile Card */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <User className="h-5 w-5" />
-                  Perfil
+                  {t('account.profile')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -78,19 +71,18 @@ export default function Account() {
                     <Mail className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Email</p>
+                    <p className="text-sm text-muted-foreground">{t('account.email')}</p>
                     <p className="font-medium">{user.email}</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Plan Card */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <CreditCard className="h-5 w-5" />
-                  Plano atual
+                  {t('account.currentPlan')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -111,9 +103,9 @@ export default function Account() {
                         </Badge>
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        {currentPlan === 'free' && 'Acesso básico às funcionalidades'}
-                        {currentPlan === 'pro' && 'Ferramentas profissionais ativas'}
-                        {currentPlan === 'premium' && 'Acesso completo a todos os Packs'}
+                        {currentPlan === 'free' && t('account.freeDesc')}
+                        {currentPlan === 'pro' && t('account.proDesc')}
+                        {currentPlan === 'premium' && t('account.premiumDesc')}
                       </p>
                     </div>
                   </div>
@@ -123,30 +115,25 @@ export default function Account() {
 
                 <div className="flex gap-3">
                   <Button variant="outline" onClick={() => navigate('/planos')}>
-                    Ver planos
+                    {t('account.viewPlans')}
                   </Button>
                   {currentPlan !== 'premium' && (
                     <Button onClick={() => navigate('/checkout')}>
-                      Fazer upgrade
+                      {t('account.upgrade')}
                     </Button>
                   )}
                 </div>
               </CardContent>
             </Card>
 
-            {/* Actions */}
             <Card>
               <CardHeader>
-                <CardTitle>Ações</CardTitle>
+                <CardTitle>{t('account.actions')}</CardTitle>
               </CardHeader>
               <CardContent>
-                <Button
-                  variant="destructive"
-                  className="w-full sm:w-auto"
-                  onClick={handleSignOut}
-                >
+                <Button variant="destructive" className="w-full sm:w-auto" onClick={handleSignOut}>
                   <LogOut className="h-4 w-4 mr-2" />
-                  Terminar sessão
+                  {t('account.signOut')}
                 </Button>
               </CardContent>
             </Card>
