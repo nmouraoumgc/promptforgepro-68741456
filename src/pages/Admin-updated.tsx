@@ -3,7 +3,8 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { 
   Package, Users, CreditCard, Plus, Edit, Trash2, 
-  ToggleLeft, ToggleRight, Search, ChevronDown, Ticket
+  ToggleLeft, ToggleRight, Search, Ticket, Copy,
+  CheckCircle, XCircle
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,7 +16,7 @@ import {
   TableHeader, TableRow 
 } from '@/components/ui/table';
 import {
-  Dialog, DialogContent, DialogDescription, DialogFooter,
+  Dialog, DialogContent, DialogFooter,
   DialogHeader, DialogTitle, DialogTrigger
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -23,7 +24,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/stores/authStore';
+import { usePromoStore } from '@/stores/promoStore';
+import { PromoCodeDialog } from '@/components/promo/PromoCodeDialog';
 import { supabase } from '@/integrations/supabase/client';
+import { format } from 'date-fns';
+import { toast } from 'sonner';
 
 interface PromptPack {
   id: string;
@@ -55,8 +60,9 @@ interface Purchase {
 
 export default function Admin() {
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { toast: showToast } = useToast();
   const { isAdmin, isLoading: authLoading } = useAuthStore();
+  const { promoCodes, fetchPromoCodes, deletePromoCode } = usePromoStore();
   
   const [packs, setPacks] = useState<PromptPack[]>([]);
   const [users, setUsers] = useState<UserProfile[]>([]);
@@ -64,7 +70,11 @@ export default function Admin() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   
-  // Dialog state
+  // Promo Dialog state
+  const [promoDialogOpen, setPromoDialogOpen] = useState(false);
+  const [editingPromoId, setEditingPromoId] = useState<string | null>(null);
+  
+  // Pack Dialog state
   const [packDialogOpen, setPackDialogOpen] = useState(false);
   const [editingPack, setEditingPack] = useState<PromptPack | null>(null);
   const [packForm, setPackForm] = useState({
@@ -78,13 +88,13 @@ export default function Admin() {
   useEffect(() => {
     if (!authLoading && !isAdmin) {
       navigate('/');
-      toast({
+      showToast({
         title: 'Acesso negado',
         description: 'Não tens permissões de administrador.',
         variant: 'destructive',
       });
     }
-  }, [isAdmin, authLoading, navigate, toast]);
+  }, [isAdmin, authLoading, navigate, showToast]);
 
   useEffect(() => {
     if (isAdmin) {
@@ -119,9 +129,28 @@ export default function Admin() {
     
     if (purchasesData) setPurchases(purchasesData);
 
+    // Fetch promo codes
+    await fetchPromoCodes();
+
     setIsLoading(false);
   };
 
+  // Promo Code Handlers
+  const handleDeletePromo = async (id: string) => {
+    if (!confirm('Tens a certeza que queres eliminar este código?')) return;
+    
+    const success = await deletePromoCode(id);
+    if (success) {
+      toast.success('Código de promoção eliminado');
+    }
+  };
+
+  const handleCopyPromoCode = (code: string) => {
+    navigator.clipboard.writeText(code);
+    toast.success('Código copiado!');
+  };
+
+  // Pack handlers (existing)
   const handleSavePack = async () => {
     if (editingPack) {
       const { error } = await supabase
@@ -130,9 +159,9 @@ export default function Admin() {
         .eq('id', editingPack.id);
       
       if (error) {
-        toast({ title: 'Erro ao atualizar', variant: 'destructive' });
+        showToast({ title: 'Erro ao atualizar', variant: 'destructive' });
       } else {
-        toast({ title: 'Pack atualizado' });
+        showToast({ title: 'Pack atualizado' });
         fetchData();
       }
     } else {
@@ -141,9 +170,9 @@ export default function Admin() {
         .insert([{ ...packForm, sort_order: packs.length }]);
       
       if (error) {
-        toast({ title: 'Erro ao criar', description: error.message, variant: 'destructive' });
+        showToast({ title: 'Erro ao criar', description: error.message, variant: 'destructive' });
       } else {
-        toast({ title: 'Pack criado' });
+        showToast({ title: 'Pack criado' });
         fetchData();
       }
     }
@@ -170,7 +199,7 @@ export default function Admin() {
       .eq('id', id);
     
     if (!error) {
-      toast({ title: 'Pack eliminado' });
+      showToast({ title: 'Pack eliminado' });
       fetchData();
     }
   };
@@ -215,11 +244,11 @@ export default function Admin() {
       >
         <header className="mb-8">
           <h1 className="text-3xl font-bold tracking-tight mb-2">Backoffice</h1>
-          <p className="text-muted-foreground">Gestão de conteúdos e utilizadores</p>
+          <p className="text-muted-foreground">Gestão de conteúdos, utilizadores e promoções</p>
         </header>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
@@ -259,6 +288,19 @@ export default function Admin() {
               </div>
             </CardContent>
           </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-lg bg-amber/10 flex items-center justify-center">
+                  <Ticket className="h-5 w-5 text-amber-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{promoCodes.length}</p>
+                  <p className="text-sm text-muted-foreground">Códigos Promo</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Tabs */}
@@ -267,6 +309,7 @@ export default function Admin() {
             <TabsTrigger value="packs">Prompt Packs</TabsTrigger>
             <TabsTrigger value="users">Utilizadores</TabsTrigger>
             <TabsTrigger value="purchases">Compras</TabsTrigger>
+            <TabsTrigger value="promo">Códigos de Promoção</TabsTrigger>
           </TabsList>
 
           {/* Packs Tab */}
@@ -396,13 +439,6 @@ export default function Admin() {
                         </TableCell>
                       </TableRow>
                     ))}
-                    {packs.length === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                          Nenhum pack criado
-                        </TableCell>
-                      </TableRow>
-                    )}
                   </TableBody>
                 </Table>
               </CardContent>
@@ -501,19 +537,121 @@ export default function Admin() {
                         </TableCell>
                       </TableRow>
                     ))}
-                    {purchases.length === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                          Nenhuma compra registada
-                        </TableCell>
-                      </TableRow>
-                    )}
                   </TableBody>
                 </Table>
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* Promo Codes Tab - NEW */}
+          <TabsContent value="promo">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Códigos de Promoção</CardTitle>
+                  <CardDescription>Gerir descontos e ofertas</CardDescription>
+                </div>
+                <Button 
+                  onClick={() => { 
+                    setEditingPromoId(null); 
+                    setPromoDialogOpen(true); 
+                  }}
+                  className="gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  Novo Código
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">A carregar...</p>
+                  </div>
+                ) : promoCodes.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">Nenhum código de promoção criado</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {promoCodes.map(promo => (
+                      <div 
+                        key={promo.id} 
+                        className="border rounded-lg p-4 flex items-start justify-between hover:bg-muted/50 transition"
+                      >
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <code className="px-2 py-1 bg-muted rounded font-mono font-bold text-sm">
+                              {promo.code}
+                            </code>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => handleCopyPromoCode(promo.code)}
+                            >
+                              <Copy className="h-3 w-3" />
+                            </Button>
+                            {promo.is_active ? (
+                              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                                <CheckCircle className="h-3 w-3 mr-1" />
+                                Ativo
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+                                <XCircle className="h-3 w-3 mr-1" />
+                                Inativo
+                              </Badge>
+                            )}
+                          </div>
+                          {promo.description && (
+                            <p className="text-sm text-muted-foreground mb-2">{promo.description}</p>
+                          )}
+                          <div className="flex gap-4 text-sm">
+                            <span>
+                              <strong>Desconto:</strong> {promo.discount_type === 'percentage' ? `${promo.discount_value}%` : promo.discount_type === 'fixed' ? `€${(promo.discount_value / 100).toFixed(2)}` : `${promo.discount_value} dias`}
+                            </span>
+                            <span>
+                              <strong>Utilizações:</strong> {promo.current_uses} / {promo.max_uses}
+                            </span>
+                            <span>
+                              <strong>Expira:</strong> {format(new Date(promo.expires_at), 'dd/MM/yyyy')}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex gap-2 ml-4">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => { 
+                              setEditingPromoId(promo.id); 
+                              setPromoDialogOpen(true); 
+                            }}
+                          >
+                            <Edit className="h-3 w-3" />
+                          </Button>
+                          <Button 
+                            variant="destructive" 
+                            size="sm" 
+                            onClick={() => handleDeletePromo(promo.id)}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
+
+        {/* Promo Code Dialog */}
+        <PromoCodeDialog 
+          open={promoDialogOpen} 
+          onOpenChange={setPromoDialogOpen}
+          editingId={editingPromoId}
+          onSuccess={fetchData}
+        />
       </motion.div>
     </div>
   );
