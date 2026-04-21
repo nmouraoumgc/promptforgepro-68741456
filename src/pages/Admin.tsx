@@ -139,10 +139,8 @@ export default function Admin() {
   const handleDeletePromo = async (id: string) => {
     if (!confirm('Tens a certeza que queres eliminar este código?')) return;
     
-    const success = await deletePromoCode(id);
-    if (success) {
-      toast.success('Código de promoção eliminado');
-    }
+    await deletePromoCode(id);
+    toast.success('Código de promoção eliminado');
   };
 
   const handleCopyPromoCode = (code: string) => {
