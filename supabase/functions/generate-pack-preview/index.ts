@@ -1,9 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { authenticateRequest, corsHeaders } from "../_shared/auth.ts";
 
 // Pack-specific prompts for different content types
 const getPackPrompt = (packSlug: string, tema: string, isPremium: boolean) => {
@@ -102,8 +98,12 @@ serve(async (req) => {
   }
 
   try {
-    const { tema, packSlug, isPremium = false } = await req.json();
-    
+    const auth = await authenticateRequest(req);
+    if (auth instanceof Response) return auth;
+    const isPremium = auth.isPremium;
+
+    const { tema, packSlug } = await req.json();
+
     console.log(`Generating preview for pack: ${packSlug}, tema: ${tema}, isPremium: ${isPremium}`);
 
     if (!tema || tema.trim().length === 0) {
