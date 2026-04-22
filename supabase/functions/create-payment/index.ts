@@ -82,6 +82,7 @@ serve(async (req) => {
     let validPromo: PromoCodeRow | null = null;
     if (promoCode) {
       const { data: promo, error: promoError } = await supabaseAdminClient
+      const { data: promo, error: promoError } = await supabaseClient
         .from("promo_codes")
         .select("id, code, discount_type, discount_value, applicable_plan_types, max_uses, current_uses, expires_at, is_active")
         .eq("code", promoCode)

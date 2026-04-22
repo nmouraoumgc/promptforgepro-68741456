@@ -55,6 +55,7 @@ const Checkout = () => {
   const handleApplyPromo = async () => {
     setPromoError("");
     const code = promoInput.trim().toUpperCase();
+
     if (!code) {
       setPromoError(isEnglish ? "Enter a code." : "Insere um código.");
       return;
@@ -68,6 +69,7 @@ const Checkout = () => {
       setPromoError(isEnglish ? "Invalid code." : "Código inválido.");
       return;
     }
+
     if (!promo.is_active) {
       setPromoError(isEnglish ? "Inactive code." : "Código inativo.");
       return;
@@ -78,10 +80,12 @@ const Checkout = () => {
       setPromoError(isEnglish ? "Expired code." : "Código expirado.");
       return;
     }
+
     if (!promo.applicable_plan_types.includes("premium")) {
       setPromoError(isEnglish ? "Code not valid for this plan." : "Código não aplicável a este plano.");
       return;
     }
+
     setAppliedPromo(promo);
     toast({ title: isEnglish ? "Code applied!" : "Código aplicado!", description: isEnglish ? `${promo.code} was applied successfully.` : `${promo.code} foi aplicado com sucesso.` });
   };
