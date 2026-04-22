@@ -7,36 +7,23 @@ import { Check, Zap, History, TestTube, BarChart3, Download, Loader2 } from "luc
 import { usePlanStore } from "@/stores/planStore";
 import { useAuthStore } from "@/stores/authStore";
 import { supabase } from "@/integrations/supabase/client";
-
-const checklistItems = [
-  {
-    icon: Zap,
-    label: "Otimizações ilimitadas ativas",
-  },
-  {
-    icon: History,
-    label: "Histórico de versões desbloqueado",
-  },
-  {
-    icon: TestTube,
-    label: "Testes A/B disponíveis",
-  },
-  {
-    icon: BarChart3,
-    label: "Pontuação detalhada ativa",
-  },
-  {
-    icon: Download,
-    label: "Exportação de prompts disponível",
-  },
-];
+import { useTranslation } from "react-i18next";
 
 const SubscriptionSuccess = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { setPlan } = usePlanStore();
   const { fetchProfile } = useAuthStore();
+  const { i18n } = useTranslation();
+  const isEnglish = i18n.language === "en";
   const [isVerifying, setIsVerifying] = useState(true);
+  const checklistItems = [
+    { icon: Zap, label: isEnglish ? "Unlimited optimizations active" : "Otimizações ilimitadas ativas" },
+    { icon: History, label: isEnglish ? "Version history unlocked" : "Histórico de versões desbloqueado" },
+    { icon: TestTube, label: isEnglish ? "A/B tests available" : "Testes A/B disponíveis" },
+    { icon: BarChart3, label: isEnglish ? "Detailed scoring active" : "Pontuação detalhada ativa" },
+    { icon: Download, label: isEnglish ? "Prompt export available" : "Exportação de prompts disponível" },
+  ];
 
   useEffect(() => {
     const verifySubscription = async () => {
@@ -72,7 +59,7 @@ const SubscriptionSuccess = () => {
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">A verificar subscrição...</p>
+          <p className="text-muted-foreground">{isEnglish ? "Verifying subscription..." : "A verificar subscrição..."}</p>
         </div>
       </div>
     );
@@ -98,10 +85,10 @@ const SubscriptionSuccess = () => {
               <Zap className="h-8 w-8 text-primary-foreground" />
             </motion.div>
             <h1 className="text-2xl md:text-3xl font-bold text-primary-foreground mb-2">
-              Bem-vindo ao Pro! ⚡
+              {isEnglish ? "Welcome to Pro! ⚡" : "Bem-vindo ao Pro! ⚡"}
             </h1>
             <p className="text-primary-foreground/90">
-              A tua subscrição está agora ativa.
+              {isEnglish ? "Your subscription is now active." : "A tua subscrição está agora ativa."}
             </p>
           </div>
 
@@ -136,7 +123,7 @@ const SubscriptionSuccess = () => {
                 onClick={() => navigate("/optimizer")}
               >
                 <Zap className="h-4 w-4 mr-2" />
-                Começar a otimizar prompts
+                {isEnglish ? "Start optimizing prompts" : "Começar a otimizar prompts"}
               </Button>
             </motion.div>
           </CardContent>
@@ -153,7 +140,7 @@ const SubscriptionSuccess = () => {
             onClick={() => navigate("/plans")}
             className="text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
-            Gerir a minha subscrição →
+            {isEnglish ? "Manage my subscription →" : "Gerir a minha subscrição →"}
           </button>
         </motion.div>
       </motion.div>
