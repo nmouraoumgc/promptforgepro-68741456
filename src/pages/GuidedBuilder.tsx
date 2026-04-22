@@ -94,6 +94,27 @@ export default function GuidedBuilder() {
 
   const { i18n } = useTranslation();
   const uiLanguage = (i18n.resolvedLanguage || i18n.language || 'pt').slice(0, 2);
+  const isEnglish = uiLanguage === 'en';
+  const translateStep = (id: string, value: string, type: 'title' | 'description') => {
+    if (!isEnglish) return value;
+    const map: Record<string, { title: string; description: string }> = {
+      objective: { title: 'Objective', description: 'What do you want to achieve?' },
+      output: { title: 'Output Type', description: 'What type of content?' },
+      model: { title: 'AI Model', description: 'Which AI is this for?' },
+      tone: { title: 'Tone & Style', description: 'How should it sound?' },
+      audience: { title: 'Target Audience', description: 'Who is it for?' },
+      constraints: { title: 'Constraints', description: 'Limits and format' },
+      creativity: { title: 'Creativity', description: 'Level of freedom' },
+      review: { title: 'Review', description: 'Confirm and generate' },
+    };
+    return map[id]?.[type] || value;
+  };
+  const outputLabel = (value: OutputType | null) => {
+    const label = OUTPUT_TYPES.find(t => t.value === value)?.label;
+    if (!label) return '';
+    if (!isEnglish) return label;
+    return ({ Texto: 'Text', Imagem: 'Image', Código: 'Code', Vídeo: 'Video', Áudio: 'Audio' } as Record<string, string>)[label] || label;
+  };
 
   const generatePrompt = async () => {
     const { objective, outputType, targetModel, tone, targetAudience, constraints, creativityLevel, format, language } = builderState;
@@ -118,7 +139,7 @@ export default function GuidedBuilder() {
       if (error) throw error;
 
       if (data.error) {
-        toast({ title: 'Erro', description: data.error, variant: 'destructive' });
+        toast({ title: isEnglish ? 'Error' : 'Erro', description: data.error, variant: 'destructive' });
         setIsGenerating(false);
         return;
       }
@@ -126,7 +147,7 @@ export default function GuidedBuilder() {
       setGeneratedPrompt(data.prompt);
     } catch (error) {
       console.error('Error generating prompt:', error);
-      toast({ title: 'Erro', description: 'Não foi possível gerar o prompt. Tenta novamente.', variant: 'destructive' });
+      toast({ title: isEnglish ? 'Error' : 'Erro', description: isEnglish ? 'Could not generate the prompt. Try again.' : 'Não foi possível gerar o prompt. Tenta novamente.', variant: 'destructive' });
     } finally {
       setIsGenerating(false);
     }
@@ -134,7 +155,7 @@ export default function GuidedBuilder() {
 
   const savePrompt = () => {
     if (!generatedPrompt) {
-      toast({ title: 'Erro', description: 'Gera primeiro o prompt', variant: 'destructive' });
+      toast({ title: isEnglish ? 'Error' : 'Erro', description: isEnglish ? 'Generate the prompt first' : 'Gera primeiro o prompt', variant: 'destructive' });
       return;
     }
 
@@ -151,7 +172,7 @@ export default function GuidedBuilder() {
       isFavorite: false,
     });
 
-    toast({ title: 'Sucesso!', description: 'Prompt guardado na biblioteca' });
+    toast({ title: isEnglish ? 'Success!' : 'Sucesso!', description: isEnglish ? 'Prompt saved to library' : 'Prompt guardado na biblioteca' });
     resetBuilderState();
     navigate('/library');
   };
@@ -169,7 +190,7 @@ export default function GuidedBuilder() {
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(generatedPrompt);
-    toast({ title: 'Copiado!', description: 'Prompt copiado para a área de transferência' });
+    toast({ title: isEnglish ? 'Copied!' : 'Copiado!', description: isEnglish ? 'Prompt copied to clipboard' : 'Prompt copiado para a área de transferência' });
   };
 
   const renderStepContent = () => {
@@ -179,16 +200,16 @@ export default function GuidedBuilder() {
           <div className="space-y-4">
             <div>
               <label className="text-sm font-medium mb-2 block">
-                Qual é o teu objetivo com este prompt?
+                {isEnglish ? 'What is your objective with this prompt?' : 'Qual é o teu objetivo com este prompt?'}
               </label>
               <Textarea
-                placeholder="Ex: Criar um post para Instagram sobre sustentabilidade que gere engagement..."
+                placeholder={isEnglish ? 'Ex: Create an Instagram post about sustainability that drives engagement...' : 'Ex: Criar um post para Instagram sobre sustentabilidade que gere engagement...'}
                 value={builderState.objective}
                 onChange={(e) => updateBuilderState({ objective: e.target.value })}
                 className="min-h-[120px] text-base"
               />
               <p className="text-xs text-muted-foreground mt-2">
-                Sê o mais específico possível. Quanto mais detalhes, melhor o resultado.
+                {isEnglish ? 'Be as specific as possible. The more detail, the better the result.' : 'Sê o mais específico possível. Quanto mais detalhes, melhor o resultado.'}
               </p>
             </div>
           </div>
@@ -218,8 +239,8 @@ export default function GuidedBuilder() {
                     {type.icon === 'Music' && <Users className="h-6 w-6" />}
                   </div>
                   <div>
-                    <p className="font-medium">{type.label}</p>
-                    <p className="text-sm text-muted-foreground">{type.description}</p>
+                    <p className="font-medium">{outputLabel(type.value)}</p>
+                    <p className="text-sm text-muted-foreground">{isEnglish ? ({ 'Artigos, emails, posts, copy': 'Articles, emails, posts, copy', 'Fotos, ilustrações, arte': 'Photos, illustrations, art', 'Programação, scripts, queries': 'Programming, scripts, queries', 'Vídeos, animações, clips': 'Videos, animations, clips', 'Música, podcasts, voiceover': 'Music, podcasts, voice-over' } as Record<string, string>)[type.description] || type.description : type.description}</p>
                   </div>
                   {builderState.outputType === type.value && (
                     <Check className="ml-auto h-5 w-5 text-primary" />
@@ -234,7 +255,7 @@ export default function GuidedBuilder() {
         return (
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Escolhe o modelo de IA para otimizar o prompt (ou deixa genérico)
+              {isEnglish ? 'Choose the AI model to optimize the prompt (or keep it generic)' : 'Escolhe o modelo de IA para otimizar o prompt (ou deixa genérico)'}
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {AI_MODELS.filter(m => 
@@ -291,17 +312,17 @@ export default function GuidedBuilder() {
           <div className="space-y-4">
             <div>
               <label className="text-sm font-medium mb-2 block">
-                Para quem é este conteúdo?
+                {isEnglish ? 'Who is this content for?' : 'Para quem é este conteúdo?'}
               </label>
               <Textarea
-                placeholder="Ex: Jovens adultos 25-35 anos interessados em tecnologia e lifestyle sustentável..."
+                placeholder={isEnglish ? 'Ex: Young adults 25-35 interested in tech and sustainable lifestyle...' : 'Ex: Jovens adultos 25-35 anos interessados em tecnologia e lifestyle sustentável...'}
                 value={builderState.targetAudience}
                 onChange={(e) => updateBuilderState({ targetAudience: e.target.value })}
                 className="min-h-[100px]"
               />
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-              {['Profissionais', 'Estudantes', 'Empresas', 'Público geral'].map((audience) => (
+              {[(isEnglish ? 'Professionals' : 'Profissionais'), (isEnglish ? 'Students' : 'Estudantes'), (isEnglish ? 'Companies' : 'Empresas'), (isEnglish ? 'General audience' : 'Público geral')].map((audience) => (
                 <Button
                   key={audience}
                   variant="outline"
@@ -324,17 +345,17 @@ export default function GuidedBuilder() {
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium mb-2 block">Formato do output</label>
+                <label className="text-sm font-medium mb-2 block">{isEnglish ? 'Output format' : 'Formato do output'}</label>
                 <Input
-                  placeholder="Ex: Lista com bullet points, parágrafo único..."
+                  placeholder={isEnglish ? 'Ex: Bullet list, single paragraph...' : 'Ex: Lista com bullet points, parágrafo único...'}
                   value={builderState.format}
                   onChange={(e) => updateBuilderState({ format: e.target.value })}
                 />
               </div>
               <div>
-                <label className="text-sm font-medium mb-2 block">Idioma</label>
+                <label className="text-sm font-medium mb-2 block">{isEnglish ? 'Language' : 'Idioma'}</label>
                 <Input
-                  placeholder="Português"
+                  placeholder={isEnglish ? 'English' : 'Português'}
                   value={builderState.language}
                   onChange={(e) => updateBuilderState({ language: e.target.value })}
                 />
@@ -342,15 +363,15 @@ export default function GuidedBuilder() {
             </div>
             
             <div>
-              <label className="text-sm font-medium mb-2 block">Restrições adicionais</label>
+              <label className="text-sm font-medium mb-2 block">{isEnglish ? 'Additional constraints' : 'Restrições adicionais'}</label>
               <div className="flex gap-2">
                 <Input
-                  placeholder="Ex: Máximo 280 caracteres, evitar jargão técnico..."
+                  placeholder={isEnglish ? 'Ex: Max 280 characters, avoid technical jargon...' : 'Ex: Máximo 280 caracteres, evitar jargão técnico...'}
                   value={newConstraint}
                   onChange={(e) => setNewConstraint(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && addConstraint()}
                 />
-                <Button onClick={addConstraint}>Adicionar</Button>
+                <Button onClick={addConstraint}>{isEnglish ? 'Add' : 'Adicionar'}</Button>
               </div>
               <div className="flex flex-wrap gap-2 mt-3">
                 {constraints.map((c, i) => (
@@ -373,7 +394,7 @@ export default function GuidedBuilder() {
           <div className="space-y-8">
             <div>
               <div className="flex justify-between mb-4">
-                <span className="text-sm font-medium">Nível de Criatividade</span>
+                <span className="text-sm font-medium">{isEnglish ? 'Creativity Level' : 'Nível de Criatividade'}</span>
                 <span className="text-sm text-muted-foreground">{builderState.creativityLevel}%</span>
               </div>
               <Slider
@@ -384,9 +405,9 @@ export default function GuidedBuilder() {
                 className="w-full"
               />
               <div className="flex justify-between mt-2 text-xs text-muted-foreground">
-                <span>🎯 Controlado</span>
-                <span>⚖️ Equilibrado</span>
-                <span>🎨 Criativo</span>
+                <span>{isEnglish ? '🎯 Controlled' : '🎯 Controlado'}</span>
+                <span>{isEnglish ? '⚖️ Balanced' : '⚖️ Equilibrado'}</span>
+                <span>{isEnglish ? '🎨 Creative' : '🎨 Criativo'}</span>
               </div>
             </div>
             
@@ -394,19 +415,19 @@ export default function GuidedBuilder() {
               <CardContent className="p-4">
                 <p className="text-sm">
                   {builderState.creativityLevel < 30 && 
-                    "O prompt será muito estruturado e previsível. Ideal para outputs que precisam de consistência."}
+                    (isEnglish ? "The prompt will be highly structured and predictable. Ideal for outputs that need consistency." : "O prompt será muito estruturado e previsível. Ideal para outputs que precisam de consistência.")}
                   {builderState.creativityLevel >= 30 && builderState.creativityLevel < 70 &&
-                    "Equilíbrio entre estrutura e liberdade criativa. Bom para a maioria dos casos."}
+                    (isEnglish ? "Balance between structure and creative freedom. Good for most cases." : "Equilíbrio entre estrutura e liberdade criativa. Bom para a maioria dos casos.")}
                   {builderState.creativityLevel >= 70 &&
-                    "O prompt incentivará respostas originais e inesperadas. Ótimo para brainstorming e arte."}
+                    (isEnglish ? "The prompt will encourage original and unexpected responses. Great for brainstorming and art." : "O prompt incentivará respostas originais e inesperadas. Ótimo para brainstorming e arte.")}
                 </p>
               </CardContent>
             </Card>
 
             <div>
-              <label className="text-sm font-medium mb-2 block">Contexto adicional (opcional)</label>
+              <label className="text-sm font-medium mb-2 block">{isEnglish ? 'Additional context (optional)' : 'Contexto adicional (opcional)'}</label>
               <Textarea
-                placeholder="Informação extra que possa ajudar a IA a entender melhor o que precisas..."
+                placeholder={isEnglish ? 'Extra information that can help the AI better understand what you need...' : 'Informação extra que possa ajudar a IA a entender melhor o que precisas...'}
                 value={builderState.additionalContext}
                 onChange={(e) => updateBuilderState({ additionalContext: e.target.value })}
               />
@@ -420,24 +441,24 @@ export default function GuidedBuilder() {
             {/* Summary */}
             <Card>
               <CardHeader>
-                <CardTitle>Resumo do Prompt</CardTitle>
+                <CardTitle>{isEnglish ? 'Prompt Summary' : 'Resumo do Prompt'}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <span className="text-muted-foreground">Objetivo:</span>
+                    <span className="text-muted-foreground">{isEnglish ? 'Objective:' : 'Objetivo:'}</span>
                     <p className="font-medium">{builderState.objective.substring(0, 100)}...</p>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Tipo:</span>
-                    <p className="font-medium">{OUTPUT_TYPES.find(t => t.value === builderState.outputType)?.label}</p>
+                    <span className="text-muted-foreground">{isEnglish ? 'Type:' : 'Tipo:'}</span>
+                    <p className="font-medium">{outputLabel(builderState.outputType)}</p>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Tom:</span>
+                    <span className="text-muted-foreground">{isEnglish ? 'Tone:' : 'Tom:'}</span>
                     <p className="font-medium">{TONE_STYLES.find(t => t.value === builderState.tone)?.label}</p>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Criatividade:</span>
+                    <span className="text-muted-foreground">{isEnglish ? 'Creativity:' : 'Criatividade:'}</span>
                     <p className="font-medium">{builderState.creativityLevel}%</p>
                   </div>
                 </div>
@@ -450,12 +471,12 @@ export default function GuidedBuilder() {
                 {isGenerating ? (
                   <>
                     <Loader2 className="h-5 w-5 animate-spin" />
-                    A gerar com IA...
+                    {isEnglish ? 'Generating with AI...' : 'A gerar com IA...'}
                   </>
                 ) : (
                   <>
                     <Wand2 className="h-5 w-5" />
-                    Gerar Prompt com IA
+                    {isEnglish ? 'Generate Prompt with AI' : 'Gerar Prompt com IA'}
                   </>
                 )}
               </Button>
@@ -467,11 +488,11 @@ export default function GuidedBuilder() {
                 <CardHeader className="flex flex-row items-center justify-between">
                   <CardTitle className="flex items-center gap-2">
                     <Sparkles className="h-5 w-5 text-primary" />
-                    Prompt Gerado
+                    {isEnglish ? 'Generated Prompt' : 'Prompt Gerado'}
                   </CardTitle>
                   <Button variant="outline" size="sm" onClick={copyToClipboard}>
                     <Copy className="h-4 w-4 mr-2" />
-                    Copiar
+                    {isEnglish ? 'Copy' : 'Copiar'}
                   </Button>
                 </CardHeader>
                 <CardContent>
@@ -486,7 +507,7 @@ export default function GuidedBuilder() {
             {generatedPrompt && (
               <Button onClick={savePrompt} size="lg" className="w-full gap-2">
                 <Check className="h-5 w-5" />
-                Guardar na Biblioteca
+                {isEnglish ? 'Save to Library' : 'Guardar na Biblioteca'}
               </Button>
             )}
           </div>
@@ -502,7 +523,7 @@ export default function GuidedBuilder() {
     return (
       <div className="p-6 animate-fade-in">
         <Card>
-          <AuthGate message="Cria uma conta gratuita para começar a construir prompts profissionais." />
+          <AuthGate message={isEnglish ? 'Create a free account to start building professional prompts.' : 'Cria uma conta gratuita para começar a construir prompts profissionais.'} />
         </Card>
       </div>
     );
@@ -541,7 +562,7 @@ export default function GuidedBuilder() {
                       'text-xs mt-1 hidden md:block',
                       (isCompleted || isCurrent) ? 'text-foreground' : 'text-muted-foreground'
                     )}>
-                      {step.title}
+                      {translateStep(step.id, step.title, 'title')}
                     </span>
                   </div>
                 );
@@ -560,8 +581,8 @@ export default function GuidedBuilder() {
           {/* Step Content */}
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle>{BUILDER_STEPS[builderState.step].title}</CardTitle>
-              <CardDescription>{BUILDER_STEPS[builderState.step].description}</CardDescription>
+              <CardTitle>{translateStep(BUILDER_STEPS[builderState.step].id, BUILDER_STEPS[builderState.step].title, 'title')}</CardTitle>
+              <CardDescription>{translateStep(BUILDER_STEPS[builderState.step].id, BUILDER_STEPS[builderState.step].description, 'description')}</CardDescription>
             </CardHeader>
             <CardContent>
               <AnimatePresence mode="wait">
@@ -581,13 +602,13 @@ export default function GuidedBuilder() {
                 <div className="mt-4 pt-4 border-t border-border">
                   <p className="text-xs text-muted-foreground flex items-center gap-2">
                     <Sparkles className="h-3 w-3 text-primary" />
-                    {builderState.step === 0 && 'Este campo define a clareza do teu prompt. Sê específico para melhores resultados.'}
-                    {builderState.step === 1 && 'O tipo de output ajuda a IA a formatar a resposta corretamente.'}
-                    {builderState.step === 2 && 'Modelos diferentes têm capacidades diferentes. Escolhe o mais adequado.'}
-                    {builderState.step === 3 && 'O tom define a personalidade do output. Afeta diretamente o score final.'}
-                    {builderState.step === 4 && 'Definir o público ajuda a IA a adaptar a linguagem e complexidade.'}
-                    {builderState.step === 5 && 'Restrições claras reduzem ambiguidade e aumentam a qualidade.'}
-                    {builderState.step === 6 && 'Equilibra controlo e liberdade criativa conforme o teu objetivo.'}
+                    {builderState.step === 0 && (isEnglish ? 'This field defines prompt clarity. Be specific for better results.' : 'Este campo define a clareza do teu prompt. Sê específico para melhores resultados.')}
+                    {builderState.step === 1 && (isEnglish ? 'Output type helps the AI format the answer correctly.' : 'O tipo de output ajuda a IA a formatar a resposta corretamente.')}
+                    {builderState.step === 2 && (isEnglish ? 'Different models have different strengths. Choose the best fit.' : 'Modelos diferentes têm capacidades diferentes. Escolhe o mais adequado.')}
+                    {builderState.step === 3 && (isEnglish ? 'Tone defines output personality and affects final quality.' : 'O tom define a personalidade do output. Afeta diretamente o score final.')}
+                    {builderState.step === 4 && (isEnglish ? 'Defining the audience helps AI adapt language and complexity.' : 'Definir o público ajuda a IA a adaptar a linguagem e complexidade.')}
+                    {builderState.step === 5 && (isEnglish ? 'Clear constraints reduce ambiguity and improve quality.' : 'Restrições claras reduzem ambiguidade e aumentam a qualidade.')}
+                    {builderState.step === 6 && (isEnglish ? 'Balance control and creative freedom according to your goal.' : 'Equilibra controlo e liberdade criativa conforme o teu objetivo.')}
                   </p>
                 </div>
               )}
@@ -602,7 +623,7 @@ export default function GuidedBuilder() {
               disabled={builderState.step === 0}
             >
               <ChevronLeft className="mr-2 h-4 w-4" />
-              Anterior
+              {isEnglish ? 'Previous' : 'Anterior'}
             </Button>
             
             {builderState.step < 7 && (
@@ -610,7 +631,7 @@ export default function GuidedBuilder() {
                 onClick={nextStep}
                 disabled={!canProceed()}
               >
-                Seguinte
+                {isEnglish ? 'Next' : 'Seguinte'}
                 <ChevronRight className="ml-2 h-4 w-4" />
               </Button>
             )}

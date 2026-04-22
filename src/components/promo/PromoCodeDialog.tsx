@@ -95,7 +95,9 @@ export function PromoCodeDialog({
       toast.error('Data de expiração é obrigatória');
       return;
     }
-    if (new Date(formData.expires_at) < new Date()) {
+    const expiresAt = new Date(formData.expires_at);
+    expiresAt.setHours(23, 59, 59, 999);
+    if (expiresAt < new Date()) {
       toast.error('Data de expiração não pode ser no passado');
       return;
     }

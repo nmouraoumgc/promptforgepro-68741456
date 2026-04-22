@@ -22,6 +22,7 @@ import { usePlanStore } from '@/stores/planStore';
 import { getPackBySlug } from '@/data/packs';
 import { PackPreview } from '@/components/packs';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 
 const categoryIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   Zap,
@@ -35,6 +36,8 @@ export default function PackDetail() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { canAccess } = usePlanStore();
+  const { i18n } = useTranslation();
+  const isEnglish = i18n.language === 'en';
   const hasAccess = canAccess('canAccessPromptPacks');
   
   const pack = getPackBySlug(slug || '');
@@ -49,10 +52,10 @@ export default function PackDetail() {
   if (!pack) {
     return (
       <div className="p-6 text-center">
-        <p className="text-muted-foreground">Pack não encontrado</p>
+        <p className="text-muted-foreground">{isEnglish ? 'Pack not found' : 'Pack não encontrado'}</p>
         <Button variant="ghost" onClick={() => navigate('/packs')} className="mt-4">
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Voltar aos Packs
+          {isEnglish ? 'Back to Packs' : 'Voltar aos Packs'}
         </Button>
       </div>
     );
@@ -62,8 +65,8 @@ export default function PackDetail() {
     navigator.clipboard.writeText(content);
     setCopiedId(id);
     toast({
-      title: 'Copiado!',
-      description: 'Template copiado para a área de transferência.',
+      title: isEnglish ? 'Copied!' : 'Copiado!',
+      description: isEnglish ? 'Template copied to clipboard.' : 'Template copiado para a área de transferência.',
     });
     setTimeout(() => setCopiedId(null), 2000);
   };
@@ -82,7 +85,7 @@ export default function PackDetail() {
           className="text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Todos os Packs
+          {isEnglish ? 'All Packs' : 'Todos os Packs'}
         </Button>
 
         {/* Pack Preview Component */}
@@ -103,7 +106,7 @@ export default function PackDetail() {
           className="text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Todos os Packs
+          {isEnglish ? 'All Packs' : 'Todos os Packs'}
         </Button>
         <Badge className="bg-primary/10 text-primary border-0">
           <Sparkles className="h-3 w-3 mr-1" />
@@ -175,7 +178,7 @@ export default function PackDetail() {
                             <h3 className="font-semibold text-foreground">{prompt.title}</h3>
                             {prompt.isFreePreview && (
                               <Badge variant="secondary" className="text-xs">
-                                Preview
+                                {isEnglish ? 'Preview' : 'Preview'}
                               </Badge>
                             )}
                           </div>
