@@ -26,6 +26,9 @@ interface PromoState {
   deletePromoCode: (id: string) => Promise<void>;
 }
 
+// Use type assertion since promo_codes table is not yet in generated types
+const fromPromo = () => supabase.from('promo_codes' as any);
+
 export const usePromoStore = create<PromoState>()(
   persist(
     (set) => ({
@@ -33,42 +36,42 @@ export const usePromoStore = create<PromoState>()(
       isLoading: false,
       fetchPromoCodes: async () => {
         set({ isLoading: true });
-        const { data, error } = await supabase
-          .from('promo_codes')
-          .select('*')
-          .order('created_at', { ascending: false });
+        try {
+          const { data, error } = await fromPromo()
+            .select('*')
+            .order('created_at', { ascending: false });
 
-        if (!error && data) {
-          set({ promoCodes: data as PromoCode[] });
+          if (!error && data) {
+            set({ promoCodes: data as unknown as PromoCode[] });
+          }
+        } catch (e) {
+          console.error('Failed to fetch promo codes:', e);
         }
         set({ isLoading: false });
       },
       createPromoCode: async (data) => {
-        const { error } = await supabase
-          .from('promo_codes')
+        const { error } = await fromPromo()
           .insert([{
             ...data,
             current_uses: 0,
           }]);
 
         if (error) throw error;
-        await (usePromoStore.getState().fetchPromoCodes());
+        await usePromoStore.getState().fetchPromoCodes();
       },
       updatePromoCode: async (id, data) => {
-        const { error } = await supabase
-          .from('promo_codes')
+        const { error } = await fromPromo()
           .update(data)
           .eq('id', id);
         if (error) throw error;
-        await (usePromoStore.getState().fetchPromoCodes());
+        await usePromoStore.getState().fetchPromoCodes();
       },
       deletePromoCode: async (id) => {
-        const { error } = await supabase
-          .from('promo_codes')
+        const { error } = await fromPromo()
           .delete()
           .eq('id', id);
         if (error) throw error;
-        await (usePromoStore.getState().fetchPromoCodes());
+        await usePromoStore.getState().fetchPromoCodes();
       },
     }),
     { name: 'promo-codes-storage' }
