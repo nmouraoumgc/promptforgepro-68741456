@@ -25,15 +25,21 @@ serve(async (req) => {
     Deno.env.get("SUPABASE_URL") ?? "",
     Deno.env.get("SUPABASE_ANON_KEY") ?? ""
   );
+  const supabaseAdminClient = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+  );
 
   try {
     logStep("Function started");
 
     // Get optional email from request body (for guest checkout)
     let guestEmail: string | null = null;
+    let promoCode: string | null = null;
     try {
       const body = await req.json();
       guestEmail = body.email || null;
+      promoCode = body.promoCode ? String(body.promoCode).trim().toUpperCase() : null;
     } catch {
       // No body or invalid JSON, that's ok
     }
@@ -59,6 +65,53 @@ serve(async (req) => {
       throw new Error("Email is required for checkout");
     }
     logStep("Using email for checkout", { email });
+
+    // Validate promo code (if provided)
+    type PromoCodeRow = {
+      id: string;
+      code: string;
+      discount_type: "percentage" | "fixed" | "free_days";
+      discount_value: number;
+      applicable_plan_types: string[];
+      max_uses: number;
+      current_uses: number;
+      expires_at: string;
+      is_active: boolean;
+    };
+
+    let validPromo: PromoCodeRow | null = null;
+    if (promoCode) {
+      const { data: promo, error: promoError } = await supabaseAdminClient
+        .from("promo_codes")
+        .select("id, code, discount_type, discount_value, applicable_plan_types, max_uses, current_uses, expires_at, is_active")
+        .eq("code", promoCode)
+        .maybeSingle();
+
+      if (promoError) {
+        logStep("Promo lookup error", { promoCode, error: promoError.message });
+        throw new Error("Could not validate promo code");
+      }
+
+      if (!promo) {
+        throw new Error("Invalid promo code");
+      }
+      if (!promo.is_active) {
+        throw new Error("Promo code is inactive");
+      }
+      if (promo.max_uses > 0 && promo.current_uses >= promo.max_uses) {
+        throw new Error("Promo code usage limit reached");
+      }
+      const expiresAt = new Date(promo.expires_at);
+      if (expiresAt < new Date()) {
+        throw new Error("Promo code has expired");
+      }
+      if (!promo.applicable_plan_types?.includes("premium")) {
+        throw new Error("Promo code is not valid for premium");
+      }
+
+      validPromo = promo as PromoCodeRow;
+      logStep("Promo validated", { code: validPromo.code, type: validPromo.discount_type, value: validPromo.discount_value });
+    }
 
     // Initialize Stripe
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
@@ -86,6 +139,24 @@ serve(async (req) => {
     const origin = req.headers.get("origin") || "https://hkmxtamqvekycbbzoeaw.lovableproject.com";
     
     // Create one-time payment session
+    let discounts: Stripe.Checkout.SessionCreateParams.Discount[] | undefined;
+    if (validPromo) {
+      const discountType = validPromo.discount_type;
+      const discountValue = Number(validPromo.discount_value);
+
+      const coupon = await stripe.coupons.create(
+        discountType === "percentage"
+          ? { duration: "once", percent_off: Math.min(100, discountValue), name: `Promo ${validPromo.code}` }
+          : {
+              duration: "once",
+              amount_off: Math.max(0, Math.round(discountValue * 100)),
+              currency: "eur",
+              name: `Promo ${validPromo.code}`,
+            }
+      );
+      discounts = [{ coupon: coupon.id }];
+    }
+
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : email,
@@ -98,14 +169,19 @@ serve(async (req) => {
       mode: "payment",
       success_url: `${origin}/purchase-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/checkout`,
+      discounts,
       metadata: {
         user_id: userId || "",
         plan: "premium",
+        promo_code: validPromo?.code || "",
+        promo_id: validPromo?.id || "",
       },
       payment_intent_data: {
         metadata: {
           user_id: userId || "",
           plan: "premium",
+          promo_code: validPromo?.code || "",
+          promo_id: validPromo?.id || "",
         },
       },
     });

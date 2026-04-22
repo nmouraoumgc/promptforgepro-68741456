@@ -10,13 +10,14 @@ import { usePlanStore } from '@/stores/planStore';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useTranslation } from 'react-i18next';
 interface PackPreviewProps {
   pack: Pack;
   onUnlock?: () => void;
 }
 
 // Pack-specific copy configurations
-const getPackCopy = (packSlug: string) => {
+const getPackCopy = (packSlug: string, isEnglish: boolean) => {
   const copyConfigs: Record<string, {
     inputLabel: string;
     inputPlaceholder: string;
@@ -125,20 +126,101 @@ const getPackCopy = (packSlug: string) => {
     trustNote: 'Criado para quem quer resultados consistentes, não apenas experimentar IA.',
   };
 
-  return copyConfigs[packSlug] || defaultCopy;
+  if (!isEnglish) return copyConfigs[packSlug] || defaultCopy;
+
+  const enOverrides: Record<string, Partial<typeof defaultCopy>> = {
+    instagram: {
+      inputLabel: 'Content topic',
+      inputPlaceholder: 'Examples: local business, creator, personal brand',
+      generateButton: '⚡ Generate free preview',
+      generateMicrocopy: 'Limited preview. No card required.',
+      successMessage: '⚡ Preview generated successfully',
+      lockedLabel: '🔒 Premium content hidden',
+      limitedViewNote: 'You are viewing a limited version of the full pack.',
+      limitTitle: '🔒 Free limit reached',
+      limitSubtext: 'Unlock this pack for full access and unlimited use.',
+      ctaMicrocopy: 'Includes all content from the Instagram Reels Prompt Pack.',
+      trustNote: 'Built for creators who want consistent outcomes — not just to experiment with AI.',
+    },
+    tiktok: {
+      inputLabel: 'Video topic',
+      inputPlaceholder: 'Ex: reality TV, fitness, money, productivity',
+      generateButton: '⚡ Generate free hooks',
+      generateMicrocopy: 'Generate 2 hooks for free. No card required.',
+      successMessage: '⚡ Hooks generated successfully',
+      lockedLabel: '🔒 Premium hook hidden',
+      limitedViewNote: 'You are viewing 2 of 5 possible hooks for this topic.',
+      limitTitle: '🔒 Free limit reached',
+      limitSubtext: 'Unlock this pack to generate unlimited hooks and access all content.',
+      ctaMicrocopy: 'Includes all TikTok Viral hooks, scripts, structures and CTAs.',
+      trustNote: 'Built for creators who want consistency — not just to "try AI".',
+    },
+    youtube: {
+      inputLabel: 'Content topic',
+      inputPlaceholder: 'Examples: titles, thumbnails, retention',
+      generateButton: '⚡ Generate free preview',
+      generateMicrocopy: 'Limited preview. No card required.',
+      successMessage: '⚡ Preview generated successfully',
+      lockedLabel: '🔒 Premium content hidden',
+      limitedViewNote: 'You are viewing a limited version of the full pack.',
+      limitTitle: '🔒 Free limit reached',
+      limitSubtext: 'Unlock this pack for full access and unlimited use.',
+      ctaMicrocopy: 'Includes all content from the YouTube Growth Prompt Pack.',
+      trustNote: 'Built for creators who want consistent outcomes — not just to experiment with AI.',
+    },
+    copywriting: {
+      inputLabel: 'Content topic',
+      inputPlaceholder: 'Examples: landing pages, emails, ads',
+      generateButton: '⚡ Generate free preview',
+      generateMicrocopy: 'Limited preview. No card required.',
+      successMessage: '⚡ Preview generated successfully',
+      lockedLabel: '🔒 Premium content hidden',
+      limitedViewNote: 'You are viewing a limited version of the full pack.',
+      limitTitle: '🔒 Free limit reached',
+      limitSubtext: 'Unlock this pack for full access and unlimited use.',
+      ctaMicrocopy: 'Includes all content from the Sales Copywriting Prompt Pack.',
+      trustNote: 'Built for creators who want consistent outcomes — not just to experiment with AI.',
+    },
+  };
+
+  return {
+    ...defaultCopy,
+    ...copyConfigs[packSlug],
+    ...{
+      inputLabel: 'Content topic',
+      inputPlaceholder: 'Ex: your topic or niche',
+      generateButton: '⚡ Generate free preview',
+      generateMicrocopy: 'Limited preview. No card required.',
+      successMessage: '⚡ Preview generated successfully',
+      lockedLabel: '🔒 Premium content hidden',
+      limitedViewNote: 'You are viewing a limited version of the full pack.',
+      unlockBenefits: [
+        'Access to all pack content',
+        'Ready-to-use templates',
+        'Future updates included',
+      ],
+      limitTitle: '🔒 Free limit reached',
+      limitSubtext: 'Unlock this pack for full access and unlimited use.',
+      ctaMicrocopy: 'Includes all pack content.',
+      trustNote: 'Built for creators who want consistent outcomes — not just to experiment with AI.',
+    },
+    ...(enOverrides[packSlug] || {}),
+  };
 };
 
 export function PackPreview({ pack, onUnlock }: PackPreviewProps) {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { canAccess } = usePlanStore();
+  const { i18n } = useTranslation();
+  const isEnglish = i18n.language === 'en';
   const hasAccess = canAccess('canAccessPromptPacks');
   const [tema, setTema] = useState('');
   const [generatedContent, setGeneratedContent] = useState<string[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [hasGenerated, setHasGenerated] = useState(false);
 
-  const copy = getPackCopy(pack.slug);
+  const copy = getPackCopy(pack.slug, isEnglish);
 
   const handleGenerate = async () => {
     if (!tema.trim()) return;
@@ -157,8 +239,8 @@ export function PackPreview({ pack, onUnlock }: PackPreviewProps) {
       if (error) {
         console.error('Error generating preview:', error);
         toast({
-          title: 'Erro ao gerar',
-          description: 'Não foi possível gerar o conteúdo. Tenta novamente.',
+          title: isEnglish ? 'Generation error' : 'Erro ao gerar',
+          description: isEnglish ? 'Could not generate the content. Try again.' : 'Não foi possível gerar o conteúdo. Tenta novamente.',
           variant: 'destructive',
         });
         setIsGenerating(false);
@@ -167,7 +249,7 @@ export function PackPreview({ pack, onUnlock }: PackPreviewProps) {
 
       if (data.error) {
         toast({
-          title: 'Erro',
+          title: isEnglish ? 'Error' : 'Erro',
           description: data.error,
           variant: 'destructive',
         });
@@ -180,8 +262,8 @@ export function PackPreview({ pack, onUnlock }: PackPreviewProps) {
     } catch (err) {
       console.error('Error:', err);
       toast({
-        title: 'Erro',
-        description: 'Ocorreu um erro inesperado. Tenta novamente.',
+        title: isEnglish ? 'Error' : 'Erro',
+        description: isEnglish ? 'An unexpected error occurred. Try again.' : 'Ocorreu um erro inesperado. Tenta novamente.',
         variant: 'destructive',
       });
     } finally {
@@ -217,7 +299,7 @@ export function PackPreview({ pack, onUnlock }: PackPreviewProps) {
             {/* Preview Header */}
             <div>
               <h3 className="font-semibold text-lg text-foreground mb-1">
-                Experimenta antes de desbloquear
+                {isEnglish ? 'Try before you unlock' : 'Experimenta antes de desbloquear'}
               </h3>
               <Badge variant="secondary" className="text-xs">
                 {pack.name}
@@ -254,7 +336,7 @@ export function PackPreview({ pack, onUnlock }: PackPreviewProps) {
                       >
                         <Zap className="h-4 w-4" />
                       </motion.div>
-                      A gerar...
+                      {isEnglish ? 'Generating...' : 'A gerar...'}
                     </>
                   ) : (
                     <>{copy.generateButton}</>
@@ -321,7 +403,7 @@ export function PackPreview({ pack, onUnlock }: PackPreviewProps) {
         >
           <Card className="p-4 border-primary/20 bg-primary/5">
             <div className="space-y-3">
-              <h4 className="font-semibold text-foreground">Ao desbloquear recebes:</h4>
+              <h4 className="font-semibold text-foreground">{isEnglish ? 'When you unlock, you get:' : 'Ao desbloquear recebes:'}</h4>
               <ul className="space-y-2">
                 {copy.unlockBenefits.map((benefit, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
@@ -359,7 +441,7 @@ export function PackPreview({ pack, onUnlock }: PackPreviewProps) {
             size="lg"
             className="w-full max-w-sm mx-auto bg-primary hover:bg-primary/90 text-primary-foreground"
           >
-            ✨ Desbloquear versão completa
+            {isEnglish ? '✨ Unlock full version' : '✨ Desbloquear versão completa'}
           </Button>
           <p className="text-xs text-muted-foreground">
             {copy.ctaMicrocopy}
