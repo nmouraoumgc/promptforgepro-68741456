@@ -10,6 +10,18 @@ import { usePlanStore } from '@/stores/planStore';
 import { useAuthStore } from '@/stores/authStore';
 import { PlanType } from '@/types/plans';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
+import { useTranslation } from 'react-i18next';
+
+export default function Pricing() {
+  const { currentPlan, setPlan } = usePlanStore();
+  const { user } = useAuthStore();
+  const navigate = useNavigate();
+  const { i18n } = useTranslation();
+  const isEnglish = i18n.language === 'en';
+  const [isLoadingPro, setIsLoadingPro] = useState(false);
+  const mainPlans = [
+    {
 export default function Pricing() {
 const { currentPlan, setPlan } = usePlanStore();
 const { user } = useAuthStore();
