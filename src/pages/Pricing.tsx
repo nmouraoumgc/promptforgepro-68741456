@@ -174,9 +174,6 @@ export default function Pricing() {
         return;
       }
 
-      // Marca plano pro localmente (antes do redirect ou se não houver redirect)
-      setPlan('pro');
-
       if (data?.url) {
         window.location.href = data.url;
       }

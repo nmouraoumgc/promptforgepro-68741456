@@ -81,6 +81,11 @@ const Checkout = () => {
       return;
     }
 
+    if (promo.discount_type === "free_days") {
+      setPromoError(isEnglish ? "This code is only valid for Pro subscriptions." : "Este código é apenas válido para a subscrição Pro.");
+      return;
+    }
+
     if (!promo.applicable_plan_types.includes("premium")) {
       setPromoError(isEnglish ? "Code not valid for this plan." : "Código não aplicável a este plano.");
       return;
