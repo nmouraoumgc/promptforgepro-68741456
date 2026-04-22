@@ -10,13 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthStore } from "@/stores/authStore";
 import { usePromoStore, type PromoCode } from "@/stores/promoStore";
-
-const valueItems = [
-  "Todos os Prompt Packs premium",
-  "Hooks, scripts, estruturas e CTAs prontos",
-  "Geração ilimitada dentro dos packs",
-  "Atualizações futuras incluídas",
-];
+import { useTranslation } from "react-i18next";
 
 const BASE_PRICE = 19;
 
@@ -29,7 +23,22 @@ const Checkout = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, profile } = useAuthStore();
-  const { promoCodes } = usePromoStore();
+  const { promoCodes, fetchPromoCodes } = usePromoStore();
+  const { i18n } = useTranslation();
+  const isEnglish = i18n.language === "en";
+  const valueItems = isEnglish
+    ? [
+        "All premium Prompt Packs",
+        "Ready-to-use hooks, scripts, structures and CTAs",
+        "Unlimited generation inside packs",
+        "Future updates included",
+      ]
+    : [
+        "Todos os Prompt Packs premium",
+        "Hooks, scripts, estruturas e CTAs prontos",
+        "Geração ilimitada dentro dos packs",
+        "Atualizações futuras incluídas",
+      ];
 
   useEffect(() => {
     if (user?.email) setEmail(user.email);
@@ -39,32 +48,42 @@ const Checkout = () => {
     if (profile?.current_plan === "premium") navigate("/packs");
   }, [profile, navigate]);
 
-  const handleApplyPromo = () => {
+  useEffect(() => {
+    fetchPromoCodes();
+  }, [fetchPromoCodes]);
+
+  const handleApplyPromo = async () => {
     setPromoError("");
     const code = promoInput.trim().toUpperCase();
     if (!code) {
-      setPromoError("Insere um código.");
+      setPromoError(isEnglish ? "Enter a code." : "Insere um código.");
       return;
     }
-    const promo = promoCodes.find((p) => p.code.toUpperCase() === code);
+    let promo = promoCodes.find((p) => p.code.toUpperCase() === code);
+    if (!promo && promoCodes.length === 0) {
+      await fetchPromoCodes();
+      promo = usePromoStore.getState().promoCodes.find((p) => p.code.toUpperCase() === code);
+    }
     if (!promo) {
-      setPromoError("Código inválido.");
+      setPromoError(isEnglish ? "Invalid code." : "Código inválido.");
       return;
     }
     if (!promo.is_active) {
-      setPromoError("Código inativo.");
+      setPromoError(isEnglish ? "Inactive code." : "Código inativo.");
       return;
     }
-    if (new Date(promo.expires_at) < new Date()) {
-      setPromoError("Código expirado.");
+    const expiresAt = new Date(promo.expires_at);
+    expiresAt.setHours(23, 59, 59, 999);
+    if (expiresAt < new Date()) {
+      setPromoError(isEnglish ? "Expired code." : "Código expirado.");
       return;
     }
     if (!promo.applicable_plan_types.includes("premium")) {
-      setPromoError("Código não aplicável a este plano.");
+      setPromoError(isEnglish ? "Code not valid for this plan." : "Código não aplicável a este plano.");
       return;
     }
     setAppliedPromo(promo);
-    toast({ title: "Código aplicado!", description: `${promo.code} foi aplicado com sucesso.` });
+    toast({ title: isEnglish ? "Code applied!" : "Código aplicado!", description: isEnglish ? `${promo.code} was applied successfully.` : `${promo.code} foi aplicado com sucesso.` });
   };
 
   const removePromo = () => {
@@ -91,8 +110,8 @@ const Checkout = () => {
     e.preventDefault();
     if (!email) {
       toast({
-        title: "Email obrigatório",
-        description: "Por favor insere o teu email para continuar.",
+        title: isEnglish ? "Email required" : "Email obrigatório",
+        description: isEnglish ? "Please enter your email to continue." : "Por favor insere o teu email para continuar.",
         variant: "destructive",
       });
       return;
@@ -112,8 +131,8 @@ const Checkout = () => {
     } catch (error) {
       console.error("Checkout error:", error);
       toast({
-        title: "Erro no checkout",
-        description: "Não foi possível iniciar o pagamento. Por favor tenta novamente.",
+        title: isEnglish ? "Checkout error" : "Erro no checkout",
+        description: isEnglish ? "Could not start the payment. Please try again." : "Não foi possível iniciar o pagamento. Por favor tenta novamente.",
         variant: "destructive",
       });
       setIsLoading(false);
@@ -134,14 +153,14 @@ const Checkout = () => {
               <span className="text-sm font-medium">Premium</span>
             </div>
             <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
-              Desbloqueia acesso completo aos Prompt Packs
+              {isEnglish ? "Unlock full access to Prompt Packs" : "Desbloqueia acesso completo aos Prompt Packs"}
             </h1>
-            <p className="text-muted-foreground">Pagamento único. Acesso imediato.</p>
+            <p className="text-muted-foreground">{isEnglish ? "One-time payment. Instant access." : "Pagamento único. Acesso imediato."}</p>
           </div>
 
           <Card className="mb-6 border-primary/20 bg-primary/5">
             <CardContent className="pt-6">
-              <h3 className="font-semibold text-foreground mb-4">O que vais desbloquear agora:</h3>
+              <h3 className="font-semibold text-foreground mb-4">{isEnglish ? "What you'll unlock now:" : "O que vais desbloquear agora:"}</h3>
               <ul className="space-y-3">
                 {valueItems.map((item, index) => (
                   <motion.li
@@ -168,16 +187,16 @@ const Checkout = () => {
                 <span className="text-sm text-muted-foreground line-through">{BASE_PRICE}€</span>
                 <div className="inline-flex items-baseline gap-1">
                   <span className="text-4xl font-bold text-primary">{finalPrice.toFixed(2)}€</span>
-                  <span className="text-muted-foreground">— pagamento único</span>
+                  <span className="text-muted-foreground">{isEnglish ? "— one-time payment" : "— pagamento único"}</span>
                 </div>
                 <span className="text-xs text-primary font-medium">
-                  Poupas {discount.toFixed(2)}€ com {appliedPromo.code}
+                  {isEnglish ? `You save ${discount.toFixed(2)}€ with ${appliedPromo.code}` : `Poupas ${discount.toFixed(2)}€ com ${appliedPromo.code}`}
                 </span>
               </div>
             ) : (
               <div className="inline-flex items-baseline gap-1">
                 <span className="text-4xl font-bold text-foreground">{BASE_PRICE}€</span>
-                <span className="text-muted-foreground">— pagamento único</span>
+                <span className="text-muted-foreground">{isEnglish ? "— one-time payment" : "— pagamento único"}</span>
               </div>
             )}
           </div>
@@ -190,7 +209,7 @@ const Checkout = () => {
                   <Input
                     id="email"
                     type="email"
-                    placeholder="o-teu-email@exemplo.com"
+                    placeholder={isEnglish ? "your-email@example.com" : "o-teu-email@exemplo.com"}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -198,7 +217,7 @@ const Checkout = () => {
                     className="h-12"
                   />
                   {user && (
-                    <p className="text-xs text-muted-foreground">Autenticado como {user.email}</p>
+                    <p className="text-xs text-muted-foreground">{isEnglish ? `Signed in as ${user.email}` : `Autenticado como ${user.email}`}</p>
                   )}
                 </div>
 
@@ -207,7 +226,7 @@ const Checkout = () => {
                   <Label htmlFor="promo">
                     <span className="inline-flex items-center gap-2">
                       <Ticket className="h-4 w-4" />
-                      Código de promoção (opcional)
+                      {isEnglish ? "Promo code (optional)" : "Código de promoção (opcional)"}
                     </span>
                   </Label>
                   {appliedPromo ? (
@@ -252,7 +271,7 @@ const Checkout = () => {
                         disabled={isLoading || !promoInput.trim()}
                         className="h-12"
                       >
-                        Aplicar
+                        {isEnglish ? "Apply" : "Aplicar"}
                       </Button>
                     </div>
                   )}
@@ -269,12 +288,12 @@ const Checkout = () => {
                   {isLoading ? (
                     <span className="flex items-center gap-2">
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      A redirecionar para Stripe...
+                      {isEnglish ? "Redirecting to Stripe..." : "A redirecionar para Stripe..."}
                     </span>
                   ) : (
                     <span className="flex items-center gap-2">
                       <CreditCard className="h-4 w-4" />
-                      Pagar {finalPrice.toFixed(2)}€ com Stripe
+                      {isEnglish ? `Pay ${finalPrice.toFixed(2)}€ with Stripe` : `Pagar ${finalPrice.toFixed(2)}€ com Stripe`}
                     </span>
                   )}
                 </Button>
@@ -283,10 +302,10 @@ const Checkout = () => {
               <div className="mt-6 pt-4 border-t border-border space-y-2">
                 <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
                   <Shield className="h-4 w-4" />
-                  <span>Pagamento seguro. Processado por Stripe.</span>
+                  <span>{isEnglish ? "Secure payment. Processed by Stripe." : "Pagamento seguro. Processado por Stripe."}</span>
                 </div>
                 <p className="text-center text-sm text-muted-foreground">
-                  Sem subscrição. Sem cobranças recorrentes.
+                  {isEnglish ? "No subscription. No recurring charges." : "Sem subscrição. Sem cobranças recorrentes."}
                 </p>
               </div>
             </CardContent>
@@ -297,7 +316,7 @@ const Checkout = () => {
               href="/pricing"
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
-              ← Voltar aos planos
+              {isEnglish ? "← Back to pricing" : "← Voltar aos planos"}
             </a>
           </div>
         </motion.div>

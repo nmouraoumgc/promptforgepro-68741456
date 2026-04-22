@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/stores/authStore';
+import { useTranslation } from 'react-i18next';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -18,6 +19,8 @@ export default function Login() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { signIn } = useAuthStore();
+  const { i18n } = useTranslation();
+  const isEnglish = i18n.language === 'en';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,14 +30,14 @@ export default function Login() {
 
     if (error) {
       toast({
-        title: 'Erro ao entrar',
-        description: 'Email ou palavra-passe incorretos.',
+        title: isEnglish ? 'Sign in error' : 'Erro ao entrar',
+        description: isEnglish ? 'Incorrect email or password.' : 'Email ou palavra-passe incorretos.',
         variant: 'destructive',
       });
     } else {
       toast({
-        title: 'Bem-vindo de volta!',
-        description: 'Sessão iniciada com sucesso.',
+        title: isEnglish ? 'Welcome back!' : 'Bem-vindo de volta!',
+        description: isEnglish ? 'Signed in successfully.' : 'Sessão iniciada com sucesso.',
       });
       navigate('/');
     }
@@ -62,9 +65,9 @@ export default function Login() {
 
         <Card>
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl">Entrar</CardTitle>
+            <CardTitle className="text-2xl">{isEnglish ? 'Sign in' : 'Entrar'}</CardTitle>
             <CardDescription>
-              Acede à tua conta PromptForge
+              {isEnglish ? 'Access your PromptForge account' : 'Acede à tua conta PromptForge'}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -76,7 +79,7 @@ export default function Login() {
                   <Input
                     id="email"
                     type="email"
-                    placeholder="o-teu-email@exemplo.com"
+                    placeholder={isEnglish ? 'your-email@example.com' : 'o-teu-email@exemplo.com'}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -86,7 +89,7 @@ export default function Login() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Palavra-passe</Label>
+                <Label htmlFor="password">{isEnglish ? 'Password' : 'Palavra-passe'}</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -113,14 +116,14 @@ export default function Login() {
                 className="w-full h-11"
                 disabled={isLoading}
               >
-                {isLoading ? 'A entrar...' : 'Entrar'}
+                {isLoading ? (isEnglish ? 'Signing in...' : 'A entrar...') : (isEnglish ? 'Sign in' : 'Entrar')}
               </Button>
             </form>
 
             <div className="mt-6 text-center text-sm">
-              <span className="text-muted-foreground">Não tens conta? </span>
+              <span className="text-muted-foreground">{isEnglish ? "Don't have an account? " : 'Não tens conta? '}</span>
               <Link to="/signup" className="text-primary hover:underline font-medium">
-                Criar conta
+                {isEnglish ? 'Create account' : 'Criar conta'}
               </Link>
             </div>
           </CardContent>

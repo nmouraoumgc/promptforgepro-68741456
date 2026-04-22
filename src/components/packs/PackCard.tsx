@@ -7,6 +7,7 @@ import { Pack } from '@/types/packs';
 import { usePlanStore } from '@/stores/planStore';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Play,
@@ -23,6 +24,8 @@ interface PackCardProps {
 export function PackCard({ pack, index = 0 }: PackCardProps) {
   const navigate = useNavigate();
   const { canAccess } = usePlanStore();
+  const { i18n } = useTranslation();
+  const isEnglish = i18n.language === 'en';
   const hasAccess = canAccess('canAccessPromptPacks');
   
   const IconComponent = iconMap[pack.icon] || Play;
@@ -64,11 +67,11 @@ export function PackCard({ pack, index = 0 }: PackCardProps) {
               </Badge>
             ) : pack.isPremium && hasAccess ? (
               <Badge className="bg-primary/10 text-primary border-0 text-xs">
-                Desbloqueado
+                {isEnglish ? 'Unlocked' : 'Desbloqueado'}
               </Badge>
             ) : (
               <Badge variant="secondary" className="text-xs">
-                Preview Grátis
+                {isEnglish ? 'Free Preview' : 'Preview Grátis'}
               </Badge>
             )}
           </div>
@@ -96,7 +99,7 @@ export function PackCard({ pack, index = 0 }: PackCardProps) {
               size="sm"
               className="h-8 text-xs text-primary hover:text-primary hover:bg-primary/10"
             >
-              {hasAccess || !pack.isPremium ? 'Abrir Pack' : 'Ver Preview'}
+              {hasAccess || !pack.isPremium ? (isEnglish ? 'Open Pack' : 'Abrir Pack') : (isEnglish ? 'View Preview' : 'Ver Preview')}
               <ChevronRight className="h-3 w-3 ml-1" />
             </Button>
           </div>
