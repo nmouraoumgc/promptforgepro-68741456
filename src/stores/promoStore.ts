@@ -36,42 +36,42 @@ export const usePromoStore = create<PromoState>()(
       isLoading: false,
       fetchPromoCodes: async () => {
         set({ isLoading: true });
-        try {
-          const { data, error } = await fromPromo()
-            .select('*')
-            .order('created_at', { ascending: false });
+        const { data, error } = await supabase
+          .from('promo_codes')
+          .select('*')
+          .order('created_at', { ascending: false });
 
-          if (!error && data) {
-            set({ promoCodes: data as unknown as PromoCode[] });
-          }
-        } catch (e) {
-          console.error('Failed to fetch promo codes:', e);
+        if (!error && data) {
+          set({ promoCodes: data as PromoCode[] });
         }
         set({ isLoading: false });
       },
       createPromoCode: async (data) => {
-        const { error } = await fromPromo()
+        const { error } = await supabase
+          .from('promo_codes')
           .insert([{
             ...data,
             current_uses: 0,
           }]);
 
         if (error) throw error;
-        await usePromoStore.getState().fetchPromoCodes();
+        await (usePromoStore.getState().fetchPromoCodes());
       },
       updatePromoCode: async (id, data) => {
-        const { error } = await fromPromo()
+        const { error } = await supabase
+          .from('promo_codes')
           .update(data)
           .eq('id', id);
         if (error) throw error;
-        await usePromoStore.getState().fetchPromoCodes();
+        await (usePromoStore.getState().fetchPromoCodes());
       },
       deletePromoCode: async (id) => {
-        const { error } = await fromPromo()
+        const { error } = await supabase
+          .from('promo_codes')
           .delete()
           .eq('id', id);
         if (error) throw error;
-        await usePromoStore.getState().fetchPromoCodes();
+        await (usePromoStore.getState().fetchPromoCodes());
       },
     }),
     { name: 'promo-codes-storage' }

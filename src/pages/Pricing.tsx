@@ -12,7 +12,6 @@ import { PlanType } from '@/types/plans';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
-import { usePromoStore, type PromoCode } from '@/stores/promoStore';
 
 export default function Pricing() {
   const { currentPlan, setPlan } = usePlanStore();
@@ -22,12 +21,6 @@ export default function Pricing() {
   const { i18n } = useTranslation();
   const isEnglish = i18n.language === 'en';
   const [isLoadingPro, setIsLoadingPro] = useState(false);
-  const [showProPromoDialog, setShowProPromoDialog] = useState(false);
-  const [proPromoInput, setProPromoInput] = useState('');
-  const [proAppliedPromo, setProAppliedPromo] = useState<PromoCode | null>(null);
-  const [proPromoError, setProPromoError] = useState('');
-  const { fetchPromoCodes } = usePromoStore();
-
   const mainPlans = [
     {
       id: 'free' as PlanType,
@@ -65,47 +58,6 @@ export default function Pricing() {
     cta: isEnglish ? 'Subscribe to Pro' : 'Subscrever Pro',
   };
 
-  const handleApplyProPromo = async () => {
-    setProPromoError('');
-    const code = proPromoInput.trim().toUpperCase();
-    if (!code) {
-      setProPromoError(isEnglish ? 'Enter a code.' : 'Insere um código.');
-      return;
-    }
-    await fetchPromoCodes();
-    const latestPromoCodes = usePromoStore.getState().promoCodes;
-    const promo = latestPromoCodes.find((p) => p.code.trim().toUpperCase() === code);
-    if (!promo) {
-      setProPromoError(isEnglish ? 'Invalid code.' : 'Código inválido.');
-      return;
-    }
-    if (!promo.is_active) {
-      setProPromoError(isEnglish ? 'Inactive code.' : 'Código inativo.');
-      return;
-    }
-    const expiresAt = new Date(promo.expires_at);
-    expiresAt.setHours(23, 59, 59, 999);
-    if (expiresAt < new Date()) {
-      setProPromoError(isEnglish ? 'Expired code.' : 'Código expirado.');
-      return;
-    }
-    if (!promo.applicable_plan_types.includes('pro')) {
-      setProPromoError(isEnglish ? 'Code not valid for this plan.' : 'Código não aplicável a este plano.');
-      return;
-    }
-    setProAppliedPromo(promo);
-    toast({
-      title: isEnglish ? 'Code applied!' : 'Código aplicado!',
-      description: isEnglish ? `${promo.code} was applied successfully.` : `${promo.code} foi aplicado com sucesso.`,
-    });
-  };
-
-  const removeProPromo = () => {
-    setProAppliedPromo(null);
-    setProPromoInput('');
-    setProPromoError('');
-  };
-
   const handleSelectPlan = async (planId: PlanType) => {
     if (planId === 'premium') {
       navigate('/checkout');
@@ -137,8 +89,8 @@ export default function Pricing() {
       
       if (data?.error) {
         toast({
-          title: "Erro",
-          description: data.message || data.error,
+          title: isEnglish ? "Subscription creation error" : "Erro ao criar subscrição",
+          description: isEnglish ? "Please try again." : "Por favor tenta novamente.",
           variant: "destructive",
         });
         return;
