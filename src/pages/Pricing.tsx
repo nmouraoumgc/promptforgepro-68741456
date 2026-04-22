@@ -1,27 +1,33 @@
 import { useState } from 'react';
-import { Check, Sparkles, Zap, Lightbulb, Loader2 } from 'lucide-react';
+import { Check, Sparkles, Zap, Lightbulb, Loader2, Ticket, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { usePlanStore } from '@/stores/planStore';
 import { useAuthStore } from '@/stores/authStore';
 import { PlanType } from '@/types/plans';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { useTranslation } from 'react-i18next';
-
 export default function Pricing() {
-  const { currentPlan, setPlan } = usePlanStore();
-  const { user } = useAuthStore();
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const { i18n } = useTranslation();
-  const isEnglish = i18n.language === 'en';
-  const [isLoadingPro, setIsLoadingPro] = useState(false);
-  // Legacy guard for previously cached UI variants that referenced this symbol.
-  const proAppliedPromo = null;
-  const mainPlans = [
-    {
+const { currentPlan, setPlan } = usePlanStore();
+const { user } = useAuthStore();
+const navigate = useNavigate();
+const { toast } = useToast();
+const { i18n } = useTranslation();
+const isEnglish = i18n.language === 'en';
+const [isLoadingPro, setIsLoadingPro] = useState(false);
+const mainPlans = [
+	    {
+	      id: 'free' as PlanType,
+	      name: 'Free',
+	      description: isEnglish ? 'To explore and test' : 'Para explorar e testar',
+	      price: '0€',
+	      priceDetail: isEnglish ? 'forever' : 'para sempre',
+	      features: isEnglish
+	        ? ['3 optimizations per prompt', 'Prompt library', 'Basic guided builder', 'Pack previews']
+	        : ['3 otimizações por prompt', 'Biblioteca de prompts', 'Guided Builder básico', 'Pré-visualização de packs'],
       id: 'free' as PlanType,
       name: 'Free',
       description: isEnglish ? 'To explore and test' : 'Para explorar e testar',
@@ -70,41 +76,55 @@ export default function Pricing() {
         navigate('/login');
         return;
       }
+      setShowProPromoDialog(true);
+    } else {
+      setPlan(planId);
+    }
+  };
+
+  const handleConfirmProSubscription = async () => {
+    setShowProPromoDialog(false);
+    setIsLoadingPro(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-subscription", {
+        body: { promoCode: proAppliedPromo?.code || null },
+      });
       
-      setIsLoadingPro(true);
-      try {
-        const { data, error } = await supabase.functions.invoke("create-subscription");
-        
-        if (error) {
-          throw new Error(error.message);
-        }
-        
-        if (data?.error) {
-          toast({
-            title: "Erro",
-            description: data.message || data.error,
-            variant: "destructive",
-          });
-          return;
-        }
-        
-        if (data?.url) {
-          window.location.href = data.url;
-        }
-      } catch (error) {
-        console.error("Subscription error:", error);
+      if (error) throw new Error(error.message);
+      
+      if (data?.error) {
         toast({
           title: isEnglish ? "Subscription creation error" : "Erro ao criar subscrição",
           description: isEnglish ? "Please try again." : "Por favor tenta novamente.",
           variant: "destructive",
         });
-      } finally {
-        setIsLoadingPro(false);
+        return;
       }
-    } else {
-      setPlan(planId);
+      
+      if (data?.url) {
+        window.location.href = data.url;
+      }
+    } catch (error) {
+      console.error("Subscription error:", error);
+      toast({
+        title: isEnglish ? "Subscription creation error" : "Erro ao criar subscrição",
+        description: isEnglish ? "Please try again." : "Por favor tenta novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingPro(false);
     }
   };
+
+  const BASE_PRO_PRICE = 9;
+  const proDiscount = proAppliedPromo
+    ? proAppliedPromo.discount_type === 'percentage'
+      ? Math.min(BASE_PRO_PRICE, (BASE_PRO_PRICE * proAppliedPromo.discount_value) / 100)
+      : proAppliedPromo.discount_type === 'fixed'
+        ? Math.min(BASE_PRO_PRICE, proAppliedPromo.discount_value)
+        : 0
+    : 0;
+  const proFinalPrice = Math.max(0, BASE_PRO_PRICE - proDiscount);
 
   return (
     <div className="p-6 md:p-8 lg:p-10 animate-fade-in">
@@ -286,6 +306,105 @@ export default function Pricing() {
           {isEnglish ? 'Questions? The Free plan never expires — use it as long as you need.' : 'Dúvidas? O plano Free não expira — usa o tempo que precisares.'}
         </p>
       </footer>
+
+      {/* Pro Promo Code Dialog */}
+      <Dialog open={showProPromoDialog} onOpenChange={setShowProPromoDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{isEnglish ? 'Subscribe to Pro' : 'Subscrever Pro'}</DialogTitle>
+            <DialogDescription>
+              {isEnglish ? 'Add a promo code before proceeding to payment.' : 'Adiciona um código promocional antes de avançar para o pagamento.'}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 pt-2">
+            {/* Price display */}
+            <div className="text-center">
+              {proAppliedPromo && proDiscount > 0 ? (
+                <div className="flex flex-col items-center gap-1">
+                  <span className="text-sm text-muted-foreground line-through">{BASE_PRO_PRICE}€/{isEnglish ? 'month' : 'mês'}</span>
+                  <span className="text-2xl font-bold text-primary">{proFinalPrice.toFixed(2)}€/{isEnglish ? 'month' : 'mês'}</span>
+                  <span className="text-xs text-primary font-medium">
+                    {isEnglish ? `You save ${proDiscount.toFixed(2)}€ with ${proAppliedPromo.code}` : `Poupas ${proDiscount.toFixed(2)}€ com ${proAppliedPromo.code}`}
+                  </span>
+                </div>
+              ) : (
+                <span className="text-2xl font-bold text-foreground">{BASE_PRO_PRICE}€/{isEnglish ? 'month' : 'mês'}</span>
+              )}
+            </div>
+
+            {/* Promo code input */}
+            <div className="space-y-2">
+              <Label>
+                <span className="inline-flex items-center gap-2">
+                  <Ticket className="h-4 w-4" />
+                  {isEnglish ? 'Promo code (optional)' : 'Código de promoção (opcional)'}
+                </span>
+              </Label>
+              {proAppliedPromo ? (
+                <div className="flex items-center justify-between gap-2 px-3 h-10 rounded-md border border-primary/40 bg-primary/10">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Check className="h-4 w-4 text-primary" />
+                    <span className="font-medium text-foreground">{proAppliedPromo.code}</span>
+                    <span className="text-muted-foreground">
+                      ({proAppliedPromo.discount_type === 'percentage'
+                        ? `-${proAppliedPromo.discount_value}%`
+                        : `-${proAppliedPromo.discount_value}€`})
+                    </span>
+                  </div>
+                  <Button type="button" variant="ghost" size="icon" onClick={removeProPromo}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <Input
+                    type="text"
+                    placeholder="EX: SUMMER20"
+                    value={proPromoInput}
+                    onChange={(e) => {
+                      setProPromoInput(e.target.value.toUpperCase());
+                      setProPromoError('');
+                    }}
+                    className="h-10"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleApplyProPromo}
+                    disabled={!proPromoInput.trim()}
+                    className="h-10"
+                  >
+                    {isEnglish ? 'Apply' : 'Aplicar'}
+                  </Button>
+                </div>
+              )}
+              {proPromoError && (
+                <p className="text-xs text-destructive">{proPromoError}</p>
+              )}
+            </div>
+
+            {/* Confirm button */}
+            <Button
+              className="w-full"
+              onClick={handleConfirmProSubscription}
+              disabled={isLoadingPro}
+            >
+              {isLoadingPro ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {isEnglish ? 'Redirecting to Stripe...' : 'A redirecionar para Stripe...'}
+                </span>
+              ) : (
+                <span className="flex items-center gap-2">
+                  <Zap className="h-4 w-4" />
+                  {isEnglish ? `Continue to payment` : `Continuar para pagamento`}
+                </span>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
