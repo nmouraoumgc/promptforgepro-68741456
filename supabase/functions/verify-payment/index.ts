@@ -92,6 +92,20 @@ serve(async (req) => {
       } else {
         logStep("Purchase recorded", { userId });
       }
+
+      // Increment promo code usage after successful payment
+      const promoId = session.metadata?.promo_id;
+      if (promoId) {
+        const { error: promoUpdateError } = await supabaseClient.rpc("increment_promo_usage", {
+          promo_id_param: promoId,
+        });
+
+        if (promoUpdateError) {
+          logStep("Error incrementing promo usage", { promoId, error: promoUpdateError.message });
+        } else {
+          logStep("Promo usage incremented", { promoId });
+        }
+      }
     }
 
     return new Response(JSON.stringify({ 

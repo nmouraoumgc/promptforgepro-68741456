@@ -7,6 +7,7 @@ import { PACKS, getPacksByCategory } from '@/data/packs';
 import { OUTCOME_CATEGORIES, OutcomeCategory } from '@/types/packs';
 import { usePlanStore } from '@/stores/planStore';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 const categoryIcons: Record<OutcomeCategory, React.ComponentType<{ className?: string }>> = {
   content: Video,
@@ -18,6 +19,8 @@ const categoryIcons: Record<OutcomeCategory, React.ComponentType<{ className?: s
 export default function PromptPacks() {
   const navigate = useNavigate();
   const { canAccess } = usePlanStore();
+  const { i18n } = useTranslation();
+  const isEnglish = i18n.language === 'en';
   const hasAccess = canAccess('canAccessPromptPacks');
 
   // Group packs by outcome category
@@ -39,14 +42,15 @@ export default function PromptPacks() {
         className="text-center max-w-2xl mx-auto"
       >
         <Badge className="mb-4 bg-primary/10 text-primary border-0">
-          Soluções Prontas
+          {isEnglish ? 'Ready Solutions' : 'Soluções Prontas'}
         </Badge>
         <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
-          Packs de Resultados
+          {isEnglish ? 'Outcome Packs' : 'Packs de Resultados'}
         </h1>
         <p className="text-lg text-muted-foreground">
-          Templates testados que resolvem problemas reais. Escolhe o resultado que precisas, 
-          não prompts genéricos.
+          {isEnglish
+            ? 'Tested templates that solve real problems. Choose the outcome you need, not generic prompts.'
+            : 'Templates testados que resolvem problemas reais. Escolhe o resultado que precisas, não prompts genéricos.'}
         </p>
       </motion.div>
 
@@ -58,9 +62,9 @@ export default function PromptPacks() {
         className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto"
       >
         {[
-          { icon: Zap, label: 'Resultado Imediato', desc: 'Templates prontos a usar' },
-          { icon: TrendingUp, label: 'Testados', desc: 'Validados com dados reais' },
-          { icon: Lightbulb, label: 'Adaptáveis', desc: 'Variáveis personalizáveis' },
+          { icon: Zap, label: isEnglish ? 'Instant Outcome' : 'Resultado Imediato', desc: isEnglish ? 'Ready-to-use templates' : 'Templates prontos a usar' },
+          { icon: TrendingUp, label: isEnglish ? 'Tested' : 'Testados', desc: isEnglish ? 'Validated with real data' : 'Validados com dados reais' },
+          { icon: Lightbulb, label: isEnglish ? 'Adaptable' : 'Adaptáveis', desc: isEnglish ? 'Customizable variables' : 'Variáveis personalizáveis' },
         ].map(({ icon: Icon, label, desc }, i) => (
           <div
             key={i}
@@ -97,8 +101,26 @@ export default function PromptPacks() {
                 <IconComponent className="h-5 w-5 text-foreground" />
               </div>
               <div>
-                <h2 className="text-xl font-semibold text-foreground">{catInfo.label}</h2>
-                <p className="text-sm text-muted-foreground">{catInfo.description}</p>
+                <h2 className="text-xl font-semibold text-foreground">
+                  {isEnglish
+                    ? ({
+                        content: 'Content Creation',
+                        sales: 'Sales & Conversion',
+                        productivity: 'Productivity',
+                        creativity: 'Creativity',
+                      } as Record<OutcomeCategory, string>)[cat]
+                    : catInfo.label}
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  {isEnglish
+                    ? ({
+                        content: 'Create engaging and high-performing content',
+                        sales: 'Copy that converts visitors into customers',
+                        productivity: 'Automate tasks and save time',
+                        creativity: 'Generate unique and innovative ideas',
+                      } as Record<OutcomeCategory, string>)[cat]
+                    : catInfo.description}
+                </p>
               </div>
             </div>
 
@@ -121,17 +143,17 @@ export default function PromptPacks() {
           className="text-center py-8 px-4 bg-gradient-to-br from-primary/5 to-primary/10 rounded-2xl border border-primary/20 max-w-2xl mx-auto"
         >
           <h3 className="text-xl font-bold text-foreground mb-2">
-            Desbloqueia todos os Packs
+            {isEnglish ? 'Unlock all Packs' : 'Desbloqueia todos os Packs'}
           </h3>
           <p className="text-muted-foreground mb-4">
-            Acesso vitalício a todos os templates e futuras atualizações.
+            {isEnglish ? 'Lifetime access to all templates and future updates.' : 'Acesso vitalício a todos os templates e futuras atualizações.'}
           </p>
           <Button
             size="lg"
             onClick={() => navigate('/pricing')}
             className="bg-primary hover:bg-primary/90"
           >
-            Ver Plano Premium
+            {isEnglish ? 'View Premium Plan' : 'Ver Plano Premium'}
             <ChevronRight className="h-4 w-4 ml-1" />
           </Button>
         </motion.div>
