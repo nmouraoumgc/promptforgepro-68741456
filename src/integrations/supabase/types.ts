@@ -58,6 +58,30 @@ export type Database = {
           },
         ]
       }
+      profiles: {
+        Row: {
+          created_at: string
+          current_plan: Database["public"]["Enums"]["plan_type"]
+          email: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_plan?: Database["public"]["Enums"]["plan_type"]
+          email: string
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_plan?: Database["public"]["Enums"]["plan_type"]
+          email?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       promo_codes: {
         Row: {
           applicable_plan_types: string[]
@@ -81,7 +105,7 @@ export type Database = {
           created_by?: string | null
           current_uses?: number
           description?: string | null
-          discount_type: string
+          discount_type?: string
           discount_value?: number
           expires_at: string
           id?: string
@@ -102,30 +126,6 @@ export type Database = {
           id?: string
           is_active?: boolean
           max_uses?: number
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      profiles: {
-        Row: {
-          created_at: string
-          current_plan: Database["public"]["Enums"]["plan_type"]
-          email: string
-          id: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          current_plan?: Database["public"]["Enums"]["plan_type"]
-          email: string
-          id: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          current_plan?: Database["public"]["Enums"]["plan_type"]
-          email?: string
-          id?: string
           updated_at?: string
         }
         Relationships: []
