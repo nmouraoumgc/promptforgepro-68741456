@@ -55,35 +55,43 @@ const Checkout = () => {
   const handleApplyPromo = async () => {
     setPromoError("");
     const code = promoInput.trim().toUpperCase();
+
     if (!code) {
       setPromoError(isEnglish ? "Enter a code." : "Insere um código.");
       return;
     }
-    let promo = promoCodes.find((p) => p.code.toUpperCase() === code);
-    if (!promo && promoCodes.length === 0) {
-      await fetchPromoCodes();
-      promo = usePromoStore.getState().promoCodes.find((p) => p.code.toUpperCase() === code);
-    }
+
+    await fetchPromoCodes();
+    const latestPromoCodes = usePromoStore.getState().promoCodes;
+    const promo = latestPromoCodes.find((p) => p.code.trim().toUpperCase() === code);
+
     if (!promo) {
       setPromoError(isEnglish ? "Invalid code." : "Código inválido.");
       return;
     }
+
     if (!promo.is_active) {
       setPromoError(isEnglish ? "Inactive code." : "Código inativo.");
       return;
     }
+
     const expiresAt = new Date(promo.expires_at);
     expiresAt.setHours(23, 59, 59, 999);
     if (expiresAt < new Date()) {
       setPromoError(isEnglish ? "Expired code." : "Código expirado.");
       return;
     }
+
     if (!promo.applicable_plan_types.includes("premium")) {
       setPromoError(isEnglish ? "Code not valid for this plan." : "Código não aplicável a este plano.");
       return;
     }
+
     setAppliedPromo(promo);
-    toast({ title: isEnglish ? "Code applied!" : "Código aplicado!", description: isEnglish ? `${promo.code} was applied successfully.` : `${promo.code} foi aplicado com sucesso.` });
+    toast({
+      title: isEnglish ? "Code applied!" : "Código aplicado!",
+      description: isEnglish ? `${promo.code} was applied successfully.` : `${promo.code} foi aplicado com sucesso.`,
+    });
   };
 
   const removePromo = () => {
