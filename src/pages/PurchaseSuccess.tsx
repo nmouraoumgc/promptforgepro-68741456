@@ -7,33 +7,22 @@ import { Check, Sparkles, Zap, FileText, RefreshCw, Lightbulb, Loader2 } from "l
 import { usePlanStore } from "@/stores/planStore";
 import { useAuthStore } from "@/stores/authStore";
 import { supabase } from "@/integrations/supabase/client";
-
-const checklistItems = [
-  {
-    icon: Sparkles,
-    label: "Prompt Packs desbloqueados",
-  },
-  {
-    icon: FileText,
-    label: "Hooks, scripts, estruturas e CTAs ativos",
-  },
-  {
-    icon: Zap,
-    label: "Limites removidos",
-  },
-  {
-    icon: RefreshCw,
-    label: "Atualizações futuras incluídas",
-  },
-];
+import { useTranslation } from "react-i18next";
 
 const PurchaseSuccess = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { setPlan } = usePlanStore();
   const { fetchProfile } = useAuthStore();
+  const { i18n } = useTranslation();
+  const isEnglish = i18n.language === "en";
   const [isVerifying, setIsVerifying] = useState(true);
-  const [verified, setVerified] = useState(false);
+  const checklistItems = [
+    { icon: Sparkles, label: isEnglish ? "Prompt Packs unlocked" : "Prompt Packs desbloqueados" },
+    { icon: FileText, label: isEnglish ? "Hooks, scripts, structures and CTAs active" : "Hooks, scripts, estruturas e CTAs ativos" },
+    { icon: Zap, label: isEnglish ? "Limits removed" : "Limites removidos" },
+    { icon: RefreshCw, label: isEnglish ? "Future updates included" : "Atualizações futuras incluídas" },
+  ];
 
   useEffect(() => {
     const verifyPayment = async () => {
@@ -59,7 +48,6 @@ const PurchaseSuccess = () => {
 
       // Always set plan locally as fallback
       setPlan("premium");
-      setVerified(true);
       setIsVerifying(false);
     };
 
@@ -71,7 +59,7 @@ const PurchaseSuccess = () => {
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">A verificar pagamento...</p>
+          <p className="text-muted-foreground">{isEnglish ? "Verifying payment..." : "A verificar pagamento..."}</p>
         </div>
       </div>
     );
@@ -97,10 +85,10 @@ const PurchaseSuccess = () => {
               <Check className="h-8 w-8 text-primary-foreground" />
             </motion.div>
             <h1 className="text-2xl md:text-3xl font-bold text-primary-foreground mb-2">
-              Acesso desbloqueado 🚀
+              {isEnglish ? "Access unlocked 🚀" : "Acesso desbloqueado 🚀"}
             </h1>
             <p className="text-primary-foreground/90">
-              Tens agora acesso completo a todos os Prompt Packs.
+              {isEnglish ? "You now have full access to all Prompt Packs." : "Tens agora acesso completo a todos os Prompt Packs."}
             </p>
           </div>
 
@@ -135,7 +123,7 @@ const PurchaseSuccess = () => {
                 onClick={() => navigate("/packs/tiktok")}
               >
                 <Sparkles className="h-4 w-4 mr-2" />
-                Criar o meu primeiro prompt premium
+                {isEnglish ? "Create my first premium prompt" : "Criar o meu primeiro prompt premium"}
               </Button>
             </motion.div>
 
@@ -148,7 +136,7 @@ const PurchaseSuccess = () => {
             >
               <Lightbulb className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
               <p className="text-sm text-muted-foreground">
-                <span className="font-medium text-foreground">Dica:</span> começa pelo TikTok Viral Pack para resultados rápidos.
+                <span className="font-medium text-foreground">{isEnglish ? "Tip:" : "Dica:"}</span> {isEnglish ? "start with the TikTok Viral Pack for quick results." : "começa pelo TikTok Viral Pack para resultados rápidos."}
               </p>
             </motion.div>
           </CardContent>
@@ -165,7 +153,7 @@ const PurchaseSuccess = () => {
             onClick={() => navigate("/packs")}
             className="text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
-            Ver todos os Prompt Packs →
+            {isEnglish ? "View all Prompt Packs →" : "Ver todos os Prompt Packs →"}
           </button>
         </motion.div>
       </motion.div>
