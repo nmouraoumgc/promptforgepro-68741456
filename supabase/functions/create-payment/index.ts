@@ -82,7 +82,6 @@ serve(async (req) => {
     let validPromo: PromoCodeRow | null = null;
     if (promoCode) {
       const { data: promo, error: promoError } = await supabaseAdminClient
-      const { data: promo, error: promoError } = await supabaseClient
         .from("promo_codes")
         .select("id, code, discount_type, discount_value, applicable_plan_types, max_uses, current_uses, expires_at, is_active")
         .eq("code", promoCode)
@@ -105,6 +104,9 @@ serve(async (req) => {
       const expiresAt = new Date(promo.expires_at);
       if (expiresAt < new Date()) {
         throw new Error("Promo code has expired");
+      }
+      if (promo.discount_type === "free_days") {
+        throw new Error("This promo code is only valid for Pro subscriptions");
       }
       if (!promo.applicable_plan_types?.includes("premium")) {
         throw new Error("Promo code is not valid for premium");
