@@ -26,6 +26,9 @@ interface PromoState {
   deletePromoCode: (id: string) => Promise<void>;
 }
 
+// Use type assertion since promo_codes table is not yet in generated types
+const fromPromo = () => supabase.from('promo_codes' as any);
+
 export const usePromoStore = create<PromoState>()(
   persist(
     (set) => ({

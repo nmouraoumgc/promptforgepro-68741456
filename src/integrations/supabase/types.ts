@@ -130,6 +130,54 @@ export type Database = {
         }
         Relationships: []
       }
+      promo_codes: {
+        Row: {
+          applicable_plan_types: string[]
+          code: string
+          created_at: string
+          created_by: string | null
+          current_uses: number
+          description: string | null
+          discount_type: string
+          discount_value: number
+          expires_at: string
+          id: string
+          is_active: boolean
+          max_uses: number
+          updated_at: string
+        }
+        Insert: {
+          applicable_plan_types?: string[]
+          code: string
+          created_at?: string
+          created_by?: string | null
+          current_uses?: number
+          description?: string | null
+          discount_type?: string
+          discount_value?: number
+          expires_at: string
+          id?: string
+          is_active?: boolean
+          max_uses?: number
+          updated_at?: string
+        }
+        Update: {
+          applicable_plan_types?: string[]
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          current_uses?: number
+          description?: string | null
+          discount_type?: string
+          discount_value?: number
+          expires_at?: string
+          id?: string
+          is_active?: boolean
+          max_uses?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       prompt_packs: {
         Row: {
           created_at: string
