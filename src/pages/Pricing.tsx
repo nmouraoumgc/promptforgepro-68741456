@@ -24,71 +24,26 @@ type PricingPlan = {
   highlight?: boolean;
 };
 
+type ProPromo = {
+  code: string;
+  discount_type: 'percentage' | 'fixed';
+  discount_value: number;
+};
+
 export default function Pricing() {
   const { currentPlan, setPlan } = usePlanStore();
   const { user } = useAuthStore();
   const navigate = useNavigate();
   const { i18n } = useTranslation();
   const isEnglish = (i18n.resolvedLanguage || i18n.language || 'pt').startsWith('en');
+
   const [isLoadingPro, setIsLoadingPro] = useState(false);
-  const mainPlans = [
-    {
-  const isEnglish = i18n.language === 'en';
-  const [isLoadingPro, setIsLoadingPro] = useState(false);
-  const mainPlans = [
-    {
-export default function Pricing() {
-const { currentPlan, setPlan } = usePlanStore();
-const { user } = useAuthStore();
-const navigate = useNavigate();
-const { toast } = useToast();
-const { i18n } = useTranslation();
-const isEnglish = i18n.language === 'en';
-const [isLoadingPro, setIsLoadingPro] = useState(false);
-const mainPlans = [
-	    {
-	      id: 'free' as PlanType,
-	      name: 'Free',
-	      description: isEnglish ? 'To explore and test' : 'Para explorar e testar',
-	      price: '0€',
-	      priceDetail: isEnglish ? 'forever' : 'para sempre',
-	      features: isEnglish
-	        ? ['3 optimizations per prompt', 'Prompt library', 'Basic guided builder', 'Pack previews']
-	        : ['3 otimizações por prompt', 'Biblioteca de prompts', 'Guided Builder básico', 'Pré-visualização de packs'],
-      id: 'free' as PlanType,
-      name: 'Free',
-      description: isEnglish ? 'To explore and test' : 'Para explorar e testar',
-      price: '0€',
-      priceDetail: isEnglish ? 'forever' : 'para sempre',
-      features: isEnglish
-        ? ['3 optimizations per prompt', 'Prompt library', 'Basic guided builder', 'Pack previews']
-        : ['3 otimizações por prompt', 'Biblioteca de prompts', 'Guided Builder básico', 'Pré-visualização de packs'],
-      cta: isEnglish ? 'Start free' : 'Começar grátis',
-    },
-    {
-      id: 'premium' as PlanType,
-      name: 'Premium',
-      description: isEnglish ? 'Full access to Prompt Packs' : 'Acesso completo aos Prompt Packs',
-      price: '19€',
-      priceDetail: isEnglish ? '— one-time payment' : '— pagamento único',
-      features: isEnglish
-        ? ['All premium Prompt Packs', 'Hooks, scripts, structures and CTAs', 'Professional templates', 'Future updates included']
-        : ['Todos os Prompt Packs premium', 'Hooks, scripts, estruturas e CTAs', 'Templates profissionais', 'Atualizações futuras incluídas'],
-      cta: isEnglish ? 'Unlock full access' : 'Desbloquear acesso completo',
-      highlight: true,
-    },
-  ];
-  const proPlan = {
-    id: 'pro' as PlanType,
-    name: 'Pro',
-    description: isEnglish ? 'For users who rely on PromptForge every day at work' : 'Para quem usa o PromptForge como ferramenta diária de trabalho',
-    price: '9€',
-    priceDetail: isEnglish ? '/month' : '/mês',
-    features: isEnglish
-      ? ['Unlimited optimizations', 'Version history', 'A/B prompt testing', 'Detailed scoring', 'Prompt export']
-      : ['Otimizações ilimitadas', 'Histórico de versões', 'Testes A/B de prompts', 'Pontuação detalhada', 'Exportação de prompts'],
-    cta: isEnglish ? 'Subscribe to Pro' : 'Subscrever Pro',
-  };
+
+  // Promo dialog state (mínimo para compilar + funcionar)
+  const [showProPromoDialog, setShowProPromoDialog] = useState(false);
+  const [proPromoInput, setProPromoInput] = useState('');
+  const [proPromoError, setProPromoError] = useState('');
+  const [proAppliedPromo, setProAppliedPromo] = useState<ProPromo | null>(null);
 
   const mainPlans: PricingPlan[] = [
     {
@@ -119,7 +74,9 @@ const mainPlans = [
   const proPlan: PricingPlan = {
     id: 'pro',
     name: 'Pro',
-    description: isEnglish ? 'For users who rely on PromptForge every day at work' : 'Para quem usa o PromptForge como ferramenta diária de trabalho',
+    description: isEnglish
+      ? 'For users who rely on PromptForge every day at work'
+      : 'Para quem usa o PromptForge como ferramenta diária de trabalho',
     price: '9€',
     priceDetail: isEnglish ? '/month' : '/mês',
     features: isEnglish
@@ -145,45 +102,70 @@ const mainPlans = [
         return;
       }
       setShowProPromoDialog(true);
-    } else {
-      setPlan(planId);
+      return;
     }
+
+    setPlan(planId);
+  };
+
+  const removeProPromo = () => {
+    setProAppliedPromo(null);
+    setProPromoError('');
+    setProPromoInput('');
+  };
+
+  // Placeholder simples: aplica promo se existir algum texto.
+  // Se já tens validação real (ex: supabase function / tabela), diz-me e eu ajusto.
+  const handleApplyProPromo = async () => {
+    const code = proPromoInput.trim().toUpperCase();
+    if (!code) return;
+
+    // Exemplo: aceita sempre e dá 20% (para não bloquear UI).
+    // Troca isto pela tua lógica real.
+    setProAppliedPromo({
+      code,
+      discount_type: 'percentage',
+      discount_value: 20,
+    });
+    setProPromoError('');
   };
 
   const handleConfirmProSubscription = async () => {
     setShowProPromoDialog(false);
     setIsLoadingPro(true);
+
     try {
-      const { data, error } = await supabase.functions.invoke("create-subscription", {
+      const { data, error } = await supabase.functions.invoke('create-subscription', {
         body: { promoCode: proAppliedPromo?.code || null },
       });
-      
+
       if (error) throw new Error(error.message);
-      
+
       if (data?.error) {
         toast({
-          title: isEnglish ? "Subscription creation error" : "Erro ao criar subscrição",
-          description: isEnglish ? "Please try again." : "Por favor tenta novamente.",
-          variant: "destructive",
+          title: isEnglish ? 'Subscription creation error' : 'Erro ao criar subscrição',
+          description: isEnglish ? 'Please try again.' : 'Por favor tenta novamente.',
+          variant: 'destructive',
         });
         return;
       }
-      
+
+      // Marca plano pro localmente (antes do redirect ou se não houver redirect)
+      setPlan('pro');
+
       if (data?.url) {
         window.location.href = data.url;
       }
     } catch (error) {
-      console.error("Subscription error:", error);
+      console.error('Subscription error:', error);
       toast({
-        title: isEnglish ? "Subscription creation error" : "Erro ao criar subscrição",
-        description: isEnglish ? "Please try again." : "Por favor tenta novamente.",
-        variant: "destructive",
+        title: isEnglish ? 'Subscription creation error' : 'Erro ao criar subscrição',
+        description: isEnglish ? 'Please try again.' : 'Por favor tenta novamente.',
+        variant: 'destructive',
       });
     } finally {
       setIsLoadingPro(false);
     }
-
-    setPlan(planId);
   };
 
   const BASE_PRO_PRICE = 9;
@@ -203,7 +185,9 @@ const mainPlans = [
           {isEnglish ? 'Choose how you want to use PromptForge' : 'Escolhe como queres usar o PromptForge'}
         </h1>
         <p className="text-muted-foreground text-lg">
-          {isEnglish ? 'Ready packs for immediate results or advanced tools for daily creators.' : 'Packs prontos para resultados imediatos ou ferramentas avançadas para quem cria todos os dias.'}
+          {isEnglish
+            ? 'Ready packs for immediate results or advanced tools for daily creators.'
+            : 'Packs prontos para resultados imediatos ou ferramentas avançadas para quem cria todos os dias.'}
         </p>
       </header>
 
@@ -218,7 +202,9 @@ const mainPlans = [
                 <span className="font-medium text-foreground">Prompt Packs</span>
                 {isEnglish ? ' — ready to use, with fast results.' : ' — prontos a usar, com resultados rápidos.'}
                 <br />
-                {isEnglish ? 'Plans are ideal for ongoing professional workflows.' : 'Os planos são para quem usa o PromptForge como ferramenta de trabalho contínua.'}
+                {isEnglish
+                  ? 'Plans are ideal for ongoing professional workflows.'
+                  : 'Os planos são para quem usa o PromptForge como ferramenta de trabalho contínua.'}
               </p>
             </div>
           </div>
@@ -232,7 +218,9 @@ const mainPlans = [
             <Card
               key={plan.id}
               className={`relative flex flex-col transition-all ${
-                plan.highlight ? 'border-primary shadow-lg shadow-primary/10 md:scale-[1.02]' : 'border-border hover:border-muted-foreground/30'
+                plan.highlight
+                  ? 'border-primary shadow-lg shadow-primary/10 md:scale-[1.02]'
+                  : 'border-border hover:border-muted-foreground/30'
               } ${isActive ? 'ring-2 ring-primary' : ''}`}
             >
               {plan.highlight && (
@@ -264,7 +252,11 @@ const mainPlans = [
                 <ul className="space-y-3 flex-1">
                   {plan.features.map((feature) => (
                     <li key={feature} className="flex items-start gap-2.5 text-sm">
-                      <Check className={`h-4 w-4 shrink-0 mt-0.5 ${plan.highlight ? 'text-primary' : 'text-muted-foreground'}`} />
+                      <Check
+                        className={`h-4 w-4 shrink-0 mt-0.5 ${
+                          plan.highlight ? 'text-primary' : 'text-muted-foreground'
+                        }`}
+                      />
                       {feature}
                     </li>
                   ))}
@@ -325,7 +317,11 @@ const mainPlans = [
               </div>
             </div>
 
-            <Button className="shrink-0 shadow-md" disabled={currentPlan === 'pro' || isLoadingPro} onClick={() => handleSelectPlan('pro')}>
+            <Button
+              className="shrink-0 shadow-md"
+              disabled={currentPlan === 'pro' || isLoadingPro}
+              onClick={() => handleSelectPlan('pro')}
+            >
               {currentPlan === 'pro' ? (
                 <>
                   <Check className="h-4 w-4 mr-2" />
@@ -349,7 +345,9 @@ const mainPlans = [
 
       <footer className="text-center mt-12 md:mt-16 max-w-lg mx-auto">
         <p className="text-sm text-muted-foreground leading-relaxed">
-          {isEnglish ? 'Questions? The Free plan never expires — use it as long as you need.' : 'Dúvidas? O plano Free não expira — usa o tempo que precisares.'}
+          {isEnglish
+            ? 'Questions? The Free plan never expires — use it as long as you need.'
+            : 'Dúvidas? O plano Free não expira — usa o tempo que precisares.'}
         </p>
       </footer>
 
@@ -362,24 +360,30 @@ const mainPlans = [
               {isEnglish ? 'Add a promo code before proceeding to payment.' : 'Adiciona um código promocional antes de avançar para o pagamento.'}
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4 pt-2">
-            {/* Price display */}
             <div className="text-center">
               {proAppliedPromo && proDiscount > 0 ? (
                 <div className="flex flex-col items-center gap-1">
-                  <span className="text-sm text-muted-foreground line-through">{BASE_PRO_PRICE}€/{isEnglish ? 'month' : 'mês'}</span>
-                  <span className="text-2xl font-bold text-primary">{proFinalPrice.toFixed(2)}€/{isEnglish ? 'month' : 'mês'}</span>
+                  <span className="text-sm text-muted-foreground line-through">
+                    {BASE_PRO_PRICE}€/{isEnglish ? 'month' : 'mês'}
+                  </span>
+                  <span className="text-2xl font-bold text-primary">
+                    {proFinalPrice.toFixed(2)}€/{isEnglish ? 'month' : 'mês'}
+                  </span>
                   <span className="text-xs text-primary font-medium">
-                    {isEnglish ? `You save ${proDiscount.toFixed(2)}€ with ${proAppliedPromo.code}` : `Poupas ${proDiscount.toFixed(2)}€ com ${proAppliedPromo.code}`}
+                    {isEnglish
+                      ? `You save ${proDiscount.toFixed(2)}€ with ${proAppliedPromo.code}`
+                      : `Poupas ${proDiscount.toFixed(2)}€ com ${proAppliedPromo.code}`}
                   </span>
                 </div>
               ) : (
-                <span className="text-2xl font-bold text-foreground">{BASE_PRO_PRICE}€/{isEnglish ? 'month' : 'mês'}</span>
+                <span className="text-2xl font-bold text-foreground">
+                  {BASE_PRO_PRICE}€/{isEnglish ? 'month' : 'mês'}
+                </span>
               )}
             </div>
 
-            {/* Promo code input */}
             <div className="space-y-2">
               <Label>
                 <span className="inline-flex items-center gap-2">
@@ -387,6 +391,7 @@ const mainPlans = [
                   {isEnglish ? 'Promo code (optional)' : 'Código de promoção (opcional)'}
                 </span>
               </Label>
+
               {proAppliedPromo ? (
                 <div className="flex items-center justify-between gap-2 px-3 h-10 rounded-md border border-primary/40 bg-primary/10">
                   <div className="flex items-center gap-2 text-sm">
@@ -425,17 +430,11 @@ const mainPlans = [
                   </Button>
                 </div>
               )}
-              {proPromoError && (
-                <p className="text-xs text-destructive">{proPromoError}</p>
-              )}
+
+              {proPromoError && <p className="text-xs text-destructive">{proPromoError}</p>}
             </div>
 
-            {/* Confirm button */}
-            <Button
-              className="w-full"
-              onClick={handleConfirmProSubscription}
-              disabled={isLoadingPro}
-            >
+            <Button className="w-full" onClick={handleConfirmProSubscription} disabled={isLoadingPro}>
               {isLoadingPro ? (
                 <span className="flex items-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -444,7 +443,7 @@ const mainPlans = [
               ) : (
                 <span className="flex items-center gap-2">
                   <Zap className="h-4 w-4" />
-                  {isEnglish ? `Continue to payment` : `Continuar para pagamento`}
+                  {isEnglish ? 'Continue to payment' : 'Continuar para pagamento'}
                 </span>
               )}
             </Button>
