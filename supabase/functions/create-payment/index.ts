@@ -25,6 +25,10 @@ serve(async (req) => {
     Deno.env.get("SUPABASE_URL") ?? "",
     Deno.env.get("SUPABASE_ANON_KEY") ?? ""
   );
+  const supabaseAdminClient = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+  );
 
   try {
     logStep("Function started");
@@ -77,6 +81,7 @@ serve(async (req) => {
 
     let validPromo: PromoCodeRow | null = null;
     if (promoCode) {
+      const { data: promo, error: promoError } = await supabaseAdminClient
       const { data: promo, error: promoError } = await supabaseClient
         .from("promo_codes")
         .select("id, code, discount_type, discount_value, applicable_plan_types, max_uses, current_uses, expires_at, is_active")

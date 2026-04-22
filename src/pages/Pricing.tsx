@@ -18,6 +18,10 @@ export default function Pricing() {
   const { user } = useAuthStore();
   const navigate = useNavigate();
   const { i18n } = useTranslation();
+  const isEnglish = (i18n.resolvedLanguage || i18n.language || 'pt').startsWith('en');
+  const [isLoadingPro, setIsLoadingPro] = useState(false);
+  const mainPlans = [
+    {
   const isEnglish = i18n.language === 'en';
   const [isLoadingPro, setIsLoadingPro] = useState(false);
   const mainPlans = [
