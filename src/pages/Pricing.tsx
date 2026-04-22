@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { usePlanStore } from '@/stores/planStore';
 import { useAuthStore } from '@/stores/authStore';
+import { usePromoStore } from '@/stores/promoStore';
 import { PlanType } from '@/types/plans';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -26,13 +27,14 @@ type PricingPlan = {
 
 type ProPromo = {
   code: string;
-  discount_type: 'percentage' | 'fixed';
+  discount_type: 'percentage' | 'fixed' | 'free_days';
   discount_value: number;
 };
 
 export default function Pricing() {
   const { currentPlan, setPlan } = usePlanStore();
   const { user } = useAuthStore();
+  const { promoCodes, fetchPromoCodes } = usePromoStore();
   const navigate = useNavigate();
   const { i18n } = useTranslation();
   const isEnglish = (i18n.resolvedLanguage || i18n.language || 'pt').startsWith('en');
@@ -114,18 +116,40 @@ export default function Pricing() {
     setProPromoInput('');
   };
 
-  // Placeholder simples: aplica promo se existir algum texto.
-  // Se já tens validação real (ex: supabase function / tabela), diz-me e eu ajusto.
   const handleApplyProPromo = async () => {
     const code = proPromoInput.trim().toUpperCase();
     if (!code) return;
 
-    // Exemplo: aceita sempre e dá 20% (para não bloquear UI).
-    // Troca isto pela tua lógica real.
+    let list = promoCodes;
+    if (list.length === 0) {
+      await fetchPromoCodes();
+      list = usePromoStore.getState().promoCodes;
+    }
+
+    const promo = list.find((p) => p.code.toUpperCase() === code);
+    if (!promo) {
+      setProPromoError(isEnglish ? 'Invalid code.' : 'Código inválido.');
+      return;
+    }
+    if (!promo.is_active) {
+      setProPromoError(isEnglish ? 'Inactive code.' : 'Código inativo.');
+      return;
+    }
+    const expiresAt = new Date(promo.expires_at);
+    expiresAt.setHours(23, 59, 59, 999);
+    if (expiresAt < new Date()) {
+      setProPromoError(isEnglish ? 'Expired code.' : 'Código expirado.');
+      return;
+    }
+    if (!promo.applicable_plan_types.includes('pro')) {
+      setProPromoError(isEnglish ? 'Code not valid for this plan.' : 'Código não aplicável a este plano.');
+      return;
+    }
+
     setProAppliedPromo({
-      code,
-      discount_type: 'percentage',
-      discount_value: 20,
+      code: promo.code,
+      discount_type: promo.discount_type as ProPromo['discount_type'],
+      discount_value: promo.discount_value,
     });
     setProPromoError('');
   };
@@ -169,12 +193,11 @@ export default function Pricing() {
   };
 
   const BASE_PRO_PRICE = 9;
-  const proDiscount = proAppliedPromo
+  const proIsFreeDays = proAppliedPromo?.discount_type === 'free_days';
+  const proDiscount = proAppliedPromo && !proIsFreeDays
     ? proAppliedPromo.discount_type === 'percentage'
       ? Math.min(BASE_PRO_PRICE, (BASE_PRO_PRICE * proAppliedPromo.discount_value) / 100)
-      : proAppliedPromo.discount_type === 'fixed'
-        ? Math.min(BASE_PRO_PRICE, proAppliedPromo.discount_value)
-        : 0
+      : Math.min(BASE_PRO_PRICE, proAppliedPromo.discount_value)
     : 0;
   const proFinalPrice = Math.max(0, BASE_PRO_PRICE - proDiscount);
 
@@ -363,7 +386,18 @@ export default function Pricing() {
 
           <div className="space-y-4 pt-2">
             <div className="text-center">
-              {proAppliedPromo && proDiscount > 0 ? (
+              {proAppliedPromo && proIsFreeDays ? (
+                <div className="flex flex-col items-center gap-1">
+                  <span className="text-2xl font-bold text-foreground">
+                    {BASE_PRO_PRICE}€/{isEnglish ? 'month' : 'mês'}
+                  </span>
+                  <span className="text-xs text-primary font-medium">
+                    {isEnglish
+                      ? `${proAppliedPromo.discount_value} free days with ${proAppliedPromo.code}, then normal price`
+                      : `${proAppliedPromo.discount_value} dias grátis com ${proAppliedPromo.code}, depois preço normal`}
+                  </span>
+                </div>
+              ) : proAppliedPromo && proDiscount > 0 ? (
                 <div className="flex flex-col items-center gap-1">
                   <span className="text-sm text-muted-foreground line-through">
                     {BASE_PRO_PRICE}€/{isEnglish ? 'month' : 'mês'}
@@ -400,7 +434,9 @@ export default function Pricing() {
                     <span className="text-muted-foreground">
                       ({proAppliedPromo.discount_type === 'percentage'
                         ? `-${proAppliedPromo.discount_value}%`
-                        : `-${proAppliedPromo.discount_value}€`})
+                        : proAppliedPromo.discount_type === 'fixed'
+                        ? `-${proAppliedPromo.discount_value}€`
+                        : `${proAppliedPromo.discount_value} ${isEnglish ? 'free days' : 'dias grátis'}`})
                     </span>
                   </div>
                   <Button type="button" variant="ghost" size="icon" onClick={removeProPromo}>
