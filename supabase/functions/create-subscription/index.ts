@@ -92,43 +92,50 @@ serve(async (req) => {
       logStep("No existing customer, will create new one");
     }
 
-    // Handle promo code - look up or create Stripe coupon
+    // Handle promo code - look up or create Stripe coupon / trial period
     const discounts: Array<{ coupon?: string; promotion_code?: string }> = [];
+    let trialPeriodDays: number | undefined;
     if (promoCode) {
       logStep("Processing promo code", { promoCode });
-      
+
       // Look up promo code in our database using service role
       const supabaseAdmin = createClient(
         Deno.env.get("SUPABASE_URL") ?? "",
         Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
       );
-      
+
       const { data: promoData } = await supabaseAdmin
         .from("promo_codes")
         .select("*")
         .eq("code", promoCode.toUpperCase())
         .eq("is_active", true)
         .single();
-      
+
       if (promoData) {
         logStep("Promo code found in DB", { discount_type: promoData.discount_type, discount_value: promoData.discount_value });
-        
-        // Create a Stripe coupon for this discount
-        const couponParams: any = {
-          duration: "once",
-          name: `Promo ${promoData.code}`,
-        };
-        
-        if (promoData.discount_type === "percentage") {
-          couponParams.percent_off = promoData.discount_value;
-        } else if (promoData.discount_type === "fixed") {
-          couponParams.amount_off = Math.round(promoData.discount_value * 100);
-          couponParams.currency = "eur";
+
+        if (promoData.discount_type === "free_days") {
+          // Use Stripe trial period for free days (e.g. 60 days = 2 months free)
+          trialPeriodDays = Math.round(promoData.discount_value);
+          logStep("Using trial period", { trialPeriodDays });
+        } else {
+          // Create a Stripe coupon for percentage or fixed discount
+          const couponParams: any = {
+            duration: "once",
+            name: `Promo ${promoData.code}`,
+          };
+
+          if (promoData.discount_type === "percentage") {
+            couponParams.percent_off = promoData.discount_value;
+          } else if (promoData.discount_type === "fixed") {
+            couponParams.amount_off = Math.round(promoData.discount_value * 100);
+            couponParams.currency = "eur";
+          }
+
+          const coupon = await stripe.coupons.create(couponParams);
+          logStep("Stripe coupon created", { couponId: coupon.id });
+          discounts.push({ coupon: coupon.id });
         }
-        
-        const coupon = await stripe.coupons.create(couponParams);
-        logStep("Stripe coupon created", { couponId: coupon.id });
-        discounts.push({ coupon: coupon.id });
       } else {
         logStep("Promo code not found or inactive, ignoring");
       }
@@ -159,6 +166,7 @@ serve(async (req) => {
           user_id: user.id,
           plan: "pro",
         },
+        ...(trialPeriodDays ? { trial_period_days: trialPeriodDays } : {}),
       },
     };
 
