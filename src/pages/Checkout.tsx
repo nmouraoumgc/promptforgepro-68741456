@@ -23,7 +23,7 @@ const Checkout = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, profile } = useAuthStore();
-  const { promoCodes } = usePromoStore();
+  const { promoCodes, fetchPromoCodes } = usePromoStore();
   const { i18n } = useTranslation();
   const isEnglish = i18n.language === "en";
   const valueItems = isEnglish
@@ -48,14 +48,22 @@ const Checkout = () => {
     if (profile?.current_plan === "premium") navigate("/packs");
   }, [profile, navigate]);
 
-  const handleApplyPromo = () => {
+  useEffect(() => {
+    fetchPromoCodes();
+  }, [fetchPromoCodes]);
+
+  const handleApplyPromo = async () => {
     setPromoError("");
     const code = promoInput.trim().toUpperCase();
     if (!code) {
       setPromoError(isEnglish ? "Enter a code." : "Insere um código.");
       return;
     }
-    const promo = promoCodes.find((p) => p.code.toUpperCase() === code);
+    let promo = promoCodes.find((p) => p.code.toUpperCase() === code);
+    if (!promo && promoCodes.length === 0) {
+      await fetchPromoCodes();
+      promo = usePromoStore.getState().promoCodes.find((p) => p.code.toUpperCase() === code);
+    }
     if (!promo) {
       setPromoError(isEnglish ? "Invalid code." : "Código inválido.");
       return;
@@ -64,7 +72,9 @@ const Checkout = () => {
       setPromoError(isEnglish ? "Inactive code." : "Código inativo.");
       return;
     }
-    if (new Date(promo.expires_at) < new Date()) {
+    const expiresAt = new Date(promo.expires_at);
+    expiresAt.setHours(23, 59, 59, 999);
+    if (expiresAt < new Date()) {
       setPromoError(isEnglish ? "Expired code." : "Código expirado.");
       return;
     }
