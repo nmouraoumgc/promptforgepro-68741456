@@ -13,6 +13,17 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
 
+type PricingPlan = {
+  id: PlanType;
+  name: string;
+  description: string;
+  price: string;
+  priceDetail: string;
+  features: string[];
+  cta: string;
+  highlight?: boolean;
+};
+
 export default function Pricing() {
   const { currentPlan, setPlan } = usePlanStore();
   const { user } = useAuthStore();
@@ -79,15 +90,56 @@ const mainPlans = [
     cta: isEnglish ? 'Subscribe to Pro' : 'Subscrever Pro',
   };
 
+  const mainPlans: PricingPlan[] = [
+    {
+      id: 'free',
+      name: 'Free',
+      description: isEnglish ? 'To explore and test' : 'Para explorar e testar',
+      price: '0€',
+      priceDetail: isEnglish ? 'forever' : 'para sempre',
+      features: isEnglish
+        ? ['3 optimizations per prompt', 'Prompt library', 'Basic guided builder', 'Pack previews']
+        : ['3 otimizações por prompt', 'Biblioteca de prompts', 'Guided Builder básico', 'Pré-visualização de packs'],
+      cta: isEnglish ? 'Start free' : 'Começar grátis',
+    },
+    {
+      id: 'premium',
+      name: 'Premium',
+      description: isEnglish ? 'Full access to Prompt Packs' : 'Acesso completo aos Prompt Packs',
+      price: '19€',
+      priceDetail: isEnglish ? '— one-time payment' : '— pagamento único',
+      features: isEnglish
+        ? ['All premium Prompt Packs', 'Hooks, scripts, structures and CTAs', 'Professional templates', 'Future updates included']
+        : ['Todos os Prompt Packs premium', 'Hooks, scripts, estruturas e CTAs', 'Templates profissionais', 'Atualizações futuras incluídas'],
+      cta: isEnglish ? 'Unlock full access' : 'Desbloquear acesso completo',
+      highlight: true,
+    },
+  ];
+
+  const proPlan: PricingPlan = {
+    id: 'pro',
+    name: 'Pro',
+    description: isEnglish ? 'For users who rely on PromptForge every day at work' : 'Para quem usa o PromptForge como ferramenta diária de trabalho',
+    price: '9€',
+    priceDetail: isEnglish ? '/month' : '/mês',
+    features: isEnglish
+      ? ['Unlimited optimizations', 'Version history', 'A/B prompt testing', 'Detailed scoring', 'Prompt export']
+      : ['Otimizações ilimitadas', 'Histórico de versões', 'Testes A/B de prompts', 'Pontuação detalhada', 'Exportação de prompts'],
+    cta: isEnglish ? 'Subscribe to Pro' : 'Subscrever Pro',
+  };
+
   const handleSelectPlan = async (planId: PlanType) => {
     if (planId === 'premium') {
       navigate('/checkout');
-    } else if (planId === 'pro') {
+      return;
+    }
+
+    if (planId === 'pro') {
       if (!user) {
         toast({
-          title: isEnglish ? "Authentication required" : "Autenticação necessária",
-          description: isEnglish ? "You must sign in to subscribe to Pro." : "Tens de iniciar sessão para subscrever o plano Pro.",
-          variant: "destructive",
+          title: isEnglish ? 'Authentication required' : 'Autenticação necessária',
+          description: isEnglish ? 'You must sign in to subscribe to Pro.' : 'Tens de iniciar sessão para subscrever o plano Pro.',
+          variant: 'destructive',
         });
         navigate('/login');
         return;
@@ -130,6 +182,8 @@ const mainPlans = [
     } finally {
       setIsLoadingPro(false);
     }
+
+    setPlan(planId);
   };
 
   const BASE_PRO_PRICE = 9;
@@ -144,7 +198,6 @@ const mainPlans = [
 
   return (
     <div className="p-6 md:p-8 lg:p-10 animate-fade-in">
-      {/* Hero */}
       <header className="text-center max-w-2xl mx-auto mb-8">
         <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-3">
           {isEnglish ? 'Choose how you want to use PromptForge' : 'Escolhe como queres usar o PromptForge'}
@@ -154,7 +207,6 @@ const mainPlans = [
         </p>
       </header>
 
-      {/* Explanatory Block */}
       <div className="mb-10 max-w-2xl mx-auto">
         <div className="bg-muted/50 border border-border rounded-xl p-5">
           <div className="flex items-start gap-3">
@@ -162,7 +214,9 @@ const mainPlans = [
             <div>
               <p className="font-medium text-sm mb-1">{isEnglish ? 'How it works' : 'Como funciona'}</p>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                {isEnglish ? 'Most creators start with ' : 'A maioria dos criadores começa pelos '}<span className="font-medium text-foreground">Prompt Packs</span>{isEnglish ? ' — ready to use, with fast results.' : ' — prontos a usar, com resultados rápidos.'}
+                {isEnglish ? 'Most creators start with ' : 'A maioria dos criadores começa pelos '}
+                <span className="font-medium text-foreground">Prompt Packs</span>
+                {isEnglish ? ' — ready to use, with fast results.' : ' — prontos a usar, com resultados rápidos.'}
                 <br />
                 {isEnglish ? 'Plans are ideal for ongoing professional workflows.' : 'Os planos são para quem usa o PromptForge como ferramenta de trabalho contínua.'}
               </p>
@@ -171,18 +225,14 @@ const mainPlans = [
         </div>
       </div>
 
-      {/* Main Plans: Free + Premium */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
         {mainPlans.map((plan) => {
           const isActive = currentPlan === plan.id;
-          
           return (
-            <Card 
+            <Card
               key={plan.id}
               className={`relative flex flex-col transition-all ${
-                plan.highlight 
-                  ? 'border-primary shadow-lg shadow-primary/10 md:scale-[1.02]' 
-                  : 'border-border hover:border-muted-foreground/30'
+                plan.highlight ? 'border-primary shadow-lg shadow-primary/10 md:scale-[1.02]' : 'border-border hover:border-muted-foreground/30'
               } ${isActive ? 'ring-2 ring-primary' : ''}`}
             >
               {plan.highlight && (
@@ -196,11 +246,7 @@ const mainPlans = [
 
               <CardHeader className={`text-center pb-4 ${plan.highlight ? 'pt-6' : ''}`}>
                 <CardTitle className="text-2xl">{plan.name}</CardTitle>
-                <CardDescription className="text-sm">
-                  {plan.description}
-                </CardDescription>
-                
-                {/* Price */}
+                <CardDescription className="text-sm">{plan.description}</CardDescription>
                 <div className="pt-4">
                   <div className="flex items-baseline justify-center gap-1">
                     <span className="text-4xl font-bold">{plan.price}</span>
@@ -213,22 +259,18 @@ const mainPlans = [
                   )}
                 </div>
               </CardHeader>
-              
+
               <CardContent className="flex-1 flex flex-col space-y-6">
-                {/* Features */}
                 <ul className="space-y-3 flex-1">
-                  {plan.features.map((feature, i) => (
-                    <li key={i} className="flex items-start gap-2.5 text-sm">
-                      <Check className={`h-4 w-4 shrink-0 mt-0.5 ${
-                        plan.highlight ? 'text-primary' : 'text-muted-foreground'
-                      }`} />
+                  {plan.features.map((feature) => (
+                    <li key={feature} className="flex items-start gap-2.5 text-sm">
+                      <Check className={`h-4 w-4 shrink-0 mt-0.5 ${plan.highlight ? 'text-primary' : 'text-muted-foreground'}`} />
                       {feature}
                     </li>
                   ))}
                 </ul>
 
-                {/* CTA */}
-                <Button 
+                <Button
                   className={`w-full ${plan.highlight ? 'shadow-md' : ''}`}
                   variant={plan.highlight ? 'default' : 'outline'}
                   disabled={isActive}
@@ -252,9 +294,7 @@ const mainPlans = [
         })}
       </div>
 
-      {/* Pro Section - Secondary */}
       <div className="mt-16 max-w-3xl mx-auto">
-        {/* Divider with label */}
         <div className="flex items-center gap-4 mb-8">
           <div className="flex-1 h-px bg-border" />
           <span className="text-sm text-muted-foreground font-medium flex items-center gap-2">
@@ -264,10 +304,8 @@ const mainPlans = [
           <div className="flex-1 h-px bg-border" />
         </div>
 
-        {/* Pro Card - Compact horizontal layout */}
         <Card className={`border-border ${currentPlan === 'pro' ? 'ring-2 ring-primary' : ''}`}>
           <div className="p-6 flex flex-col md:flex-row md:items-center gap-6">
-            {/* Info */}
             <div className="flex-1 space-y-2">
               <div className="flex items-center gap-3">
                 <h3 className="text-xl font-semibold">{proPlan.name}</h3>
@@ -276,12 +314,10 @@ const mainPlans = [
                   <span className="text-muted-foreground text-sm">{proPlan.priceDetail}</span>
                 </div>
               </div>
-              <p className="text-sm text-muted-foreground">
-                {proPlan.description}
-              </p>
+              <p className="text-sm text-muted-foreground">{proPlan.description}</p>
               <div className="flex flex-wrap gap-x-4 gap-y-1 pt-2">
-                {proPlan.features.map((feature, i) => (
-                  <span key={i} className="text-xs text-muted-foreground flex items-center gap-1.5">
+                {proPlan.features.map((feature) => (
+                  <span key={feature} className="text-xs text-muted-foreground flex items-center gap-1.5">
                     <Check className="h-3 w-3 text-muted-foreground" />
                     {feature}
                   </span>
@@ -289,12 +325,7 @@ const mainPlans = [
               </div>
             </div>
 
-            {/* CTA */}
-            <Button 
-              className="shrink-0 shadow-md"
-              disabled={currentPlan === 'pro' || isLoadingPro}
-              onClick={() => handleSelectPlan('pro')}
-            >
+            <Button className="shrink-0 shadow-md" disabled={currentPlan === 'pro' || isLoadingPro} onClick={() => handleSelectPlan('pro')}>
               {currentPlan === 'pro' ? (
                 <>
                   <Check className="h-4 w-4 mr-2" />
@@ -316,7 +347,6 @@ const mainPlans = [
         </Card>
       </div>
 
-      {/* Trust note */}
       <footer className="text-center mt-12 md:mt-16 max-w-lg mx-auto">
         <p className="text-sm text-muted-foreground leading-relaxed">
           {isEnglish ? 'Questions? The Free plan never expires — use it as long as you need.' : 'Dúvidas? O plano Free não expira — usa o tempo que precisares.'}
