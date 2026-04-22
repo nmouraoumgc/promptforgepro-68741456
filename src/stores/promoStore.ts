@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface PromoCode {
   id: string;
@@ -27,30 +28,47 @@ interface PromoState {
 
 export const usePromoStore = create<PromoState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       promoCodes: [],
       isLoading: false,
       fetchPromoCodes: async () => {
-        // no-op until backend table exists
+        set({ isLoading: true });
+        const { data, error } = await supabase
+          .from('promo_codes')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (!error && data) {
+          set({ promoCodes: data as PromoCode[] });
+        }
+        set({ isLoading: false });
       },
       createPromoCode: async (data) => {
-        const newCode: PromoCode = {
-          ...data,
-          id: crypto.randomUUID(),
-          current_uses: 0,
-          created_at: new Date().toISOString(),
-        };
-        set({ promoCodes: [...get().promoCodes, newCode] });
+        const { error } = await supabase
+          .from('promo_codes')
+          .insert([{
+            ...data,
+            current_uses: 0,
+          }]);
+
+        if (error) throw error;
+        await (usePromoStore.getState().fetchPromoCodes());
       },
       updatePromoCode: async (id, data) => {
-        set({
-          promoCodes: get().promoCodes.map((p) =>
-            p.id === id ? { ...p, ...data } : p
-          ),
-        });
+        const { error } = await supabase
+          .from('promo_codes')
+          .update(data)
+          .eq('id', id);
+        if (error) throw error;
+        await (usePromoStore.getState().fetchPromoCodes());
       },
       deletePromoCode: async (id) => {
-        set({ promoCodes: get().promoCodes.filter((p) => p.id !== id) });
+        const { error } = await supabase
+          .from('promo_codes')
+          .delete()
+          .eq('id', id);
+        if (error) throw error;
+        await (usePromoStore.getState().fetchPromoCodes());
       },
     }),
     { name: 'promo-codes-storage' }

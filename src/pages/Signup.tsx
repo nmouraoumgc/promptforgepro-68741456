@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/stores/authStore';
+import { useTranslation } from 'react-i18next';
 
 export default function Signup() {
   const [email, setEmail] = useState('');
@@ -19,14 +20,16 @@ export default function Signup() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { signUp } = useAuthStore();
+  const { i18n } = useTranslation();
+  const isEnglish = i18n.language === 'en';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (password !== confirmPassword) {
       toast({
-        title: 'Erro',
-        description: 'As palavras-passe não coincidem.',
+        title: isEnglish ? 'Error' : 'Erro',
+        description: isEnglish ? 'Passwords do not match.' : 'As palavras-passe não coincidem.',
         variant: 'destructive',
       });
       return;
@@ -34,8 +37,8 @@ export default function Signup() {
 
     if (password.length < 6) {
       toast({
-        title: 'Erro',
-        description: 'A palavra-passe deve ter pelo menos 6 caracteres.',
+        title: isEnglish ? 'Error' : 'Erro',
+        description: isEnglish ? 'Password must have at least 6 characters.' : 'A palavra-passe deve ter pelo menos 6 caracteres.',
         variant: 'destructive',
       });
       return;
@@ -47,14 +50,14 @@ export default function Signup() {
 
     if (error) {
       toast({
-        title: 'Erro ao criar conta',
-        description: error.message || 'Tenta novamente.',
+        title: isEnglish ? 'Account creation failed' : 'Erro ao criar conta',
+        description: error.message || (isEnglish ? 'Try again.' : 'Tenta novamente.'),
         variant: 'destructive',
       });
     } else {
       toast({
-        title: 'Conta criada!',
-        description: 'Bem-vindo ao PromptForge.',
+        title: isEnglish ? 'Account created!' : 'Conta criada!',
+        description: isEnglish ? 'Welcome to PromptForge.' : 'Bem-vindo ao PromptForge.',
       });
       navigate('/');
     }
@@ -82,9 +85,9 @@ export default function Signup() {
 
         <Card>
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl">Criar conta</CardTitle>
+            <CardTitle className="text-2xl">{isEnglish ? 'Create account' : 'Criar conta'}</CardTitle>
             <CardDescription>
-              Começa a criar prompts profissionais
+              {isEnglish ? 'Start creating professional prompts' : 'Começa a criar prompts profissionais'}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -96,7 +99,7 @@ export default function Signup() {
                   <Input
                     id="email"
                     type="email"
-                    placeholder="o-teu-email@exemplo.com"
+                    placeholder={isEnglish ? 'your-email@example.com' : 'o-teu-email@exemplo.com'}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -106,13 +109,13 @@ export default function Signup() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Palavra-passe</Label>
+                <Label htmlFor="password">{isEnglish ? 'Password' : 'Palavra-passe'}</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="Mínimo 6 caracteres"
+                    placeholder={isEnglish ? 'Minimum 6 characters' : 'Mínimo 6 caracteres'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
@@ -129,13 +132,13 @@ export default function Signup() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirmar palavra-passe</Label>
+                <Label htmlFor="confirmPassword">{isEnglish ? 'Confirm password' : 'Confirmar palavra-passe'}</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="confirmPassword"
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="Repetir palavra-passe"
+                    placeholder={isEnglish ? 'Repeat password' : 'Repetir palavra-passe'}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
@@ -149,14 +152,14 @@ export default function Signup() {
                 className="w-full h-11"
                 disabled={isLoading}
               >
-                {isLoading ? 'A criar conta...' : 'Criar conta'}
+                {isLoading ? (isEnglish ? 'Creating account...' : 'A criar conta...') : (isEnglish ? 'Create account' : 'Criar conta')}
               </Button>
             </form>
 
             <div className="mt-6 text-center text-sm">
-              <span className="text-muted-foreground">Já tens conta? </span>
+              <span className="text-muted-foreground">{isEnglish ? 'Already have an account? ' : 'Já tens conta? '}</span>
               <Link to="/login" className="text-primary hover:underline font-medium">
-                Entrar
+                {isEnglish ? 'Sign in' : 'Entrar'}
               </Link>
             </div>
           </CardContent>

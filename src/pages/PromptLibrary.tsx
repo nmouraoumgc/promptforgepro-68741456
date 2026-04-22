@@ -13,7 +13,8 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
 export default function PromptLibrary() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isEnglish = i18n.language === 'en';
   const { prompts, toggleFavorite, deletePrompt, duplicatePrompt } = usePromptStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<Category | 'all'>('all');
@@ -54,7 +55,22 @@ export default function PromptLibrary() {
       <div className="flex gap-2 flex-wrap">
         <Badge variant={selectedCategory === 'all' ? 'default' : 'outline'} className="cursor-pointer" onClick={() => setSelectedCategory('all')}>{t('library.all')}</Badge>
         {CATEGORIES.map(cat => (
-          <Badge key={cat.value} variant={selectedCategory === cat.value ? 'default' : 'outline'} className="cursor-pointer" onClick={() => setSelectedCategory(cat.value)}>{cat.label}</Badge>
+          <Badge key={cat.value} variant={selectedCategory === cat.value ? 'default' : 'outline'} className="cursor-pointer" onClick={() => setSelectedCategory(cat.value)}>
+            {isEnglish ? ({
+              writing: 'Writing',
+              code: 'Code',
+              image: 'Image',
+              video: 'Video',
+              audio: 'Audio',
+              business: 'Business',
+              education: 'Education',
+              creative: 'Creative',
+              'social-media': 'Social Media',
+              other: 'Other',
+              marketing: 'Marketing',
+              email: 'Email',
+            } as Record<string, string>)[cat.value] || cat.label : cat.label}
+          </Badge>
         ))}
       </div>
 

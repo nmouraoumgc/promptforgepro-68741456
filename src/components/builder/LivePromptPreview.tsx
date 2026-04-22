@@ -3,12 +3,15 @@ import { Eye, FileText } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { GuidedBuilderState, TONE_STYLES, OUTPUT_TYPES } from '@/types/prompt';
+import { useTranslation } from 'react-i18next';
 
 interface LivePromptPreviewProps {
   builderState: GuidedBuilderState;
 }
 
 export default function LivePromptPreview({ builderState }: LivePromptPreviewProps) {
+  const { i18n } = useTranslation();
+  const isEnglish = i18n.language === 'en';
   const { objective, outputType, targetModel, tone, targetAudience, constraints, format, language, creativityLevel } = builderState;
 
   const previewSections = useMemo(() => {
@@ -17,35 +20,35 @@ export default function LivePromptPreview({ builderState }: LivePromptPreviewPro
     // Context section
     if (objective || targetAudience) {
       let contextContent = '';
-      if (objective) contextContent += `Objetivo: ${objective}\n`;
-      if (targetAudience) contextContent += `Público-alvo: ${targetAudience}`;
-      sections.push({ type: 'context', label: 'Contexto', content: contextContent.trim() });
+      if (objective) contextContent += `${isEnglish ? 'Objective' : 'Objetivo'}: ${objective}\n`;
+      if (targetAudience) contextContent += `${isEnglish ? 'Target audience' : 'Público-alvo'}: ${targetAudience}`;
+      sections.push({ type: 'context', label: isEnglish ? 'Context' : 'Contexto', content: contextContent.trim() });
     }
     
     // Instructions section
-    const outputLabel = OUTPUT_TYPES.find(t => t.value === outputType)?.label || 'conteúdo';
+    const outputLabel = OUTPUT_TYPES.find(t => t.value === outputType)?.label || (isEnglish ? 'content' : 'conteúdo');
     const toneLabel = TONE_STYLES.find(t => t.value === tone)?.label?.toLowerCase();
     
-    let instructionContent = `Gera ${outputLabel.toLowerCase()} que:\n`;
-    instructionContent += `- Cumpra o objetivo definido\n`;
-    if (tone) instructionContent += `- Use um tom ${toneLabel}\n`;
-    if (creativityLevel > 70) instructionContent += `- Seja criativo e original\n`;
-    if (creativityLevel < 30) instructionContent += `- Siga uma estrutura conservadora\n`;
+    let instructionContent = `${isEnglish ? 'Generate' : 'Gera'} ${outputLabel.toLowerCase()} ${isEnglish ? 'that:' : 'que:'}\n`;
+    instructionContent += `${isEnglish ? '- Meets the defined objective' : '- Cumpra o objetivo definido'}\n`;
+    if (tone) instructionContent += `${isEnglish ? '- Uses a' : '- Use um'} ${isEnglish ? 'tone' : 'tom'} ${toneLabel}\n`;
+    if (creativityLevel > 70) instructionContent += `${isEnglish ? '- Is creative and original' : '- Seja criativo e original'}\n`;
+    if (creativityLevel < 30) instructionContent += `${isEnglish ? '- Follows a conservative structure' : '- Siga uma estrutura conservadora'}\n`;
     
     if (outputType || tone) {
-      sections.push({ type: 'instruction', label: 'Instruções', content: instructionContent.trim() });
+      sections.push({ type: 'instruction', label: isEnglish ? 'Instructions' : 'Instruções', content: instructionContent.trim() });
     }
     
     // Restrictions section
     if (constraints.length > 0 || format || language !== 'pt') {
       let restrictionContent = '';
-      if (format) restrictionContent += `Formato: ${format}\n`;
-      if (language && language !== 'pt') restrictionContent += `Idioma: ${language}\n`;
+      if (format) restrictionContent += `${isEnglish ? 'Format' : 'Formato'}: ${format}\n`;
+      if (language && language !== 'pt') restrictionContent += `${isEnglish ? 'Language' : 'Idioma'}: ${language}\n`;
       constraints.forEach(c => {
         restrictionContent += `- ${c}\n`;
       });
       if (restrictionContent) {
-        sections.push({ type: 'restriction', label: 'Restrições', content: restrictionContent.trim() });
+        sections.push({ type: 'restriction', label: isEnglish ? 'Constraints' : 'Restrições', content: restrictionContent.trim() });
       }
     }
     
@@ -54,26 +57,26 @@ export default function LivePromptPreview({ builderState }: LivePromptPreviewPro
       let outputContent = '';
       switch (outputType) {
         case 'text':
-          outputContent = 'Entrega um texto bem estruturado, claro e pronto para usar.';
+          outputContent = isEnglish ? 'Deliver a well-structured, clear, ready-to-use text.' : 'Entrega um texto bem estruturado, claro e pronto para usar.';
           break;
         case 'image':
-          outputContent = 'Descrição detalhada para geração de imagem com estilo e composição claros.';
+          outputContent = isEnglish ? 'Detailed image-generation description with clear style and composition.' : 'Descrição detalhada para geração de imagem com estilo e composição claros.';
           break;
         case 'code':
-          outputContent = 'Código funcional, comentado e seguindo boas práticas.';
+          outputContent = isEnglish ? 'Functional, documented code following best practices.' : 'Código funcional, comentado e seguindo boas práticas.';
           break;
         case 'video':
-          outputContent = 'Descrição de cena, movimentos de câmara e elementos visuais.';
+          outputContent = isEnglish ? 'Scene description, camera movements and visual elements.' : 'Descrição de cena, movimentos de câmara e elementos visuais.';
           break;
         case 'audio':
-          outputContent = 'Especificações de tom, ritmo e mood.';
+          outputContent = isEnglish ? 'Tone, rhythm and mood specifications.' : 'Especificações de tom, ritmo e mood.';
           break;
       }
-      sections.push({ type: 'output', label: 'Output Esperado', content: outputContent });
+      sections.push({ type: 'output', label: isEnglish ? 'Expected Output' : 'Output Esperado', content: outputContent });
     }
     
     return sections;
-  }, [objective, outputType, tone, targetAudience, constraints, format, language, creativityLevel]);
+  }, [objective, outputType, tone, targetAudience, constraints, format, language, creativityLevel, isEnglish]);
 
   const getSectionStyles = (type: string) => {
     switch (type) {
@@ -112,10 +115,10 @@ export default function LivePromptPreview({ builderState }: LivePromptPreviewPro
       <CardHeader className="pb-3">
         <CardTitle className="text-sm flex items-center gap-2">
           <Eye className="h-4 w-4 text-primary" />
-          Pré-visualização em Tempo Real
+          {isEnglish ? 'Live Preview' : 'Pré-visualização em Tempo Real'}
         </CardTitle>
         <p className="text-xs text-muted-foreground">
-          O teu prompt está a ser construído enquanto preenches
+          {isEnglish ? 'Your prompt is being built as you fill in fields' : 'O teu prompt está a ser construído enquanto preenches'}
         </p>
       </CardHeader>
       <CardContent>
@@ -154,7 +157,7 @@ export default function LivePromptPreview({ builderState }: LivePromptPreviewPro
                 })}
               </div>
               <span className="text-[10px] text-muted-foreground">
-                {previewSections.length}/4 secções definidas
+                {previewSections.length}/4 {isEnglish ? 'sections defined' : 'secções definidas'}
               </span>
             </div>
           </div>
@@ -162,10 +165,10 @@ export default function LivePromptPreview({ builderState }: LivePromptPreviewPro
           <div className="text-center py-8">
             <FileText className="h-10 w-10 mx-auto text-muted-foreground/30 mb-3" />
             <p className="text-sm text-muted-foreground">
-              Começa a preencher para ver o prompt
+              {isEnglish ? 'Start filling fields to preview the prompt' : 'Começa a preencher para ver o prompt'}
             </p>
             <p className="text-xs text-muted-foreground/70 mt-1">
-              Cada campo que preenches aparece aqui em tempo real
+              {isEnglish ? 'Each field appears here in real time' : 'Cada campo que preenches aparece aqui em tempo real'}
             </p>
           </div>
         )}
