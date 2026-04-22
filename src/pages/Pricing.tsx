@@ -10,19 +10,24 @@ import { usePlanStore } from '@/stores/planStore';
 import { useAuthStore } from '@/stores/authStore';
 import { PlanType } from '@/types/plans';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { useTranslation } from 'react-i18next';
-
 export default function Pricing() {
-  const { currentPlan, setPlan } = usePlanStore();
-  const { user } = useAuthStore();
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const { i18n } = useTranslation();
-  const isEnglish = i18n.language === 'en';
-  const [isLoadingPro, setIsLoadingPro] = useState(false);
-  const mainPlans = [
-    {
+const { currentPlan, setPlan } = usePlanStore();
+const { user } = useAuthStore();
+const navigate = useNavigate();
+const { toast } = useToast();
+const { i18n } = useTranslation();
+const isEnglish = i18n.language === 'en';
+const [isLoadingPro, setIsLoadingPro] = useState(false);
+const mainPlans = [
+	    {
+	      id: 'free' as PlanType,
+	      name: 'Free',
+	      description: isEnglish ? 'To explore and test' : 'Para explorar e testar',
+	      price: '0€',
+	      priceDetail: isEnglish ? 'forever' : 'para sempre',
+	      features: isEnglish
+	        ? ['3 optimizations per prompt', 'Prompt library', 'Basic guided builder', 'Pack previews']
+	        : ['3 otimizações por prompt', 'Biblioteca de prompts', 'Guided Builder básico', 'Pré-visualização de packs'],
       id: 'free' as PlanType,
       name: 'Free',
       description: isEnglish ? 'To explore and test' : 'Para explorar e testar',
