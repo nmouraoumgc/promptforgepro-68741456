@@ -39,6 +39,7 @@ export default function PromptOptimizer() {
   const [currentPromptId] = useState(() => `prompt-${Date.now()}`); // Track optimizations per session
   const { toast } = useToast();
   const { i18n } = useTranslation();
+  const isEnglish = i18n.language === 'en';
   const language = (i18n.resolvedLanguage || i18n.language || 'pt').slice(0, 2);
   const { user } = useAuthStore();
   const { currentPlan, canOptimize, incrementOptimizationCount, getOptimizationCount } = usePlanStore();
@@ -48,7 +49,7 @@ export default function PromptOptimizer() {
     return (
       <div className="p-6 animate-fade-in">
         <Card>
-          <AuthGate message="Cria uma conta gratuita para otimizar os teus prompts." />
+          <AuthGate message={isEnglish ? 'Create a free account to optimize your prompts.' : 'Cria uma conta gratuita para otimizar os teus prompts.'} />
         </Card>
       </div>
     );
@@ -58,17 +59,13 @@ export default function PromptOptimizer() {
 
   const optimizePrompt = async () => {
     if (!inputPrompt.trim()) {
-      toast({ title: 'Atenção', description: 'Introduz um prompt para otimizar', variant: 'destructive' });
+      toast({ title: isEnglish ? 'Warning' : 'Atenção', description: isEnglish ? 'Enter a prompt to optimize' : 'Introduz um prompt para otimizar', variant: 'destructive' });
       return;
     }
 
     // Check optimization limit for free users
     if (currentPlan === 'free' && !canOptimize(currentPromptId)) {
-      toast({ 
-        title: 'Limite atingido', 
-        description: 'Upgrade para Pro para otimizações ilimitadas', 
-        variant: 'destructive' 
-      });
+      toast({ title: isEnglish ? 'Limit reached' : 'Limite atingido', description: isEnglish ? 'Upgrade to Pro for unlimited optimizations' : 'Upgrade para Pro para otimizações ilimitadas', variant: 'destructive' });
       return;
     }
 
@@ -87,7 +84,7 @@ export default function PromptOptimizer() {
       if (error) throw error;
 
       if (data.error) {
-        toast({ title: 'Erro', description: data.error, variant: 'destructive' });
+        toast({ title: isEnglish ? 'Error' : 'Erro', description: data.error, variant: 'destructive' });
         setIsOptimizing(false);
         return;
       }
@@ -107,7 +104,7 @@ export default function PromptOptimizer() {
       }
     } catch (error) {
       console.error('Error optimizing prompt:', error);
-      toast({ title: 'Erro', description: 'Não foi possível otimizar o prompt. Tenta novamente.', variant: 'destructive' });
+      toast({ title: isEnglish ? 'Error' : 'Erro', description: isEnglish ? 'Could not optimize the prompt. Try again.' : 'Não foi possível otimizar o prompt. Tenta novamente.', variant: 'destructive' });
     } finally {
       setIsOptimizing(false);
     }
@@ -119,22 +116,22 @@ export default function PromptOptimizer() {
       if (detailed) {
         setInputPrompt(detailed.content);
         setScore({ clarity: 88, specificity: 85, structure: 92, creativity: 70, overall: 84 });
-        toast({ title: 'Prompt melhorado!', description: 'As correções automáticas foram aplicadas' });
+        toast({ title: isEnglish ? 'Prompt improved!' : 'Prompt melhorado!', description: isEnglish ? 'Automatic fixes were applied' : 'As correções automáticas foram aplicadas' });
       }
     }
   };
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    toast({ title: 'Copiado!', description: 'Prompt copiado para a área de transferência' });
+    toast({ title: isEnglish ? 'Copied!' : 'Copiado!', description: isEnglish ? 'Prompt copied to clipboard' : 'Prompt copiado para a área de transferência' });
   };
 
   const typeLabels: Record<string, { label: string; icon: string; description: string }> = {
-    shorter: { label: 'Mais Curto', icon: '⚡', description: 'Versão condensada e directa' },
-    detailed: { label: 'Mais Detalhado', icon: '📝', description: 'Contexto e exemplos adicionais' },
-    creative: { label: 'Mais Criativo', icon: '🎨', description: 'Liberdade para originalidade' },
-    technical: { label: 'Mais Técnico', icon: '🔧', description: 'Precisão e especificidade' },
-    restrictive: { label: 'Mais Controlado', icon: '🎯', description: 'Formato e limites estritos' },
+    shorter: { label: isEnglish ? 'Shorter' : 'Mais Curto', icon: '⚡', description: isEnglish ? 'Condensed version' : 'Versão condensada e directa' },
+    detailed: { label: isEnglish ? 'More Detailed' : 'Mais Detalhado', icon: '📝', description: isEnglish ? 'More context and examples' : 'Contexto e exemplos adicionais' },
+    creative: { label: isEnglish ? 'More Creative' : 'Mais Criativo', icon: '🎨', description: isEnglish ? 'More freedom for originality' : 'Liberdade para originalidade' },
+    technical: { label: isEnglish ? 'More Technical' : 'Mais Técnico', icon: '🔧', description: isEnglish ? 'Precision and specificity' : 'Precisão e especificidade' },
+    restrictive: { label: isEnglish ? 'More Controlled' : 'Mais Controlado', icon: '🎯', description: isEnglish ? 'Strict format and limits' : 'Formato e limites estritos' },
   };
 
   const remainingOptimizations = currentPlan === 'free' ? 3 - getOptimizationCount(currentPromptId) : null;
@@ -148,10 +145,15 @@ export default function PromptOptimizer() {
       <div className="rounded-lg bg-info/10 border border-info/20 p-4 flex items-start gap-3">
         <Info className="h-5 w-5 text-info shrink-0 mt-0.5" />
         <div>
-          <p className="text-sm font-medium">Como funciona a otimização?</p>
+          <p className="text-sm font-medium">{isEnglish ? 'How optimization works' : 'Como funciona a otimização?'}</p>
           <p className="text-xs text-muted-foreground mt-1">
-            Cola o teu prompt e obtém variações otimizadas com explicações detalhadas do que foi melhorado. 
-            Cada alteração vem acompanhada de uma justificação para te ajudar a aprender.
+            {isEnglish
+              ? 'Paste your prompt and get optimized variations with detailed explanations of what improved.'
+              : 'Cola o teu prompt e obtém variações otimizadas com explicações detalhadas do que foi melhorado.'}
+            {' '}
+            {isEnglish
+              ? 'Each change includes a clear rationale so you can learn from it.'
+              : 'Cada alteração vem acompanhada de uma justificação para te ajudar a aprender.'}
           </p>
         </div>
       </div>
@@ -162,32 +164,32 @@ export default function PromptOptimizer() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5" />
-              Prompt Original
+              {isEnglish ? 'Original Prompt' : 'Prompt Original'}
             </CardTitle>
-            <CardDescription>Cola ou define o prompt que queres otimizar</CardDescription>
+            <CardDescription>{isEnglish ? 'Paste or write the prompt you want to optimize' : 'Cola ou define o prompt que queres otimizar'}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Textarea 
-                placeholder="Ex: Escreve um post para Instagram sobre sustentabilidade..." 
+                placeholder={isEnglish ? 'Ex: Write an Instagram post about sustainability...' : 'Ex: Escreve um post para Instagram sobre sustentabilidade...'} 
                 value={inputPrompt} 
                 onChange={(e) => setInputPrompt(e.target.value)} 
                 className="min-h-[200px]" 
               />
               <p className="text-xs text-muted-foreground">
-                💡 Este campo define o ponto de partida. Quanto mais detalhes, melhores as otimizações.
+                {isEnglish ? '💡 This field defines the starting point. More detail leads to better optimizations.' : '💡 Este campo define o ponto de partida. Quanto mais detalhes, melhores as otimizações.'}
               </p>
             </div>
             <Button onClick={optimizePrompt} disabled={isOptimizing} className="w-full">
               {isOptimizing ? (
                 <>
                   <Zap className="h-4 w-4 mr-2 animate-pulse" />
-                  A analisar e otimizar...
+                  {isEnglish ? 'Analyzing and optimizing...' : 'A analisar e otimizar...'}
                 </>
               ) : (
                 <>
                   <Sparkles className="h-4 w-4 mr-2" />
-                  Otimizar Prompt
+                  {isEnglish ? 'Optimize Prompt' : 'Otimizar Prompt'}
                 </>
               )}
             </Button>
@@ -202,15 +204,15 @@ export default function PromptOptimizer() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Sparkles className="h-5 w-5" />
-                Prompt Score
+                {isEnglish ? 'Prompt Score' : 'Prompt Score'}
               </CardTitle>
-              <CardDescription>Análise da qualidade do teu prompt</CardDescription>
+              <CardDescription>{isEnglish ? 'Quality analysis of your prompt' : 'Análise da qualidade do teu prompt'}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="text-center py-12 text-muted-foreground">
                 <Sparkles className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p className="font-medium">Otimiza um prompt para ver o score</p>
-                <p className="text-xs mt-2">O score analisa clareza, especificidade, estrutura e criatividade</p>
+                <p className="font-medium">{isEnglish ? 'Optimize a prompt to see the score' : 'Otimiza um prompt para ver o score'}</p>
+                <p className="text-xs mt-2">{isEnglish ? 'The score analyzes clarity, specificity, structure and creativity' : 'O score analisa clareza, especificidade, estrutura e criatividade'}</p>
               </div>
             </CardContent>
           </Card>
@@ -222,7 +224,7 @@ export default function PromptOptimizer() {
         <ImprovementsList 
           originalPrompt={inputPrompt}
           optimizedPrompt={selectedOptimization.content}
-          improvements={improvements.length > 0 ? improvements : ['Objetivo clarificado', 'Estrutura melhorada', 'Tom especificado']}
+          improvements={improvements.length > 0 ? improvements : (isEnglish ? ['Objective clarified', 'Structure improved', 'Tone specified'] : ['Objetivo clarificado', 'Estrutura melhorada', 'Tom especificado'])}
         />
       )}
 
@@ -230,8 +232,8 @@ export default function PromptOptimizer() {
       {optimizations.length > 0 && (
         <div className="space-y-4">
           <div>
-            <h3 className="text-lg font-semibold">Variações Otimizadas</h3>
-            <p className="text-sm text-muted-foreground">Clica numa variação para ver os detalhes e comparar</p>
+            <h3 className="text-lg font-semibold">{isEnglish ? 'Optimized Variations' : 'Variações Otimizadas'}</h3>
+            <p className="text-sm text-muted-foreground">{isEnglish ? 'Click a variation to inspect details and compare' : 'Clica numa variação para ver os detalhes e comparar'}</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {optimizations.map((opt) => (
@@ -272,7 +274,7 @@ export default function PromptOptimizer() {
                     }}
                   >
                     <Copy className="h-3 w-3 mr-2" />
-                    Copiar esta versão
+                    {isEnglish ? 'Copy this version' : 'Copiar esta versão'}
                   </Button>
                 </CardContent>
               </Card>
