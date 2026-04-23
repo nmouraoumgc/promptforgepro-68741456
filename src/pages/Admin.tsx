@@ -605,7 +605,7 @@ export default function Admin() {
                           )}
                           <div className="flex gap-4 text-sm">
                             <span>
-                              <strong>Desconto:</strong> {promo.discount_type === 'percentage' ? `${promo.discount_value}%` : promo.discount_type === 'fixed' ? `€${(promo.discount_value / 100).toFixed(2)}` : `${promo.discount_value} dias`}
+                              <strong>Desconto:</strong> {promo.discount_type === 'percentage' ? `${promo.discount_value}%` : promo.discount_type === 'fixed' ? `€${(promo.discount_value ?? 0).toFixed(2)}` : `${promo.discount_value} dias`}
                             </span>
                             {promo.discount_type !== 'free_days' && (
                               <span>
