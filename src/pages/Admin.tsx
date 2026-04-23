@@ -607,6 +607,11 @@ export default function Admin() {
                             <span>
                               <strong>Desconto:</strong> {promo.discount_type === 'percentage' ? `${promo.discount_value}%` : promo.discount_type === 'fixed' ? `€${(promo.discount_value / 100).toFixed(2)}` : `${promo.discount_value} dias`}
                             </span>
+                            {promo.discount_type !== 'free_days' && (
+                              <span>
+                                <strong>Duração:</strong> {promo.duration_months > 0 ? `${promo.duration_months} meses` : 'Aplica uma vez'}
+                              </span>
+                            )}
                             <span>
                               <strong>Utilizações:</strong> {promo.current_uses} / {promo.max_uses}
                             </span>

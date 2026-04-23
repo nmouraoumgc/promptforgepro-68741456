@@ -45,6 +45,7 @@ export function PromoCodeDialog({
     description: '',
     discount_type: 'percentage' as 'percentage' | 'fixed' | 'free_days',
     discount_value: 0,
+    duration_months: 0,
     applicable_plan_types: ['free', 'pro', 'premium'],
     max_uses: 100,
     expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
@@ -60,6 +61,7 @@ export function PromoCodeDialog({
           description: promo.description || '',
           discount_type: promo.discount_type,
           discount_value: promo.discount_value,
+          duration_months: promo.duration_months,
           applicable_plan_types: promo.applicable_plan_types,
           max_uses: promo.max_uses,
           expires_at: promo.expires_at.split('T')[0],
@@ -73,6 +75,7 @@ export function PromoCodeDialog({
         description: '',
         discount_type: 'percentage',
         discount_value: 0,
+        duration_months: 0,
         applicable_plan_types: ['free', 'pro', 'premium'],
         max_uses: 100,
         expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
@@ -206,6 +209,28 @@ export function PromoCodeDialog({
               />
             </div>
           </div>
+
+          {/* Duração do desconto (meses) — only for percentage/fixed */}
+          {formData.discount_type !== 'free_days' && (
+            <div className="space-y-2">
+              <Label>Duração do desconto (meses)</Label>
+              <Input
+                type="number"
+                min={0}
+                value={formData.duration_months}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    duration_months: parseInt(e.target.value) || 0,
+                  })
+                }
+                placeholder="Ex: 3"
+              />
+              <p className="text-xs text-muted-foreground">
+                0 = aplica uma vez, 3 = desconto durante 3 meses
+              </p>
+            </div>
+          )}
 
           {/* Planos Aplicáveis */}
           <div className="space-y-2">

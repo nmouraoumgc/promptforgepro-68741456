@@ -8,6 +8,7 @@ export interface PromoCode {
   description?: string;
   discount_type: 'percentage' | 'fixed' | 'free_days';
   discount_value: number;
+  duration_months: number;
   applicable_plan_types: string[];
   max_uses: number;
   current_uses?: number;
@@ -25,9 +26,6 @@ interface PromoState {
   updatePromoCode: (id: string, data: Partial<PromoCode>) => Promise<void>;
   deletePromoCode: (id: string) => Promise<void>;
 }
-
-// Use type assertion since promo_codes table is not yet in generated types
-const fromPromo = () => supabase.from('promo_codes' as any);
 
 export const usePromoStore = create<PromoState>()(
   persist(

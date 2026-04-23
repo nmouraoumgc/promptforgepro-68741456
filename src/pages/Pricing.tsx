@@ -29,6 +29,7 @@ type ProPromo = {
   code: string;
   discount_type: 'percentage' | 'fixed' | 'free_days';
   discount_value: number;
+  duration_months: number;
 };
 
 export default function Pricing() {
@@ -150,6 +151,7 @@ export default function Pricing() {
       code: promo.code,
       discount_type: promo.discount_type as ProPromo['discount_type'],
       discount_value: promo.discount_value,
+      duration_months: promo.duration_months,
     });
     setProPromoError('');
   };
@@ -403,9 +405,13 @@ export default function Pricing() {
                     {proFinalPrice.toFixed(2)}€/{isEnglish ? 'month' : 'mês'}
                   </span>
                   <span className="text-xs text-primary font-medium">
-                    {isEnglish
-                      ? `You save ${proDiscount.toFixed(2)}€ with ${proAppliedPromo.code}`
-                      : `Poupas ${proDiscount.toFixed(2)}€ com ${proAppliedPromo.code}`}
+                    {proAppliedPromo.duration_months > 0
+                      ? isEnglish
+                        ? `${proAppliedPromo.discount_value}${proAppliedPromo.discount_type === 'percentage' ? '%' : '€'} discount for ${proAppliedPromo.duration_months} months, then ${BASE_PRO_PRICE}€/month`
+                        : `${proAppliedPromo.discount_value}${proAppliedPromo.discount_type === 'percentage' ? '%' : '€'} de desconto durante ${proAppliedPromo.duration_months} meses, depois ${BASE_PRO_PRICE}€/mês`
+                      : isEnglish
+                        ? `You save ${proDiscount.toFixed(2)}€ with ${proAppliedPromo.code}`
+                        : `Poupas ${proDiscount.toFixed(2)}€ com ${proAppliedPromo.code}`}
                   </span>
                 </div>
               ) : (
@@ -433,7 +439,10 @@ export default function Pricing() {
                         ? `-${proAppliedPromo.discount_value}%`
                         : proAppliedPromo.discount_type === 'fixed'
                         ? `-${proAppliedPromo.discount_value}€`
-                        : `${proAppliedPromo.discount_value} ${isEnglish ? 'free days' : 'dias grátis'}`})
+                        : `${proAppliedPromo.discount_value} ${isEnglish ? 'free days' : 'dias grátis'}`}
+                      {proAppliedPromo.discount_type !== 'free_days' && proAppliedPromo.duration_months > 0
+                        ? ` · ${proAppliedPromo.duration_months} ${isEnglish ? 'months' : 'meses'}`
+                        : ''})
                     </span>
                   </div>
                   <Button type="button" variant="ghost" size="icon" onClick={removeProPromo}>
