@@ -1,5 +1,5 @@
 
-CREATE TABLE public.promo_codes (
+CREATE TABLE IF NOT EXISTS public.promo_codes (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   code TEXT NOT NULL UNIQUE,
   description TEXT,
@@ -17,16 +17,19 @@ CREATE TABLE public.promo_codes (
 
 ALTER TABLE public.promo_codes ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Admins can manage promo codes" ON public.promo_codes;
 CREATE POLICY "Admins can manage promo codes"
   ON public.promo_codes FOR ALL
   TO authenticated
   USING (public.has_role(auth.uid(), 'admin'));
 
+DROP POLICY IF EXISTS "Authenticated users can view active promo codes" ON public.promo_codes;
 CREATE POLICY "Authenticated users can view active promo codes"
   ON public.promo_codes FOR SELECT
   TO authenticated
   USING (is_active = true AND expires_at > now());
 
+DROP TRIGGER IF EXISTS update_promo_codes_updated_at ON public.promo_codes;
 CREATE TRIGGER update_promo_codes_updated_at
   BEFORE UPDATE ON public.promo_codes
   FOR EACH ROW
