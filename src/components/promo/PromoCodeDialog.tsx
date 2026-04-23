@@ -173,9 +173,15 @@ export function PromoCodeDialog({
               <Label>Tipo de Desconto</Label>
               <Select
                 value={formData.discount_type}
-                onValueChange={(value: any) =>
-                  setFormData({ ...formData, discount_type: value })
-                }
+                onValueChange={(value: any) => {
+                  const defaultPlans =
+                    value === 'free_days' ? ['pro'] : ['pro', 'premium'];
+                  setFormData({
+                    ...formData,
+                    discount_type: value,
+                    applicable_plan_types: defaultPlans,
+                  });
+                }}
               >
                 <SelectTrigger>
                   <SelectValue />

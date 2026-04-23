@@ -60,11 +60,8 @@ const Checkout = () => {
       setPromoError(isEnglish ? "Enter a code." : "Insere um código.");
       return;
     }
-    let promo = promoCodes.find((p) => p.code.toUpperCase() === code);
-    if (!promo && promoCodes.length === 0) {
-      await fetchPromoCodes();
-      promo = usePromoStore.getState().promoCodes.find((p) => p.code.toUpperCase() === code);
-    }
+    await fetchPromoCodes();
+    const promo = usePromoStore.getState().promoCodes.find((p) => p.code.toUpperCase() === code);
     if (!promo) {
       setPromoError(isEnglish ? "Invalid code." : "Código inválido.");
       return;
@@ -87,7 +84,7 @@ const Checkout = () => {
     }
 
     if (!promo.applicable_plan_types.includes("premium")) {
-      setPromoError(isEnglish ? "Code not valid for this plan." : "Código não aplicável a este plano.");
+      setPromoError(isEnglish ? "This code is only valid for the Pro subscription." : "Este código é apenas válido para a subscrição Pro.");
       return;
     }
 
