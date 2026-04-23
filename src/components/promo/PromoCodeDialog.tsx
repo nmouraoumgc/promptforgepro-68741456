@@ -121,7 +121,8 @@ export function PromoCodeDialog({
       onSuccess?.();
       onOpenChange(false);
     } catch (error) {
-      toast.error('Erro ao guardar código');
+      const message = error instanceof Error ? error.message : 'Erro desconhecido';
+      toast.error('Erro ao guardar código', { description: message });
     } finally {
       setIsLoading(false);
     }

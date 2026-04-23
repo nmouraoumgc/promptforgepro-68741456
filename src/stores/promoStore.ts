@@ -26,9 +26,6 @@ interface PromoState {
   deletePromoCode: (id: string) => Promise<void>;
 }
 
-// Use type assertion since promo_codes table is not yet in generated types
-const fromPromo = () => supabase.from('promo_codes' as any);
-
 export const usePromoStore = create<PromoState>()(
   persist(
     (set) => ({
@@ -54,7 +51,7 @@ export const usePromoStore = create<PromoState>()(
             current_uses: 0,
           }]);
 
-        if (error) throw error;
+        if (error) throw new Error(error.message);
         await (usePromoStore.getState().fetchPromoCodes());
       },
       updatePromoCode: async (id, data) => {
@@ -62,7 +59,7 @@ export const usePromoStore = create<PromoState>()(
           .from('promo_codes')
           .update(data)
           .eq('id', id);
-        if (error) throw error;
+        if (error) throw new Error(error.message);
         await (usePromoStore.getState().fetchPromoCodes());
       },
       deletePromoCode: async (id) => {
@@ -70,7 +67,7 @@ export const usePromoStore = create<PromoState>()(
           .from('promo_codes')
           .delete()
           .eq('id', id);
-        if (error) throw error;
+        if (error) throw new Error(error.message);
         await (usePromoStore.getState().fetchPromoCodes());
       },
     }),
