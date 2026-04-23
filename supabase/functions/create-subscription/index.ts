@@ -112,7 +112,7 @@ serve(async (req) => {
         .single();
 
       if (promoData) {
-        logStep("Promo code found in DB", { discount_type: promoData.discount_type, discount_value: promoData.discount_value });
+        logStep("Promo code found in DB", { discount_type: promoData.discount_type, discount_value: promoData.discount_value, duration_months: promoData.duration_months });
 
         if (promoData.discount_type === "free_days") {
           // Use Stripe trial period for free days (e.g. 60 days = 2 months free)
@@ -120,9 +120,11 @@ serve(async (req) => {
           logStep("Using trial period", { trialPeriodDays });
         } else {
           // Create a Stripe coupon for percentage or fixed discount
+          const durationMonths: number = promoData.duration_months ?? 0;
           const couponParams: any = {
-            duration: "once",
+            duration: durationMonths > 0 ? "repeating" : "once",
             name: `Promo ${promoData.code}`,
+            ...(durationMonths > 0 ? { duration_in_months: durationMonths } : {}),
           };
 
           if (promoData.discount_type === "percentage") {
@@ -133,7 +135,7 @@ serve(async (req) => {
           }
 
           const coupon = await stripe.coupons.create(couponParams);
-          logStep("Stripe coupon created", { couponId: coupon.id });
+          logStep("Stripe coupon created", { couponId: coupon.id, duration: couponParams.duration });
           discounts.push({ coupon: coupon.id });
         }
       } else {

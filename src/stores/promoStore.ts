@@ -8,6 +8,7 @@ export interface PromoCode {
   description?: string;
   discount_type: 'percentage' | 'fixed' | 'free_days';
   discount_value: number;
+  duration_months: number;
   applicable_plan_types: string[];
   max_uses: number;
   current_uses?: number;
