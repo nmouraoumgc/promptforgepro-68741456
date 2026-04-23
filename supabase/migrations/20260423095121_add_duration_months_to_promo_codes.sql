@@ -1,2 +1,2 @@
 ALTER TABLE public.promo_codes
-ADD COLUMN duration_months integer NOT NULL DEFAULT 0;
+ADD COLUMN IF NOT EXISTS duration_months integer NOT NULL DEFAULT 0;

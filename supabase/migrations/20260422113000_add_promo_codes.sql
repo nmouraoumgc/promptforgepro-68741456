@@ -9,6 +9,7 @@ create table if not exists public.promo_codes (
   max_uses integer not null default 100 check (max_uses >= 0),
   current_uses integer not null default 0 check (current_uses >= 0),
   expires_at timestamptz not null,
+  duration_months integer not null default 0,
   is_active boolean not null default true,
   created_by uuid references auth.users(id),
   created_at timestamptz not null default now(),
