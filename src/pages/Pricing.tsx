@@ -120,13 +120,8 @@ export default function Pricing() {
     const code = proPromoInput.trim().toUpperCase();
     if (!code) return;
 
-    let list = promoCodes;
-    if (list.length === 0) {
-      await fetchPromoCodes();
-      list = usePromoStore.getState().promoCodes;
-    }
-
-    const promo = list.find((p) => p.code.toUpperCase() === code);
+    await fetchPromoCodes();
+    const promo = usePromoStore.getState().promoCodes.find((p) => p.code.toUpperCase() === code);
     if (!promo) {
       setProPromoError(isEnglish ? 'Invalid code.' : 'Código inválido.');
       return;
