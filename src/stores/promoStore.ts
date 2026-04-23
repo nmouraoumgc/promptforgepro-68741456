@@ -52,7 +52,7 @@ export const usePromoStore = create<PromoState>()(
             current_uses: 0,
           }]);
 
-        if (error) throw error;
+        if (error) throw new Error(error.message);
         await (usePromoStore.getState().fetchPromoCodes());
       },
       updatePromoCode: async (id, data) => {
@@ -60,7 +60,7 @@ export const usePromoStore = create<PromoState>()(
           .from('promo_codes')
           .update(data)
           .eq('id', id);
-        if (error) throw error;
+        if (error) throw new Error(error.message);
         await (usePromoStore.getState().fetchPromoCodes());
       },
       deletePromoCode: async (id) => {
@@ -68,7 +68,7 @@ export const usePromoStore = create<PromoState>()(
           .from('promo_codes')
           .delete()
           .eq('id', id);
-        if (error) throw error;
+        if (error) throw new Error(error.message);
         await (usePromoStore.getState().fetchPromoCodes());
       },
     }),
