@@ -12,7 +12,8 @@ import { pt, enUS } from 'date-fns/locale';
 
 export default function VersionHistory() {
   const { t, i18n } = useTranslation();
-  const locale = i18n.language === 'en' ? enUS : pt;
+  const isEnglish = (i18n.resolvedLanguage || i18n.language || 'pt').startsWith('en');
+  const locale = isEnglish ? enUS : pt;
   const { prompts, revertToVersion } = usePromptStore();
   const { canAccess } = usePlanStore();
   const { user } = useAuthStore();
@@ -38,7 +39,7 @@ export default function VersionHistory() {
     );
   }
 
-  const dateFormat = i18n.language === 'en' ? "MMM d, yyyy 'at' HH:mm" : "d MMM yyyy 'às' HH:mm";
+  const dateFormat = isEnglish ? "MMM d, yyyy 'at' HH:mm" : "d MMM yyyy 'às' HH:mm";
 
   return (
     <div className="p-6 space-y-6 animate-fade-in">

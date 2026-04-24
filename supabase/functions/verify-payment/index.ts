@@ -8,75 +8,56 @@ const corsHeaders = {
 };
 
 const logStep = (step: string, details?: unknown) => {
-  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
+  const detailsStr = details ? ` - ${JSON.stringify(details)}` : "";
   console.log(`[VERIFY-PAYMENT] ${step}${detailsStr}`);
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    logStep("Function started");
-
     const { session_id } = await req.json();
     if (!session_id) {
       throw new Error("session_id is required");
     }
-    logStep("Session ID received", { session_id });
 
-    // Initialize Stripe
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) {
       throw new Error("STRIPE_SECRET_KEY is not set");
     }
-    
+
     const stripe = new Stripe(stripeKey, {
       apiVersion: "2025-08-27.basil",
     });
 
-    // Retrieve the checkout session
     const session = await stripe.checkout.sessions.retrieve(session_id);
-    logStep("Session retrieved", { 
-      status: session.payment_status,
-      customerEmail: session.customer_details?.email 
-    });
 
     if (session.payment_status !== "paid") {
-      return new Response(JSON.stringify({ 
-        success: false, 
-        message: "Payment not completed" 
+      return new Response(JSON.stringify({
+        success: false,
+        message: "Payment not completed",
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
       });
     }
 
-    // Payment successful - update user profile if user_id in metadata
     const userId = session.metadata?.user_id;
-    
+
     if (userId) {
       const supabaseClient = createClient(
         Deno.env.get("SUPABASE_URL") ?? "",
-        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
       );
 
-      // Update user's plan to premium
-      const { error: updateError } = await supabaseClient
+      await supabaseClient
         .from("profiles")
         .update({ current_plan: "premium" })
         .eq("id", userId);
 
-      if (updateError) {
-        logStep("Error updating profile", { error: updateError.message });
-      } else {
-        logStep("Profile updated to premium", { userId });
-      }
-
-      // Record the purchase
-      const { error: purchaseError } = await supabaseClient
+      await supabaseClient
         .from("purchases")
         .insert({
           user_id: userId,
@@ -87,31 +68,19 @@ serve(async (req) => {
           status: "completed",
         });
 
-      if (purchaseError) {
-        logStep("Error recording purchase", { error: purchaseError.message });
-      } else {
-        logStep("Purchase recorded", { userId });
-      }
-
-      // Increment promo code usage after successful payment
       const promoId = session.metadata?.promo_id;
       if (promoId) {
-        const { error: promoUpdateError } = await supabaseClient.rpc("increment_promo_usage", {
+        await supabaseClient.rpc("increment_promo_usage", {
           promo_id_param: promoId,
         });
-
-        if (promoUpdateError) {
-          logStep("Error incrementing promo usage", { promoId, error: promoUpdateError.message });
-        } else {
-          logStep("Promo usage incremented", { promoId });
-        }
       }
     }
 
-    return new Response(JSON.stringify({ 
-      success: true, 
+    return new Response(JSON.stringify({
+      success: true,
       plan: "premium",
-      email: session.customer_details?.email 
+      provider: "stripe",
+      email: session.customer_details?.email,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,

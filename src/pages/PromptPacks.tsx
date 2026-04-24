@@ -20,7 +20,7 @@ export default function PromptPacks() {
   const navigate = useNavigate();
   const { canAccess } = usePlanStore();
   const { i18n } = useTranslation();
-  const isEnglish = i18n.language === 'en';
+  const isEnglish = (i18n.resolvedLanguage || i18n.language || 'pt').startsWith('en');
   const hasAccess = canAccess('canAccessPromptPacks');
 
   // Group packs by outcome category

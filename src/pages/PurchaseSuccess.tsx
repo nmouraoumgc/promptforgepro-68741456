@@ -15,7 +15,7 @@ const PurchaseSuccess = () => {
   const { setPlan } = usePlanStore();
   const { fetchProfile } = useAuthStore();
   const { i18n } = useTranslation();
-  const isEnglish = i18n.language === "en";
+  const isEnglish = (i18n.resolvedLanguage || i18n.language || "pt").startsWith("en");
   const [isVerifying, setIsVerifying] = useState(true);
   const checklistItems = [
     { icon: Sparkles, label: isEnglish ? "Prompt Packs unlocked" : "Prompt Packs desbloqueados" },

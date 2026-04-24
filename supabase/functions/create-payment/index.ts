@@ -7,33 +7,29 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Premium Prompt Packs - one-time payment
-const PREMIUM_PRICE_ID = "price_1SkmVtR9OqsKhbCAZbO1BlCj";
+const PREMIUM_PRICE_CENTS = 1900; // 19€ one-time
 
 const logStep = (step: string, details?: unknown) => {
-  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
+  const detailsStr = details ? ` - ${JSON.stringify(details)}` : "";
   console.log(`[CREATE-PAYMENT] ${step}${detailsStr}`);
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   const supabaseClient = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+    Deno.env.get("SUPABASE_ANON_KEY") ?? "",
   );
+
   const supabaseAdminClient = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY") ?? "",
   );
 
   try {
-    logStep("Function started");
-
-    // Get optional email from request body (for guest checkout)
     let guestEmail: string | null = null;
     let promoCode: string | null = null;
     try {
@@ -41,13 +37,12 @@ serve(async (req) => {
       guestEmail = body.email || null;
       promoCode = body.promoCode ? String(body.promoCode).trim().toUpperCase() : null;
     } catch {
-      // No body or invalid JSON, that's ok
+      // ignore
     }
 
-    // Try to get authenticated user
     let userEmail: string | null = null;
     let userId: string | null = null;
-    
+
     const authHeader = req.headers.get("Authorization");
     if (authHeader) {
       const token = authHeader.replace("Bearer ", "");
@@ -55,18 +50,14 @@ serve(async (req) => {
       if (data.user?.email) {
         userEmail = data.user.email;
         userId = data.user.id;
-        logStep("Authenticated user found", { userId, email: userEmail });
       }
     }
 
-    // Use authenticated email or guest email
     const email = userEmail || guestEmail;
     if (!email) {
       throw new Error("Email is required for checkout");
     }
-    logStep("Using email for checkout", { email });
 
-    // Validate promo code (if provided)
     type PromoCodeRow = {
       id: string;
       code: string;
@@ -87,86 +78,65 @@ serve(async (req) => {
         .eq("code", promoCode)
         .maybeSingle();
 
-      if (promoError) {
-        logStep("Promo lookup error", { promoCode, error: promoError.message });
-        throw new Error("Could not validate promo code");
-      }
-
-      if (!promo) {
-        throw new Error("Invalid promo code");
-      }
-      if (!promo.is_active) {
-        throw new Error("Promo code is inactive");
-      }
-      if (promo.max_uses > 0 && promo.current_uses >= promo.max_uses) {
-        throw new Error("Promo code usage limit reached");
-      }
-      const expiresAt = new Date(promo.expires_at);
-      if (expiresAt < new Date()) {
-        throw new Error("Promo code has expired");
-      }
-      if (promo.discount_type === "free_days") {
-        throw new Error("This promo code is only valid for Pro subscriptions");
-      }
-      if (!promo.applicable_plan_types?.includes("premium")) {
-        throw new Error("Promo code is not valid for premium");
-      }
+      if (promoError) throw new Error("Could not validate promo code");
+      if (!promo) throw new Error("Invalid promo code");
+      if (!promo.is_active) throw new Error("Promo code is inactive");
+      if (promo.max_uses > 0 && promo.current_uses >= promo.max_uses) throw new Error("Promo code usage limit reached");
+      if (new Date(promo.expires_at) < new Date()) throw new Error("Promo code has expired");
+      if (promo.discount_type === "free_days") throw new Error("This promo code is only valid for Pro subscriptions");
+      if (!promo.applicable_plan_types?.includes("premium")) throw new Error("Promo code is not valid for premium");
 
       validPromo = promo as PromoCodeRow;
-      logStep("Promo validated", { code: validPromo.code, type: validPromo.discount_type, value: validPromo.discount_value });
     }
 
-    // Initialize Stripe
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) {
       throw new Error("STRIPE_SECRET_KEY is not set");
     }
-    
+
     const stripe = new Stripe(stripeKey, {
       apiVersion: "2025-08-27.basil",
     });
-    logStep("Stripe initialized");
 
-    // Check if a Stripe customer already exists
     const customers = await stripe.customers.list({ email, limit: 1 });
-    let customerId: string | undefined;
-    
-    if (customers.data.length > 0) {
-      customerId = customers.data[0].id;
-      logStep("Existing customer found", { customerId });
-    } else {
-      logStep("No existing customer, will create new one");
-    }
+    const customerId = customers.data.length > 0 ? customers.data[0].id : undefined;
 
-    // Get origin for success/cancel URLs
-    const origin = req.headers.get("origin") || "https://hkmxtamqvekycbbzoeaw.lovableproject.com";
-    
-    // Create one-time payment session
     let discounts: Stripe.Checkout.SessionCreateParams.Discount[] | undefined;
     if (validPromo) {
-      const discountType = validPromo.discount_type;
       const discountValue = Number(validPromo.discount_value);
-
       const coupon = await stripe.coupons.create(
-        discountType === "percentage"
-          ? { duration: "once", percent_off: Math.min(100, discountValue), name: `Promo ${validPromo.code}` }
+        validPromo.discount_type === "percentage"
+          ? {
+              duration: "once",
+              percent_off: Math.min(100, discountValue),
+              name: `Promo ${validPromo.code}`,
+            }
           : {
               duration: "once",
               amount_off: Math.max(0, Math.round(discountValue * 100)),
               currency: "eur",
               name: `Promo ${validPromo.code}`,
-            }
+            },
       );
       discounts = [{ coupon: coupon.id }];
     }
+
+    const origin = req.headers.get("origin") || "https://hkmxtamqvekycbbzoeaw.lovableproject.com";
 
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : email,
       line_items: [
         {
-          price: PREMIUM_PRICE_ID,
           quantity: 1,
+          price_data: {
+            currency: "eur",
+            unit_amount: PREMIUM_PRICE_CENTS,
+            product_data: {
+              name: "Premium Prompt Packs",
+              description: "One-time access to all Premium Prompt Packs",
+            },
+          },
         },
       ],
       mode: "payment",
@@ -188,10 +158,10 @@ serve(async (req) => {
         },
       },
     });
-    
-    logStep("Checkout session created", { sessionId: session.id, url: session.url });
 
-    return new Response(JSON.stringify({ url: session.url }), {
+    logStep("Stripe checkout session created", { sessionId: session.id });
+
+    return new Response(JSON.stringify({ url: session.url, provider: "stripe" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
