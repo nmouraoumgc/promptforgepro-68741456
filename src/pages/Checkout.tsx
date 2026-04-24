@@ -60,7 +60,16 @@ const Checkout = () => {
       setPromoError(isEnglish ? "Enter a code." : "Insere um código.");
       return;
     }
-    await fetchPromoCodes();
+    try {
+      await fetchPromoCodes();
+    } catch {
+      setPromoError(
+        isEnglish
+          ? "Could not verify the code. Please try again."
+          : "Não foi possível verificar o código. Tenta novamente."
+      );
+      return;
+    }
     const promo = usePromoStore.getState().promoCodes.find((p) => p.code.toUpperCase() === code);
     if (!promo) {
       setPromoError(isEnglish ? "Invalid code." : "Código inválido.");
