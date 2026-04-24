@@ -337,12 +337,12 @@ const Checkout = () => {
                   {isLoading ? (
                     <span className="flex items-center gap-2">
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      {isEnglish ? "Redirecting to Stripe..." : "A redirecionar para Stripe..."}
+                      {isEnglish ? "Redirecting to Paddle..." : "A redirecionar para Paddle..."}
                     </span>
                   ) : (
                     <span className="flex items-center gap-2">
                       <CreditCard className="h-4 w-4" />
-                      {isEnglish ? `Pay ${finalPrice.toFixed(2)}€ with Stripe` : `Pagar ${finalPrice.toFixed(2)}€ com Stripe`}
+                      {isEnglish ? `Pay ${finalPrice.toFixed(2)}€ with Paddle` : `Pagar ${finalPrice.toFixed(2)}€ com Paddle`}
                     </span>
                   )}
                 </Button>
@@ -351,7 +351,7 @@ const Checkout = () => {
               <div className="mt-6 pt-4 border-t border-border space-y-2">
                 <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
                   <Shield className="h-4 w-4" />
-                  <span>{isEnglish ? "Secure payment. Processed by Stripe." : "Pagamento seguro. Processado por Stripe."}</span>
+                  <span>{isEnglish ? "Secure payment. Processed by Paddle." : "Pagamento seguro. Processado pela Paddle."}</span>
                 </div>
                 <p className="text-center text-sm text-muted-foreground">
                   {isEnglish ? "No subscription. No recurring charges." : "Sem subscrição. Sem cobranças recorrentes."}

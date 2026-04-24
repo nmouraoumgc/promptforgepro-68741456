@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
@@ -7,11 +6,19 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const PREMIUM_PRICE_CENTS = 1900; // 19€ one-time
-
 const logStep = (step: string, details?: unknown) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : "";
   console.log(`[CREATE-PAYMENT] ${step}${detailsStr}`);
+};
+
+const buildPaddleCheckoutUrl = (baseUrl: string, params: Record<string, string>) => {
+  const url = new URL(baseUrl);
+  Object.entries(params).forEach(([key, value]) => {
+    if (value) {
+      url.searchParams.set(key, value);
+    }
+  });
+  return url.toString();
 };
 
 serve(async (req) => {
@@ -32,6 +39,7 @@ serve(async (req) => {
   try {
     let guestEmail: string | null = null;
     let promoCode: string | null = null;
+
     try {
       const body = await req.json();
       guestEmail = body.email || null;
@@ -71,6 +79,7 @@ serve(async (req) => {
     };
 
     let validPromo: PromoCodeRow | null = null;
+
     if (promoCode) {
       const { data: promo, error: promoError } = await supabaseAdminClient
         .from("promo_codes")
@@ -78,7 +87,10 @@ serve(async (req) => {
         .eq("code", promoCode)
         .maybeSingle();
 
-      if (promoError) throw new Error("Could not validate promo code");
+      if (promoError) {
+        throw new Error("Could not validate promo code");
+      }
+
       if (!promo) throw new Error("Invalid promo code");
       if (!promo.is_active) throw new Error("Promo code is inactive");
       if (promo.max_uses > 0 && promo.current_uses >= promo.max_uses) throw new Error("Promo code usage limit reached");
@@ -89,79 +101,28 @@ serve(async (req) => {
       validPromo = promo as PromoCodeRow;
     }
 
-    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!stripeKey) {
-      throw new Error("STRIPE_SECRET_KEY is not set");
+    const paddlePremiumCheckoutUrl = Deno.env.get("PADDLE_PREMIUM_CHECKOUT_URL");
+    if (!paddlePremiumCheckoutUrl) {
+      throw new Error("PADDLE_PREMIUM_CHECKOUT_URL is not set");
     }
 
-    const stripe = new Stripe(stripeKey, {
-      apiVersion: "2025-08-27.basil",
-    });
-
-    const customers = await stripe.customers.list({ email, limit: 1 });
-    const customerId = customers.data.length > 0 ? customers.data[0].id : undefined;
-
-    let discounts: Stripe.Checkout.SessionCreateParams.Discount[] | undefined;
-    if (validPromo) {
-      const discountValue = Number(validPromo.discount_value);
-      const coupon = await stripe.coupons.create(
-        validPromo.discount_type === "percentage"
-          ? {
-              duration: "once",
-              percent_off: Math.min(100, discountValue),
-              name: `Promo ${validPromo.code}`,
-            }
-          : {
-              duration: "once",
-              amount_off: Math.max(0, Math.round(discountValue * 100)),
-              currency: "eur",
-              name: `Promo ${validPromo.code}`,
-            },
-      );
-      discounts = [{ coupon: coupon.id }];
-    }
-
-    const origin = req.headers.get("origin") || "https://hkmxtamqvekycbbzoeaw.lovableproject.com";
-
-    const session = await stripe.checkout.sessions.create({
-      customer: customerId,
-      customer_email: customerId ? undefined : email,
-      line_items: [
-        {
-          quantity: 1,
-          price_data: {
-            currency: "eur",
-            unit_amount: PREMIUM_PRICE_CENTS,
-            product_data: {
-              name: "Premium Prompt Packs",
-              description: "One-time access to all Premium Prompt Packs",
-            },
-          },
-        },
-      ],
-      mode: "payment",
-      success_url: `${origin}/purchase-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/checkout`,
-      discounts,
-      metadata: {
+    const url = buildPaddleCheckoutUrl(paddlePremiumCheckoutUrl, {
+      email,
+      discount_code: validPromo?.code || "",
+      custom_data: JSON.stringify({
         user_id: userId || "",
         plan: "premium",
-        promo_code: validPromo?.code || "",
         promo_id: validPromo?.id || "",
-      },
-      payment_intent_data: {
-        metadata: {
-          user_id: userId || "",
-          plan: "premium",
-          promo_code: validPromo?.code || "",
-          promo_id: validPromo?.id || "",
-        },
-      },
+        promo_code: validPromo?.code || "",
+      }),
     });
 
-    logStep("Stripe checkout session created", { sessionId: session.id });
+    logStep("Paddle checkout URL generated", {
+      hasPromo: Boolean(validPromo?.code),
+      hasUser: Boolean(userId),
+    });
 
-    return new Response(JSON.stringify({ url: session.url, provider: "stripe" }), {
+    return new Response(JSON.stringify({ url, provider: "paddle" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });

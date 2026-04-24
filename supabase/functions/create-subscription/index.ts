@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
@@ -7,11 +6,19 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const PRO_PRICE_CENTS = 900; // 9€/month
-
 const logStep = (step: string, details?: unknown) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : "";
   console.log(`[CREATE-SUBSCRIPTION] ${step}${detailsStr}`);
+};
+
+const buildPaddleCheckoutUrl = (baseUrl: string, params: Record<string, string>) => {
+  const url = new URL(baseUrl);
+  Object.entries(params).forEach(([key, value]) => {
+    if (value) {
+      url.searchParams.set(key, value);
+    }
+  });
+  return url.toString();
 };
 
 serve(async (req) => {
@@ -60,6 +67,7 @@ serve(async (req) => {
     };
 
     let validPromo: PromoCodeRow | null = null;
+
     if (promoCode) {
       const supabaseAdmin = createClient(
         Deno.env.get("SUPABASE_URL") ?? "",
@@ -82,108 +90,30 @@ serve(async (req) => {
       validPromo = promo as PromoCodeRow;
     }
 
-    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!stripeKey) {
-      throw new Error("STRIPE_SECRET_KEY is not set");
+    const paddleProCheckoutUrl = Deno.env.get("PADDLE_PRO_CHECKOUT_URL");
+    if (!paddleProCheckoutUrl) {
+      throw new Error("PADDLE_PRO_CHECKOUT_URL is not set");
     }
 
-    const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
-
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
-    const customerId = customers.data.length > 0 ? customers.data[0].id : undefined;
-
-    if (customerId) {
-      const subscriptions = await stripe.subscriptions.list({
-        customer: customerId,
-        status: "active",
-        limit: 1,
-      });
-
-      if (subscriptions.data.length > 0) {
-        return new Response(JSON.stringify({
-          error: "Already subscribed",
-          message: "Já tens uma subscrição ativa.",
-        }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
-        });
-      }
-    }
-
-    const discounts: Stripe.Checkout.SessionCreateParams.Discount[] = [];
-    let trialPeriodDays: number | undefined;
-
-    if (validPromo) {
-      if (validPromo.discount_type === "free_days") {
-        trialPeriodDays = Math.round(validPromo.discount_value);
-      } else {
-        const durationMonths = validPromo.duration_months ?? 0;
-        const couponParams: Stripe.CouponCreateParams = {
-          duration: durationMonths > 0 ? "repeating" : "once",
-          name: `Promo ${validPromo.code}`,
-          ...(durationMonths > 0 ? { duration_in_months: durationMonths } : {}),
-        };
-
-        if (validPromo.discount_type === "percentage") {
-          couponParams.percent_off = validPromo.discount_value;
-        } else {
-          couponParams.amount_off = Math.round(validPromo.discount_value * 100);
-          couponParams.currency = "eur";
-        }
-
-        const coupon = await stripe.coupons.create(couponParams);
-        discounts.push({ coupon: coupon.id });
-      }
-    }
-
-    const origin = req.headers.get("origin") || "https://hkmxtamqvekycbbzoeaw.lovableproject.com";
-
-    const sessionParams: Stripe.Checkout.SessionCreateParams = {
-      customer: customerId,
-      customer_email: customerId ? undefined : user.email,
-      line_items: [
-        {
-          quantity: 1,
-          price_data: {
-            currency: "eur",
-            unit_amount: PRO_PRICE_CENTS,
-            recurring: { interval: "month" },
-            product_data: {
-              name: "Pro Subscription",
-              description: "Unlimited optimizations and advanced prompt tools",
-            },
-          },
-        },
-      ],
-      mode: "subscription",
-      success_url: `${origin}/subscription-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/pricing`,
-      metadata: {
+    const url = buildPaddleCheckoutUrl(paddleProCheckoutUrl, {
+      email: user.email,
+      discount_code: validPromo?.code || "",
+      custom_data: JSON.stringify({
         user_id: user.id,
         plan: "pro",
-        promo_code: validPromo?.code || "",
         promo_id: validPromo?.id || "",
-      },
-      subscription_data: {
-        metadata: {
-          user_id: user.id,
-          plan: "pro",
-          promo_code: validPromo?.code || "",
-          promo_id: validPromo?.id || "",
-        },
-        ...(trialPeriodDays ? { trial_period_days: trialPeriodDays } : {}),
-      },
-    };
+        promo_code: validPromo?.code || "",
+        promo_type: validPromo?.discount_type || "",
+        promo_duration_months: validPromo?.duration_months ? String(validPromo.duration_months) : "",
+      }),
+    });
 
-    if (discounts.length > 0) {
-      sessionParams.discounts = discounts;
-    }
+    logStep("Paddle checkout URL generated", {
+      userId: user.id,
+      hasPromo: Boolean(validPromo?.code),
+    });
 
-    const session = await stripe.checkout.sessions.create(sessionParams);
-
-    logStep("Stripe subscription checkout session created", { sessionId: session.id });
-
-    return new Response(JSON.stringify({ url: session.url, provider: "stripe" }), {
+    return new Response(JSON.stringify({ url, provider: "paddle" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
