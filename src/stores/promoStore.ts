@@ -1,6 +1,14 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 import { supabase } from '@/integrations/supabase/client';
+
+// One-time cleanup of legacy persisted promo cache (could contain stale codes).
+try {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    window.localStorage.removeItem('promo-codes-storage');
+  }
+} catch {
+  // ignore storage access errors
+}
 
 export interface PromoCode {
   id: string;
@@ -27,51 +35,49 @@ interface PromoState {
   deletePromoCode: (id: string) => Promise<void>;
 }
 
-export const usePromoStore = create<PromoState>()(
-  persist(
-    (set) => ({
-      promoCodes: [],
-      isLoading: false,
-      fetchPromoCodes: async () => {
-        set({ isLoading: true });
-        const { data, error } = await supabase
-          .from('promo_codes')
-          .select('*')
-          .order('created_at', { ascending: false });
+export const usePromoStore = create<PromoState>()((set) => ({
+  promoCodes: [],
+  isLoading: false,
+  fetchPromoCodes: async () => {
+    set({ isLoading: true });
+    const { data, error } = await supabase
+      .from('promo_codes')
+      .select('*')
+      .order('created_at', { ascending: false });
 
-        if (!error && data) {
-          set({ promoCodes: data as PromoCode[] });
-        }
-        set({ isLoading: false });
-      },
-      createPromoCode: async (data) => {
-        const { error } = await supabase
-          .from('promo_codes')
-          .insert([{
-            ...data,
-            current_uses: 0,
-          }]);
+    if (error) {
+      // Reset to empty so validation cannot match against a stale snapshot.
+      set({ promoCodes: [], isLoading: false });
+      throw new Error(error.message);
+    }
 
-        if (error) throw new Error(error.message);
-        await (usePromoStore.getState().fetchPromoCodes());
-      },
-      updatePromoCode: async (id, data) => {
-        const { error } = await supabase
-          .from('promo_codes')
-          .update(data)
-          .eq('id', id);
-        if (error) throw new Error(error.message);
-        await (usePromoStore.getState().fetchPromoCodes());
-      },
-      deletePromoCode: async (id) => {
-        const { error } = await supabase
-          .from('promo_codes')
-          .delete()
-          .eq('id', id);
-        if (error) throw new Error(error.message);
-        await (usePromoStore.getState().fetchPromoCodes());
-      },
-    }),
-    { name: 'promo-codes-storage' }
-  )
-);
+    set({ promoCodes: (data ?? []) as PromoCode[], isLoading: false });
+  },
+  createPromoCode: async (data) => {
+    const { error } = await supabase
+      .from('promo_codes')
+      .insert([{
+        ...data,
+        current_uses: 0,
+      }]);
+
+    if (error) throw new Error(error.message);
+    await usePromoStore.getState().fetchPromoCodes();
+  },
+  updatePromoCode: async (id, data) => {
+    const { error } = await supabase
+      .from('promo_codes')
+      .update(data)
+      .eq('id', id);
+    if (error) throw new Error(error.message);
+    await usePromoStore.getState().fetchPromoCodes();
+  },
+  deletePromoCode: async (id) => {
+    const { error } = await supabase
+      .from('promo_codes')
+      .delete()
+      .eq('id', id);
+    if (error) throw new Error(error.message);
+    await usePromoStore.getState().fetchPromoCodes();
+  },
+}));
