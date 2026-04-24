@@ -1,85 +1,42 @@
 import { useTranslation } from 'react-i18next';
-import { BookOpen, Lightbulb, Target, Zap, CheckCircle } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-
-const tipsByLang = {
-  pt: [
-    { icon: Target, title: 'Sê Específico', description: 'Quanto mais detalhes deres, melhor será o resultado. Evita instruções vagas.', level: 'Básico' },
-    { icon: Zap, title: 'Define o Formato', description: 'Diz explicitamente se queres lista, parágrafo, código, tabela, etc.', level: 'Básico' },
-    { icon: Lightbulb, title: 'Dá Exemplos', description: 'Mostrar exemplos do que esperas ajuda a IA a entender o padrão.', level: 'Intermédio' },
-    { icon: CheckCircle, title: 'Usa Restrições', description: 'Limita o comprimento, exclui tópicos, define o tom desejado.', level: 'Intermédio' },
-  ],
-  en: [
-    { icon: Target, title: 'Be Specific', description: 'The more details you give, the better the result. Avoid vague instructions.', level: 'Basic' },
-    { icon: Zap, title: 'Define the Format', description: 'Explicitly say if you want a list, paragraph, code, table, etc.', level: 'Basic' },
-    { icon: Lightbulb, title: 'Give Examples', description: 'Showing examples of what you expect helps the AI understand the pattern.', level: 'Intermediate' },
-    { icon: CheckCircle, title: 'Use Constraints', description: 'Limit length, exclude topics, set the desired tone.', level: 'Intermediate' },
-  ],
-};
-
-const lessonsByLang = {
-  pt: [
-    { title: 'Anatomia de um Bom Prompt', duration: '5 min', level: 'Iniciante' },
-    { title: 'Variáveis Dinâmicas', duration: '8 min', level: 'Intermédio' },
-    { title: 'Prompts para Imagens', duration: '10 min', level: 'Avançado' },
-    { title: 'Chain of Thought', duration: '12 min', level: 'Avançado' },
-  ],
-  en: [
-    { title: 'Anatomy of a Good Prompt', duration: '5 min', level: 'Beginner' },
-    { title: 'Dynamic Variables', duration: '8 min', level: 'Intermediate' },
-    { title: 'Prompts for Images', duration: '10 min', level: 'Advanced' },
-    { title: 'Chain of Thought', duration: '12 min', level: 'Advanced' },
-  ],
-};
+import { Construction, Clock } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 
 export default function Learn() {
   const { t, i18n } = useTranslation();
   const lang = ((i18n.resolvedLanguage || i18n.language || 'pt').slice(0, 2) === 'en' ? 'en' : 'pt') as 'pt' | 'en';
-  const tips = tipsByLang[lang];
-  const lessons = lessonsByLang[lang];
+
+  const content = {
+    pt: {
+      title: 'Secção Learn',
+      subtitle: 'Em breve',
+      message: 'Estamos a preparar conteúdo educativo de qualidade para te ajudar a dominar a arte dos prompts.',
+    },
+    en: {
+      title: 'Learn Section',
+      subtitle: 'Coming Soon',
+      message: 'We\'re preparing quality educational content to help you master the art of prompts.',
+    },
+  };
+
+  const c = content[lang];
 
   return (
-    <div className="p-6 space-y-6 animate-fade-in">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Lightbulb className="h-5 w-5 text-warning" />{t('learn.tipsTitle')}</CardTitle>
-            <CardDescription>{t('learn.tipsDesc')}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {tips.map((tip, i) => (
-              <div key={i} className="flex gap-4 p-4 rounded-lg bg-muted/50">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                  <tip.icon className="h-5 w-5 text-primary" />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-medium">{tip.title}</span>
-                    <Badge variant="secondary">{tip.level}</Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground">{tip.description}</p>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><BookOpen className="h-5 w-5 text-primary" />{t('learn.lessonsTitle')}</CardTitle>
-            <CardDescription>{t('learn.lessonsDesc')}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {lessons.map((lesson, i) => (
-              <div key={i} className="flex items-center justify-between p-4 rounded-lg border border-border hover:border-primary/50 cursor-pointer transition-all">
-                <div>
-                  <p className="font-medium">{lesson.title}</p>
-                  <p className="text-sm text-muted-foreground">{lesson.duration}</p>
-                </div>
-                <Badge variant="outline">{lesson.level}</Badge>
-              </div>
-            ))}
+    <div className="p-6 animate-fade-in">
+      <div className="flex flex-col items-center justify-center min-h-[60vh]">
+        <Card className="w-full max-w-md">
+          <CardContent className="flex flex-col items-center justify-center py-16 px-8 text-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 mb-6">
+              <Construction className="h-8 w-8 text-primary" />
+            </div>
+            <h1 className="text-2xl font-bold text-foreground mb-2">{c.title}</h1>
+            <div className="flex items-center gap-2 text-primary font-medium mb-4">
+              <Clock className="h-4 w-4" />
+              <span>{c.subtitle}</span>
+            </div>
+            <p className="text-muted-foreground max-w-sm">
+              {c.message}
+            </p>
           </CardContent>
         </Card>
       </div>
