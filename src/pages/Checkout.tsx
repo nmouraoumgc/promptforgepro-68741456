@@ -9,21 +9,25 @@ import { Check, Shield, CreditCard, Sparkles, Loader2, Ticket, X } from "lucide-
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthStore } from "@/stores/authStore";
-import { usePromoStore, type PromoCode } from "@/stores/promoStore";
 import { useTranslation } from "react-i18next";
 
 const BASE_PRICE = 19;
+
+type AppliedPromo = {
+  code: string;
+  discount_type: 'percentage' | 'fixed';
+  discount_value: number;
+};
 
 const Checkout = () => {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [promoInput, setPromoInput] = useState("");
-  const [appliedPromo, setAppliedPromo] = useState<PromoCode | null>(null);
+  const [appliedPromo, setAppliedPromo] = useState<AppliedPromo | null>(null);
   const [promoError, setPromoError] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, profile } = useAuthStore();
-  const { promoCodes, fetchPromoCodes } = usePromoStore();
   const { i18n } = useTranslation();
   const isEnglish = i18n.language === "en";
   const valueItems = isEnglish
@@ -48,10 +52,6 @@ const Checkout = () => {
     if (profile?.current_plan === "premium") navigate("/packs");
   }, [profile, navigate]);
 
-  useEffect(() => {
-    fetchPromoCodes();
-  }, [fetchPromoCodes]);
-
   const handleApplyPromo = async () => {
     setPromoError("");
     const code = promoInput.trim().toUpperCase();
@@ -60,45 +60,79 @@ const Checkout = () => {
       setPromoError(isEnglish ? "Enter a code." : "Insere um código.");
       return;
     }
+
     try {
-      await fetchPromoCodes();
+      const { data: promo, error: promoError } = await supabase
+        .from('promo_codes')
+        .select('*')
+        .eq('code', code)
+        .maybeSingle();
+
+      if (promoError) {
+        setPromoError(
+          isEnglish
+            ? "Could not verify the code. Please try again."
+            : "Não foi possível verificar o código. Tenta novamente."
+        );
+        return;
+      }
+      if (!promo) {
+        setPromoError(isEnglish ? "Invalid code." : "Código inválido.");
+        return;
+      }
+      if (!promo.is_active) {
+        setPromoError(isEnglish ? "Inactive code." : "Código inativo.");
+        return;
+      }
+      if (promo.max_uses > 0 && (promo.current_uses ?? 0) >= promo.max_uses) {
+        setPromoError(
+          isEnglish
+            ? "This code has reached its usage limit."
+            : "Este código atingiu o limite de utilizações."
+        );
+        return;
+      }
+      const expiresAt = new Date(promo.expires_at);
+      expiresAt.setHours(23, 59, 59, 999);
+      if (expiresAt < new Date()) {
+        setPromoError(isEnglish ? "Expired code." : "Código expirado.");
+        return;
+      }
+      if (promo.discount_type === "free_days") {
+        setPromoError(
+          isEnglish
+            ? "This code is only valid for Pro subscriptions."
+            : "Este código é apenas válido para a subscrição Pro."
+        );
+        return;
+      }
+      if (!promo.applicable_plan_types.includes("premium")) {
+        setPromoError(
+          isEnglish
+            ? "This code is not valid for Premium."
+            : "Este código não é válido para o plano Premium."
+        );
+        return;
+      }
+
+      setAppliedPromo({
+        code: promo.code,
+        discount_type: promo.discount_type as 'percentage' | 'fixed',
+        discount_value: promo.discount_value,
+      });
+      toast({
+        title: isEnglish ? "Code applied!" : "Código aplicado!",
+        description: isEnglish
+          ? `${promo.code} was applied successfully.`
+          : `${promo.code} foi aplicado com sucesso.`,
+      });
     } catch {
       setPromoError(
         isEnglish
           ? "Could not verify the code. Please try again."
           : "Não foi possível verificar o código. Tenta novamente."
       );
-      return;
     }
-    const promo = usePromoStore.getState().promoCodes.find((p) => p.code.toUpperCase() === code);
-    if (!promo) {
-      setPromoError(isEnglish ? "Invalid code." : "Código inválido.");
-      return;
-    }
-
-    if (!promo.is_active) {
-      setPromoError(isEnglish ? "Inactive code." : "Código inativo.");
-      return;
-    }
-    const expiresAt = new Date(promo.expires_at);
-    expiresAt.setHours(23, 59, 59, 999);
-    if (expiresAt < new Date()) {
-      setPromoError(isEnglish ? "Expired code." : "Código expirado.");
-      return;
-    }
-
-    if (promo.discount_type === "free_days") {
-      setPromoError(isEnglish ? "This code is only valid for Pro subscriptions." : "Este código é apenas válido para a subscrição Pro.");
-      return;
-    }
-
-    if (!promo.applicable_plan_types.includes("premium")) {
-      setPromoError(isEnglish ? "This code is only valid for the Pro subscription." : "Este código é apenas válido para a subscrição Pro.");
-      return;
-    }
-
-    setAppliedPromo(promo);
-    toast({ title: isEnglish ? "Code applied!" : "Código aplicado!", description: isEnglish ? `${promo.code} was applied successfully.` : `${promo.code} foi aplicado com sucesso.` });
   };
 
   const removePromo = () => {
