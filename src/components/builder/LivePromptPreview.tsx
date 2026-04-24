@@ -11,7 +11,7 @@ interface LivePromptPreviewProps {
 
 export default function LivePromptPreview({ builderState }: LivePromptPreviewProps) {
   const { i18n } = useTranslation();
-  const isEnglish = i18n.language === 'en';
+  const isEnglish = (i18n.resolvedLanguage || i18n.language || 'pt').startsWith('en');
   const { objective, outputType, targetModel, tone, targetAudience, constraints, format, language, creativityLevel } = builderState;
 
   const previewSections = useMemo(() => {
