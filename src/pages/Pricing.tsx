@@ -534,7 +534,7 @@ export default function Pricing() {
               {isLoadingPro ? (
                 <span className="flex items-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  {isEnglish ? 'Redirecting to Stripe...' : 'A redirecionar para Stripe...'}
+                  {isEnglish ? 'Redirecting to Paddle...' : 'A redirecionar para Paddle...'}
                 </span>
               ) : (
                 <span className="flex items-center gap-2">

@@ -20,7 +20,7 @@ export default function Login() {
   const { toast } = useToast();
   const { signIn } = useAuthStore();
   const { i18n } = useTranslation();
-  const isEnglish = i18n.language === 'en';
+  const isEnglish = (i18n.resolvedLanguage || i18n.language || 'pt').startsWith('en');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
