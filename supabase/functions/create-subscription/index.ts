@@ -80,12 +80,12 @@ serve(async (req) => {
       
       if (subscriptions.data.length > 0) {
         logStep("User already has active subscription");
-        return new Response(JSON.stringify({ 
+        return new Response(JSON.stringify({
           error: "Already subscribed",
-          message: "Já tens uma subscrição ativa." 
+          message: "Já tens uma subscrição ativa."
         }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 400,
+          status: 200,
         });
       }
     } else {

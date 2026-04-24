@@ -8,7 +8,6 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { usePlanStore } from '@/stores/planStore';
 import { useAuthStore } from '@/stores/authStore';
-import { usePromoStore } from '@/stores/promoStore';
 import { PlanType } from '@/types/plans';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -34,8 +33,7 @@ type ProPromo = {
 
 export default function Pricing() {
   const { currentPlan, setPlan } = usePlanStore();
-  const { user } = useAuthStore();
-  const { promoCodes, fetchPromoCodes } = usePromoStore();
+  const { user, isLoading: authLoading } = useAuthStore();
   const navigate = useNavigate();
   const { i18n } = useTranslation();
   const isEnglish = (i18n.resolvedLanguage || i18n.language || 'pt').startsWith('en');
@@ -95,7 +93,7 @@ export default function Pricing() {
     }
 
     if (planId === 'pro') {
-      if (!user) {
+      if (!authLoading && !user) {
         toast({
           title: isEnglish ? 'Authentication required' : 'Autenticação necessária',
           description: isEnglish ? 'You must sign in to subscribe to Pro.' : 'Tens de iniciar sessão para subscrever o plano Pro.',
@@ -104,6 +102,7 @@ export default function Pricing() {
         navigate('/login');
         return;
       }
+      if (authLoading) return;
       setShowProPromoDialog(true);
       return;
     }
@@ -121,43 +120,66 @@ export default function Pricing() {
     const code = proPromoInput.trim().toUpperCase();
     if (!code) return;
 
+    setProPromoError('');
+
     try {
-      await fetchPromoCodes();
+      const { data: promo, error: promoError } = await supabase
+        .from('promo_codes')
+        .select('*')
+        .eq('code', code)
+        .maybeSingle();
+
+      if (promoError) {
+        setProPromoError(
+          isEnglish
+            ? 'Could not verify the code. Please try again.'
+            : 'Não foi possível verificar o código. Tenta novamente.'
+        );
+        return;
+      }
+      if (!promo) {
+        setProPromoError(isEnglish ? 'Invalid code.' : 'Código inválido.');
+        return;
+      }
+      if (!promo.is_active) {
+        setProPromoError(isEnglish ? 'Inactive code.' : 'Código inativo.');
+        return;
+      }
+      if (promo.max_uses > 0 && (promo.current_uses ?? 0) >= promo.max_uses) {
+        setProPromoError(
+          isEnglish
+            ? 'This code has reached its usage limit.'
+            : 'Este código atingiu o limite de utilizações.'
+        );
+        return;
+      }
+      const expiresAt = new Date(promo.expires_at);
+      expiresAt.setHours(23, 59, 59, 999);
+      if (expiresAt < new Date()) {
+        setProPromoError(isEnglish ? 'Expired code.' : 'Código expirado.');
+        return;
+      }
+      if (!promo.applicable_plan_types.includes('pro')) {
+        setProPromoError(
+          isEnglish ? 'Code not valid for this plan.' : 'Código não aplicável a este plano.'
+        );
+        return;
+      }
+
+      setProAppliedPromo({
+        code: promo.code,
+        discount_type: promo.discount_type as ProPromo['discount_type'],
+        discount_value: promo.discount_value,
+        duration_months: promo.duration_months ?? 0,
+      });
+      setProPromoError('');
     } catch {
       setProPromoError(
         isEnglish
           ? 'Could not verify the code. Please try again.'
           : 'Não foi possível verificar o código. Tenta novamente.'
       );
-      return;
     }
-    const promo = usePromoStore.getState().promoCodes.find((p) => p.code.toUpperCase() === code);
-    if (!promo) {
-      setProPromoError(isEnglish ? 'Invalid code.' : 'Código inválido.');
-      return;
-    }
-    if (!promo.is_active) {
-      setProPromoError(isEnglish ? 'Inactive code.' : 'Código inativo.');
-      return;
-    }
-    const expiresAt = new Date(promo.expires_at);
-    expiresAt.setHours(23, 59, 59, 999);
-    if (expiresAt < new Date()) {
-      setProPromoError(isEnglish ? 'Expired code.' : 'Código expirado.');
-      return;
-    }
-    if (!promo.applicable_plan_types.includes('pro')) {
-      setProPromoError(isEnglish ? 'Code not valid for this plan.' : 'Código não aplicável a este plano.');
-      return;
-    }
-
-    setProAppliedPromo({
-      code: promo.code,
-      discount_type: promo.discount_type as ProPromo['discount_type'],
-      discount_value: promo.discount_value,
-      duration_months: promo.duration_months,
-    });
-    setProPromoError('');
   };
 
   const handleConfirmProSubscription = async () => {
@@ -165,16 +187,44 @@ export default function Pricing() {
     setIsLoadingPro(true);
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          title: isEnglish ? 'Session expired' : 'Sessão expirada',
+          description: isEnglish ? 'Please sign in again.' : 'Por favor inicia sessão novamente.',
+          variant: 'destructive',
+        });
+        navigate('/login');
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke('create-subscription', {
         body: { promoCode: proAppliedPromo?.code || null },
+        headers: { Authorization: `Bearer ${session.access_token}` },
       });
-
-      if (error) throw new Error(error.message);
 
       if (data?.error) {
         toast({
           title: isEnglish ? 'Subscription creation error' : 'Erro ao criar subscrição',
-          description: isEnglish ? 'Please try again.' : 'Por favor tenta novamente.',
+          description: data.message || data.error,
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      if (error) {
+        let description = isEnglish ? 'Please try again.' : 'Por favor tenta novamente.';
+        try {
+          const ctx = (error as any).context;
+          if (ctx && typeof ctx.json === 'function') {
+            const body = await ctx.json();
+            if (body?.message) description = body.message;
+            else if (body?.error) description = body.error;
+          }
+        } catch { /* ignore parse errors */ }
+        toast({
+          title: isEnglish ? 'Subscription creation error' : 'Erro ao criar subscrição',
+          description,
           variant: 'destructive',
         });
         return;
@@ -183,8 +233,8 @@ export default function Pricing() {
       if (data?.url) {
         window.location.href = data.url;
       }
-    } catch (error) {
-      console.error('Subscription error:', error);
+    } catch (err) {
+      console.error('Subscription error:', err);
       toast({
         title: isEnglish ? 'Subscription creation error' : 'Erro ao criar subscrição',
         description: isEnglish ? 'Please try again.' : 'Por favor tenta novamente.',
