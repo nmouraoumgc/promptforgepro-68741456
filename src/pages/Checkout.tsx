@@ -29,7 +29,7 @@ const Checkout = () => {
   const { toast } = useToast();
   const { user, profile } = useAuthStore();
   const { i18n } = useTranslation();
-  const isEnglish = i18n.language === "en";
+  const isEnglish = (i18n.resolvedLanguage || i18n.language || "pt").startsWith("en");
   const valueItems = isEnglish
     ? [
         "All premium Prompt Packs",

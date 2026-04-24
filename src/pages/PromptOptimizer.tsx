@@ -39,7 +39,7 @@ export default function PromptOptimizer() {
   const [currentPromptId] = useState(() => `prompt-${Date.now()}`); // Track optimizations per session
   const { toast } = useToast();
   const { i18n } = useTranslation();
-  const isEnglish = i18n.language === 'en';
+  const isEnglish = (i18n.resolvedLanguage || i18n.language || 'pt').startsWith('en');
   const language = (i18n.resolvedLanguage || i18n.language || 'pt').slice(0, 2);
   const { user } = useAuthStore();
   const { currentPlan, canOptimize, incrementOptimizationCount, getOptimizationCount } = usePlanStore();

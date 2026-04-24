@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 
 export default function PromptLibrary() {
   const { t, i18n } = useTranslation();
-  const isEnglish = i18n.language === 'en';
+  const isEnglish = (i18n.resolvedLanguage || i18n.language || 'pt').startsWith('en');
   const { prompts, toggleFavorite, deletePrompt, duplicatePrompt } = usePromptStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<Category | 'all'>('all');

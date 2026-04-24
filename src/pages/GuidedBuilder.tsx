@@ -115,6 +115,42 @@ export default function GuidedBuilder() {
     if (!isEnglish) return label;
     return ({ Texto: 'Text', Imagem: 'Image', Código: 'Code', Vídeo: 'Video', Áudio: 'Audio' } as Record<string, string>)[label] || label;
   };
+  const modelLabel = (label: string) => {
+    if (!isEnglish) return label;
+    return ({
+      'Genérico (qualquer IA)': 'Generic (any AI)',
+    } as Record<string, string>)[label] || label;
+  };
+  const toneLabel = (label: string) => {
+    if (!isEnglish) return label;
+    return ({
+      Profissional: 'Professional',
+      Casual: 'Casual',
+      'Amigável': 'Friendly',
+      Formal: 'Formal',
+      Criativo: 'Creative',
+      Técnico: 'Technical',
+      Humorístico: 'Humorous',
+      Persuasivo: 'Persuasive',
+      Informativo: 'Informative',
+      Narrativo: 'Narrative',
+    } as Record<string, string>)[label] || label;
+  };
+  const toneDescription = (description: string) => {
+    if (!isEnglish) return description;
+    return ({
+      'Formal e business-like': 'Formal and business-like',
+      'Relaxado e conversacional': 'Relaxed and conversational',
+      'Caloroso e acessível': 'Warm and approachable',
+      'Sério e institucional': 'Serious and institutional',
+      'Expressivo e artístico': 'Expressive and artistic',
+      'Preciso e especializado': 'Precise and specialized',
+      'Divertido e leve': 'Fun and light',
+      'Convincente e impactante': 'Convincing and impactful',
+      'Educativo e claro': 'Educational and clear',
+      Storytelling: 'Storytelling',
+    } as Record<string, string>)[description] || description;
+  };
 
   const generatePrompt = async () => {
     const { objective, outputType, targetModel, tone, targetAudience, constraints, creativityLevel, format, language } = builderState;
@@ -270,7 +306,7 @@ export default function GuidedBuilder() {
                   onClick={() => updateBuilderState({ targetModel: model.value })}
                 >
                   <CardContent className="flex items-center justify-between p-4">
-                    <span className="font-medium">{model.label}</span>
+                    <span className="font-medium">{modelLabel(model.label)}</span>
                     {builderState.targetModel === model.value && (
                       <Check className="h-5 w-5 text-primary" />
                     )}
@@ -295,8 +331,8 @@ export default function GuidedBuilder() {
               >
                 <CardContent className="flex items-center justify-between p-4">
                   <div>
-                    <p className="font-medium">{tone.label}</p>
-                    <p className="text-sm text-muted-foreground">{tone.description}</p>
+                    <p className="font-medium">{toneLabel(tone.label)}</p>
+                    <p className="text-sm text-muted-foreground">{toneDescription(tone.description)}</p>
                   </div>
                   {builderState.tone === tone.value && (
                     <Check className="h-5 w-5 text-primary" />

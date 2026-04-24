@@ -37,7 +37,7 @@ export default function PackDetail() {
   const { toast } = useToast();
   const { canAccess } = usePlanStore();
   const { i18n } = useTranslation();
-  const isEnglish = i18n.language === 'en';
+  const isEnglish = (i18n.resolvedLanguage || i18n.language || 'pt').startsWith('en');
   const hasAccess = canAccess('canAccessPromptPacks');
   
   const pack = getPackBySlug(slug || '');
