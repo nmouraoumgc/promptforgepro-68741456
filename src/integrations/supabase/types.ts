@@ -58,57 +58,6 @@ export type Database = {
           },
         ]
       }
-      promo_codes: {
-        Row: {
-          applicable_plan_types: string[]
-          code: string
-          created_at: string
-          created_by: string | null
-          current_uses: number
-          description: string | null
-          discount_type: string
-          discount_value: number
-          duration_months: number
-          expires_at: string
-          id: string
-          is_active: boolean
-          max_uses: number
-          updated_at: string
-        }
-        Insert: {
-          applicable_plan_types?: string[]
-          code: string
-          created_at?: string
-          created_by?: string | null
-          current_uses?: number
-          description?: string | null
-          discount_type: string
-          discount_value?: number
-          duration_months?: number
-          expires_at: string
-          id?: string
-          is_active?: boolean
-          max_uses?: number
-          updated_at?: string
-        }
-        Update: {
-          applicable_plan_types?: string[]
-          code?: string
-          created_at?: string
-          created_by?: string | null
-          current_uses?: number
-          description?: string | null
-          discount_type?: string
-          discount_value?: number
-          duration_months?: number
-          expires_at?: string
-          id?: string
-          is_active?: boolean
-          max_uses?: number
-          updated_at?: string
-        }
-        Relationships: []
-      }
       profiles: {
         Row: {
           created_at: string
@@ -129,6 +78,57 @@ export type Database = {
           current_plan?: Database["public"]["Enums"]["plan_type"]
           email?: string
           id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      promo_codes: {
+        Row: {
+          applicable_plan_types: string[]
+          code: string
+          created_at: string
+          created_by: string | null
+          current_uses: number
+          description: string | null
+          discount_type: string
+          discount_value: number
+          duration_months: number | null
+          expires_at: string
+          id: string
+          is_active: boolean
+          max_uses: number
+          updated_at: string
+        }
+        Insert: {
+          applicable_plan_types?: string[]
+          code: string
+          created_at?: string
+          created_by?: string | null
+          current_uses?: number
+          description?: string | null
+          discount_type?: string
+          discount_value?: number
+          duration_months?: number | null
+          expires_at: string
+          id?: string
+          is_active?: boolean
+          max_uses?: number
+          updated_at?: string
+        }
+        Update: {
+          applicable_plan_types?: string[]
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          current_uses?: number
+          description?: string | null
+          discount_type?: string
+          discount_value?: number
+          duration_months?: number | null
+          expires_at?: string
+          id?: string
+          is_active?: boolean
+          max_uses?: number
           updated_at?: string
         }
         Relationships: []
@@ -234,12 +234,6 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
-      }
-      increment_promo_usage: {
-        Args: {
-          promo_id_param: string
-        }
-        Returns: undefined
       }
     }
     Enums: {
