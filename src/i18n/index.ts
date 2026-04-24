@@ -16,14 +16,15 @@ i18n
       pt: { translation: pt },
       en: { translation: en },
     },
-    fallbackLng: 'pt',
+    fallbackLng: 'en',
     supportedLngs: SUPPORTED_LANGUAGES as unknown as string[],
     load: 'languageOnly',
     interpolation: {
       escapeValue: false,
     },
     detection: {
-      order: ['localStorage', 'navigator', 'htmlTag'],
+      order: ['querystring', 'htmlTag', 'localStorage', 'navigator'],
+      lookupQuerystring: 'lang',
       lookupLocalStorage: 'pf_lang',
       caches: ['localStorage'],
     },
