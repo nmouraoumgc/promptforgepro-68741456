@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -17,10 +18,8 @@ serve(async (req) => {
   }
 
   try {
-    const paddlePortalUrl = Deno.env.get("PADDLE_CUSTOMER_PORTAL_URL");
-    if (!paddlePortalUrl) {
-      throw new Error("PADDLE_CUSTOMER_PORTAL_URL is not set");
-    }
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
 
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -38,12 +37,22 @@ serve(async (req) => {
     const user = userData.user;
     if (!user?.email) throw new Error("User not authenticated or email not available");
 
-    const url = new URL(paddlePortalUrl);
-    url.searchParams.set("email", user.email);
+    const stripe = new Stripe(stripeKey, { apiVersion: "2024-06-20" });
+    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+    if (customers.data.length === 0) {
+      throw new Error("No Stripe customer found for this account");
+    }
 
-    logStep("Paddle portal URL generated", { userId: user.id });
+    const origin = req.headers.get("origin") || req.headers.get("referer")?.split("/").slice(0, 3).join("/") || "";
 
-    return new Response(JSON.stringify({ url: url.toString() }), {
+    const portalSession = await stripe.billingPortal.sessions.create({
+      customer: customers.data[0].id,
+      return_url: `${origin}/account`,
+    });
+
+    logStep("Stripe portal session created", { userId: user.id });
+
+    return new Response(JSON.stringify({ url: portalSession.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });

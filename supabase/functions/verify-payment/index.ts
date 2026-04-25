@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -17,21 +18,21 @@ serve(async (req) => {
   }
 
   try {
-    let promoId: string | null = null;
-    let paymentReference: string | null = null;
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
 
+    let sessionId: string | null = null;
     try {
       const body = await req.json();
-      promoId = body?.promo_id || null;
-      paymentReference = body?.payment_reference || body?.session_id || null;
+      sessionId = body?.session_id || body?.sessionId || null;
     } catch {
       // optional body
     }
 
+    if (!sessionId) throw new Error("session_id is required");
+
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      throw new Error("Authentication required");
-    }
+    if (!authHeader) throw new Error("Authentication required");
 
     const token = authHeader.replace("Bearer ", "");
 
@@ -47,23 +48,35 @@ serve(async (req) => {
     const user = userData.user;
     if (!user?.id) throw new Error("User not authenticated");
 
+    const stripe = new Stripe(stripeKey, { apiVersion: "2024-06-20" });
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+    if (session.payment_status !== "paid") {
+      logStep("Session not paid", { status: session.payment_status });
+      return new Response(JSON.stringify({ success: false, status: session.payment_status }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
+    const promoId = session.metadata?.promo_id || null;
+    const amountTotal = session.amount_total ?? 1900;
+
     const { error: updateError } = await supabaseClient
       .from("profiles")
       .update({ current_plan: "premium" })
       .eq("id", user.id);
 
-    if (updateError) {
-      throw new Error(`Could not update profile: ${updateError.message}`);
-    }
+    if (updateError) throw new Error(`Could not update profile: ${updateError.message}`);
 
     const { error: purchaseError } = await supabaseClient
       .from("purchases")
       .insert({
         user_id: user.id,
         plan: "premium",
-        amount_cents: 1900,
-        currency: "EUR",
-        stripe_payment_id: paymentReference,
+        amount_cents: amountTotal,
+        currency: (session.currency || "eur").toUpperCase(),
+        stripe_payment_id: session.payment_intent as string || session.id,
         status: "completed",
       });
 
@@ -75,7 +88,6 @@ serve(async (req) => {
       const { error: promoUpdateError } = await supabaseClient.rpc("increment_promo_usage", {
         promo_id_param: promoId,
       });
-
       if (promoUpdateError) {
         logStep("Promo increment warning", { error: promoUpdateError.message });
       }
@@ -84,7 +96,7 @@ serve(async (req) => {
     return new Response(JSON.stringify({
       success: true,
       plan: "premium",
-      provider: "paddle",
+      provider: "stripe",
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
