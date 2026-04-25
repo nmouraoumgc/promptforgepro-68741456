@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,15 +12,7 @@ const logStep = (step: string, details?: unknown) => {
   console.log(`[CREATE-PAYMENT] ${step}${detailsStr}`);
 };
 
-const buildPaddleCheckoutUrl = (baseUrl: string, params: Record<string, string>) => {
-  const url = new URL(baseUrl);
-  Object.entries(params).forEach(([key, value]) => {
-    if (value) {
-      url.searchParams.set(key, value);
-    }
-  });
-  return url.toString();
-};
+const BASE_PRICE_CENTS = 1900; // 19€
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -37,6 +30,9 @@ serve(async (req) => {
   );
 
   try {
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
+
     let guestEmail: string | null = null;
     let promoCode: string | null = null;
 
@@ -62,9 +58,7 @@ serve(async (req) => {
     }
 
     const email = userEmail || guestEmail;
-    if (!email) {
-      throw new Error("Email is required for checkout");
-    }
+    if (!email) throw new Error("Email is required for checkout");
 
     type PromoCodeRow = {
       id: string;
@@ -87,10 +81,7 @@ serve(async (req) => {
         .eq("code", promoCode)
         .maybeSingle();
 
-      if (promoError) {
-        throw new Error("Could not validate promo code");
-      }
-
+      if (promoError) throw new Error("Could not validate promo code");
       if (!promo) throw new Error("Invalid promo code");
       if (!promo.is_active) throw new Error("Promo code is inactive");
       if (promo.max_uses > 0 && promo.current_uses >= promo.max_uses) throw new Error("Promo code usage limit reached");
@@ -101,28 +92,58 @@ serve(async (req) => {
       validPromo = promo as PromoCodeRow;
     }
 
-    const paddlePremiumCheckoutUrl = Deno.env.get("PADDLE_PREMIUM_CHECKOUT_URL");
-    if (!paddlePremiumCheckoutUrl) {
-      throw new Error("PADDLE_PREMIUM_CHECKOUT_URL is not set");
+    // Compute final price
+    let finalPriceCents = BASE_PRICE_CENTS;
+    if (validPromo) {
+      if (validPromo.discount_type === "percentage") {
+        finalPriceCents = Math.max(
+          0,
+          Math.round(BASE_PRICE_CENTS - (BASE_PRICE_CENTS * validPromo.discount_value) / 100),
+        );
+      } else if (validPromo.discount_type === "fixed") {
+        finalPriceCents = Math.max(0, BASE_PRICE_CENTS - Math.round(validPromo.discount_value * 100));
+      }
     }
 
-    const url = buildPaddleCheckoutUrl(paddlePremiumCheckoutUrl, {
-      email,
-      discount_code: validPromo?.code || "",
-      custom_data: JSON.stringify({
+    const stripe = new Stripe(stripeKey, { apiVersion: "2024-06-20" });
+
+    const origin = req.headers.get("origin") || req.headers.get("referer")?.split("/").slice(0, 3).join("/") || "";
+
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      payment_method_types: ["card"],
+      customer_email: email,
+      line_items: [
+        {
+          price_data: {
+            currency: "eur",
+            product_data: {
+              name: "PromptForge Premium Pack",
+              description: "Lifetime access to all premium Prompt Packs",
+            },
+            unit_amount: finalPriceCents,
+          },
+          quantity: 1,
+        },
+      ],
+      success_url: `${origin}/purchase-success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/checkout`,
+      metadata: {
         user_id: userId || "",
         plan: "premium",
         promo_id: validPromo?.id || "",
         promo_code: validPromo?.code || "",
-      }),
+      },
     });
 
-    logStep("Paddle checkout URL generated", {
+    logStep("Stripe checkout session created", {
+      sessionId: session.id,
       hasPromo: Boolean(validPromo?.code),
       hasUser: Boolean(userId),
+      finalPriceCents,
     });
 
-    return new Response(JSON.stringify({ url, provider: "paddle" }), {
+    return new Response(JSON.stringify({ url: session.url, provider: "stripe", sessionId: session.id }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });

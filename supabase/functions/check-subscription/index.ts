@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -23,6 +24,9 @@ serve(async (req) => {
   );
 
   try {
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
+
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("No authorization header provided");
 
@@ -31,24 +35,48 @@ serve(async (req) => {
     if (userError) throw new Error(`Authentication error: ${userError.message}`);
 
     const user = userData.user;
-    if (!user?.id) throw new Error("User not authenticated");
+    if (!user?.email) throw new Error("User not authenticated");
 
-    const { data: profile, error: profileError } = await supabaseClient
+    const stripe = new Stripe(stripeKey, { apiVersion: "2024-06-20" });
+
+    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+    if (customers.data.length === 0) {
+      logStep("No Stripe customer found", { email: user.email });
+      return new Response(JSON.stringify({ subscribed: false, plan: null, subscription_end: null }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
+    const customerId = customers.data[0].id;
+    const subs = await stripe.subscriptions.list({
+      customer: customerId,
+      status: "active",
+      limit: 1,
+    });
+
+    const hasActive = subs.data.length > 0;
+    const subscriptionEnd = hasActive
+      ? new Date(subs.data[0].current_period_end * 1000).toISOString()
+      : null;
+
+    // Sync profile.current_plan for trustworthy client gating
+    const { data: profile } = await supabaseClient
       .from("profiles")
       .select("current_plan")
       .eq("id", user.id)
       .single();
 
-    if (profileError) {
-      throw new Error(`Profile lookup error: ${profileError.message}`);
+    if (hasActive && profile?.current_plan !== "pro" && profile?.current_plan !== "premium") {
+      await supabaseClient.from("profiles").update({ current_plan: "pro" }).eq("id", user.id);
+    } else if (!hasActive && profile?.current_plan === "pro") {
+      await supabaseClient.from("profiles").update({ current_plan: "free" }).eq("id", user.id);
     }
 
-    const subscribed = profile?.current_plan === "pro";
-
     return new Response(JSON.stringify({
-      subscribed,
-      plan: subscribed ? "pro" : null,
-      subscription_end: null,
+      subscribed: hasActive,
+      plan: hasActive ? "pro" : null,
+      subscription_end: subscriptionEnd,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
