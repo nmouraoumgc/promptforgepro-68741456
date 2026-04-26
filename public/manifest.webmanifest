@@ -1,26 +1,19 @@
 {
-  "id": "/",
   "name": "PromptForge Pro",
   "short_name": "PromptForge",
   "description": "Crie, otimize e teste prompts profissionais com IA",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "orientation": "portrait",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
   "lang": "pt-BR",
   "icons": [
     {
-      "src": "/pwa-icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml"
-    },
-    {
-      "src": "/pwa-icon.svg",
+      "src": "/placeholder.svg",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "maskable"
+      "purpose": "any maskable"
     },
     {
       "src": "/favicon.ico",

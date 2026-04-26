@@ -1,20 +1,16 @@
-const SW_VERSION = "v2";
-const STATIC_CACHE = `promptforge-static-${SW_VERSION}`;
-const RUNTIME_CACHE = `promptforge-runtime-${SW_VERSION}`;
-const OFFLINE_URL = "/offline.html";
-
-const STATIC_ASSETS = [
+const CACHE_NAME = "promptforgepro-v1";
+const APP_SHELL_ASSETS = [
   "/",
   "/index.html",
-  OFFLINE_URL,
   "/manifest.webmanifest",
   "/favicon.ico",
-  "/apple-touch-icon.svg",
-  "/pwa-icon.svg"
+  "/placeholder.svg"
 ];
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(STATIC_CACHE).then((cache) => cache.addAll(STATIC_ASSETS)));
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL_ASSETS))
+  );
   self.skipWaiting();
 });
 
@@ -23,7 +19,7 @@ self.addEventListener("activate", (event) => {
     caches.keys().then((keys) =>
       Promise.all(
         keys
-          .filter((key) => ![STATIC_CACHE, RUNTIME_CACHE].includes(key))
+          .filter((key) => key !== CACHE_NAME)
           .map((key) => caches.delete(key))
       )
     )
@@ -38,36 +34,24 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  if (request.mode === "navigate") {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          const responseCopy = response.clone();
-          caches.open(RUNTIME_CACHE).then((cache) => cache.put(request, responseCopy));
-          return response;
-        })
-        .catch(async () => {
-          const cachedPage = await caches.match(request);
-          return cachedPage || caches.match(OFFLINE_URL);
-        })
-    );
-    return;
-  }
-
   event.respondWith(
     caches.match(request).then((cachedResponse) => {
       if (cachedResponse) {
         return cachedResponse;
       }
 
-      return fetch(request).then((networkResponse) => {
-        if (networkResponse.status === 200 && networkResponse.type === "basic") {
-          const responseCopy = networkResponse.clone();
-          caches.open(RUNTIME_CACHE).then((cache) => cache.put(request, responseCopy));
-        }
+      return fetch(request)
+        .then((networkResponse) => {
+          if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== "basic") {
+            return networkResponse;
+          }
 
-        return networkResponse;
-      });
+          const responseToCache = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, responseToCache));
+
+          return networkResponse;
+        })
+        .catch(() => caches.match("/index.html"));
     })
   );
 });
