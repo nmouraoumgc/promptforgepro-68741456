@@ -6,7 +6,7 @@ const OFFLINE_URL = "/offline.html";
 const STATIC_ASSETS = [
   "/",
   "/index.html",
-  "/offline.html",
+  OFFLINE_URL,
   "/manifest.webmanifest",
   "/favicon.ico",
   "/apple-touch-icon.svg",
@@ -14,9 +14,7 @@ const STATIC_ASSETS = [
 ];
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(STATIC_CACHE).then((cache) => cache.addAll(STATIC_ASSETS))
-  );
+  event.waitUntil(caches.open(STATIC_CACHE).then((cache) => cache.addAll(STATIC_ASSETS)));
   self.skipWaiting();
 });
 
@@ -44,8 +42,8 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          const copy = response.clone();
-          caches.open(RUNTIME_CACHE).then((cache) => cache.put(request, copy));
+          const responseCopy = response.clone();
+          caches.open(RUNTIME_CACHE).then((cache) => cache.put(request, responseCopy));
           return response;
         })
         .catch(async () => {
@@ -67,6 +65,7 @@ self.addEventListener("fetch", (event) => {
           const responseCopy = networkResponse.clone();
           caches.open(RUNTIME_CACHE).then((cache) => cache.put(request, responseCopy));
         }
+
         return networkResponse;
       });
     })
