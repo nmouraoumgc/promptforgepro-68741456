@@ -244,6 +244,15 @@
     "premiumDesc": "Full access to all Packs",
     "viewPlans": "View plans",
     "upgrade": "Upgrade",
+    "billingTitle": "Billing portal",
+    "billingDesc": "Manage everything related to billing from one place.",
+    "billingFeatureMethods": "Update your payment methods",
+    "billingFeatureInvoices": "View and download invoices",
+    "billingFeatureManage": "Cancel or update your subscription",
+    "openBillingPortal": "Open billing portal",
+    "openingPortal": "Opening portal...",
+    "billingErrorTitle": "Could not open billing portal",
+    "billingErrorDesc": "Please try again in a moment.",
     "actions": "Actions",
     "signOut": "Sign out"
   }

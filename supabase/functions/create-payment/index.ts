@@ -109,32 +109,73 @@ serve(async (req) => {
 
     const origin = req.headers.get("origin") || req.headers.get("referer")?.split("/").slice(0, 3).join("/") || "";
 
-    const session = await stripe.checkout.sessions.create({
-      mode: "payment",
-      payment_method_types: ["card"],
-      customer_email: email,
-      line_items: [
-        {
-          price_data: {
-            currency: "eur",
-            product_data: {
-              name: "PromptForge Premium Pack",
-              description: "Lifetime access to all premium Prompt Packs",
+    const alternativeCheckoutUrl =
+      Deno.env.get("PREMIUM_ALTERNATIVE_CHECKOUT_URL") ??
+      Deno.env.get("ALTERNATIVE_CHECKOUT_URL") ??
+      "";
+
+    let session: Awaited<ReturnType<typeof stripe.checkout.sessions.create>> | null = null;
+    try {
+      session = await stripe.checkout.sessions.create({
+        mode: "payment",
+        customer_email: email,
+        line_items: [
+          {
+            price_data: {
+              currency: "eur",
+              product_data: {
+                name: "PromptForge Premium Pack",
+                description: "Lifetime access to all premium Prompt Packs",
+              },
+              unit_amount: finalPriceCents,
             },
-            unit_amount: finalPriceCents,
+            quantity: 1,
           },
-          quantity: 1,
+        ],
+        success_url: `${origin}/purchase-success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${origin}/checkout`,
+        metadata: {
+          user_id: userId || "",
+          plan: "premium",
+          promo_id: validPromo?.id || "",
+          promo_code: validPromo?.code || "",
         },
-      ],
-      success_url: `${origin}/purchase-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/checkout`,
-      metadata: {
-        user_id: userId || "",
-        plan: "premium",
-        promo_id: validPromo?.id || "",
-        promo_code: validPromo?.code || "",
-      },
-    });
+      });
+    } catch (stripeError) {
+      const stripeErrorMessage =
+        stripeError instanceof Error ? stripeError.message : String(stripeError);
+
+      if (
+        stripeErrorMessage
+          .toLowerCase()
+          .includes("cannot currently make live charges") &&
+        alternativeCheckoutUrl
+      ) {
+        logStep("Stripe unavailable, using alternative checkout", {
+          userId,
+          alternativeCheckoutUrl,
+        });
+
+        return new Response(
+          JSON.stringify({
+            url: alternativeCheckoutUrl,
+            provider: "alternative",
+            warning:
+              "Stripe is temporarily unavailable for live charges. Redirecting to an alternative checkout.",
+          }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          },
+        );
+      }
+
+      throw stripeError;
+    }
+
+    if (!session?.url || !session.id) {
+      throw new Error("Failed to create checkout session");
+    }
 
     logStep("Stripe checkout session created", {
       sessionId: session.id,

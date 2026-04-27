@@ -1,18 +1,23 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { User, Mail, CreditCard, LogOut, Crown, Zap, Sparkles } from 'lucide-react';
+import { useState } from 'react';
+import { User, Mail, CreditCard, LogOut, Crown, Zap, Sparkles, ReceiptText, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useAuthStore } from '@/stores/authStore';
 import { PLAN_INFO } from '@/types/plans';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 export default function Account() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, profile, signOut, isLoading } = useAuthStore();
+  const { toast } = useToast();
+  const [isOpeningPortal, setIsOpeningPortal] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
@@ -45,6 +50,45 @@ export default function Account() {
       case 'premium': return <Sparkles className="h-5 w-5" />;
       case 'pro': return <Zap className="h-5 w-5" />;
       default: return <Crown className="h-5 w-5" />;
+    }
+  };
+
+  const handleOpenBillingPortal = async () => {
+    if (!user) return;
+    setIsOpeningPortal(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          title: t('plans.authNeeded'),
+          description: t('plans.authNeededDesc'),
+          variant: 'destructive',
+        });
+        navigate('/login');
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('customer-portal', {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+
+      if (error) throw new Error(error.message);
+      if (data?.error) throw new Error(data.error);
+
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error('No customer portal URL returned');
+      }
+    } catch (error) {
+      console.error('Customer portal error:', error);
+      toast({
+        title: t('account.billingErrorTitle'),
+        description: t('account.billingErrorDesc'),
+        variant: 'destructive',
+      });
+    } finally {
+      setIsOpeningPortal(false);
     }
   };
 
@@ -134,6 +178,38 @@ export default function Account() {
                 <Button variant="destructive" className="w-full sm:w-auto" onClick={handleSignOut}>
                   <LogOut className="h-4 w-4 mr-2" />
                   {t('account.signOut')}
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ReceiptText className="h-5 w-5" />
+                  {t('account.billingTitle')}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground">{t('account.billingDesc')}</p>
+                <ul className="text-sm space-y-1 text-foreground">
+                  <li>• {t('account.billingFeatureMethods')}</li>
+                  <li>• {t('account.billingFeatureInvoices')}</li>
+                  <li>• {t('account.billingFeatureManage')}</li>
+                </ul>
+                <Button
+                  variant="outline"
+                  onClick={handleOpenBillingPortal}
+                  disabled={isOpeningPortal}
+                  className="w-full sm:w-auto"
+                >
+                  {isOpeningPortal ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      {t('account.openingPortal')}
+                    </>
+                  ) : (
+                    t('account.openBillingPortal')
+                  )}
                 </Button>
               </CardContent>
             </Card>

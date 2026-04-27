@@ -212,6 +212,15 @@ export default function Pricing() {
         return;
       }
 
+      if (data?.warning) {
+        toast({
+          title: isEnglish ? 'Alternative checkout' : 'Checkout alternativo',
+          description: isEnglish
+            ? 'Stripe is temporarily unavailable. Redirecting to an alternative payment page.'
+            : 'A Stripe está temporariamente indisponível. Vamos redirecionar para um pagamento alternativo.',
+        });
+      }
+
       if (error) {
         let description = isEnglish ? 'Please try again.' : 'Por favor tenta novamente.';
         try {
@@ -232,6 +241,14 @@ export default function Pricing() {
 
       if (data?.url) {
         window.location.href = data.url;
+      } else {
+        toast({
+          title: isEnglish ? 'Subscription creation error' : 'Erro ao criar subscrição',
+          description: isEnglish
+            ? 'Could not start checkout. Please try again.'
+            : 'Não foi possível iniciar o checkout. Tenta novamente.',
+          variant: 'destructive',
+        });
       }
     } catch (err) {
       console.error('Subscription error:', err);
@@ -534,7 +551,7 @@ export default function Pricing() {
               {isLoadingPro ? (
                 <span className="flex items-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  {isEnglish ? 'Redirecting to Paddle...' : 'A redirecionar para Paddle...'}
+                  {isEnglish ? 'Redirecting to secure checkout...' : 'A redirecionar para checkout seguro...'}
                 </span>
               ) : (
                 <span className="flex items-center gap-2">
