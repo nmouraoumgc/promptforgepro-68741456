@@ -212,7 +212,7 @@ export default function Pricing() {
         return;
       }
 
-      if (data?.warning) {
+      if (data?.provider === 'external') {
         toast({
           title: isEnglish ? 'Alternative checkout' : 'Checkout alternativo',
           description: isEnglish

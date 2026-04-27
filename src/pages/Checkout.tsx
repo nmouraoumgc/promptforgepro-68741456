@@ -172,7 +172,7 @@ const Checkout = () => {
         body: { email, promoCode: appliedPromo?.code },
       });
       if (error) throw new Error(error.message);
-      if (data?.warning) {
+      if (data?.provider === "external") {
         toast({
           title: isEnglish ? "Alternative checkout" : "Checkout alternativo",
           description: isEnglish
