@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
-import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -18,18 +17,18 @@ serve(async (req) => {
   }
 
   try {
-    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
+    const lsApiKey = Deno.env.get("LEMONSQUEEZY_API_KEY");
+    if (!lsApiKey) throw new Error("LEMONSQUEEZY_API_KEY is not set");
 
-    let sessionId: string | null = null;
+    let orderId: string | null = null;
     try {
       const body = await req.json();
-      sessionId = body?.session_id || body?.sessionId || null;
+      orderId = body?.session_id || body?.order_id || null;
     } catch {
       // optional body
     }
 
-    if (!sessionId) throw new Error("session_id is required");
+    if (!orderId) throw new Error("session_id (order_id) is required");
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("Authentication required");
@@ -48,19 +47,39 @@ serve(async (req) => {
     const user = userData.user;
     if (!user?.id) throw new Error("User not authenticated");
 
-    const stripe = new Stripe(stripeKey, { apiVersion: "2024-06-20" });
-    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    const lsResponse = await fetch(`https://api.lemonsqueezy.com/v1/orders/${orderId}`, {
+      headers: {
+        "Accept": "application/vnd.api+json",
+        "Authorization": `Bearer ${lsApiKey}`,
+      },
+    });
 
-    if (session.payment_status !== "paid") {
-      logStep("Session not paid", { status: session.payment_status });
-      return new Response(JSON.stringify({ success: false, status: session.payment_status }), {
+    if (!lsResponse.ok) {
+      const errText = await lsResponse.text();
+      logStep("Lemon Squeezy API error", { status: lsResponse.status, body: errText });
+      throw new Error(`Could not retrieve order: ${lsResponse.status}`);
+    }
+
+    const lsData = await lsResponse.json();
+    const order = lsData?.data;
+
+    if (!order) throw new Error("Order not found");
+
+    const status = order.attributes?.status;
+    if (status !== "paid") {
+      logStep("Order not paid", { status });
+      return new Response(JSON.stringify({ success: false, status }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
       });
     }
 
-    const promoId = session.metadata?.promo_id || null;
-    const amountTotal = session.amount_total ?? 1900;
+    const amountTotal = order.attributes?.total ?? 1900;
+    const currency = (order.attributes?.currency || "EUR").toUpperCase();
+    const promoId =
+      order.attributes?.first_order_item?.custom_data?.promo_id ||
+      order.attributes?.custom_data?.promo_id ||
+      null;
 
     const { error: updateError } = await supabaseClient
       .from("profiles")
@@ -75,8 +94,8 @@ serve(async (req) => {
         user_id: user.id,
         plan: "premium",
         amount_cents: amountTotal,
-        currency: (session.currency || "eur").toUpperCase(),
-        stripe_payment_id: session.payment_intent as string || session.id,
+        currency,
+        stripe_payment_id: String(order.id),
         status: "completed",
       });
 
@@ -96,7 +115,7 @@ serve(async (req) => {
     return new Response(JSON.stringify({
       success: true,
       plan: "premium",
-      provider: "stripe",
+      provider: "lemonsqueezy",
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,

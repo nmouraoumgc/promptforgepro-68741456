@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
-import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -24,8 +23,8 @@ serve(async (req) => {
   );
 
   try {
-    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
+    const lsApiKey = Deno.env.get("LEMONSQUEEZY_API_KEY");
+    if (!lsApiKey) throw new Error("LEMONSQUEEZY_API_KEY is not set");
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("No authorization header provided");
@@ -37,27 +36,33 @@ serve(async (req) => {
     const user = userData.user;
     if (!user?.email) throw new Error("User not authenticated");
 
-    const stripe = new Stripe(stripeKey, { apiVersion: "2024-06-20" });
+    const lsResponse = await fetch(
+      `https://api.lemonsqueezy.com/v1/subscriptions?filter[user_email]=${encodeURIComponent(user.email)}`,
+      {
+        headers: {
+          "Accept": "application/vnd.api+json",
+          "Authorization": `Bearer ${lsApiKey}`,
+        },
+      },
+    );
 
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
-    if (customers.data.length === 0) {
-      logStep("No Stripe customer found", { email: user.email });
-      return new Response(JSON.stringify({ subscribed: false, plan: null, subscription_end: null }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      });
+    if (!lsResponse.ok) {
+      const errText = await lsResponse.text();
+      logStep("Lemon Squeezy API error", { status: lsResponse.status, body: errText });
+      throw new Error(`Could not retrieve subscriptions: ${lsResponse.status}`);
     }
 
-    const customerId = customers.data[0].id;
-    const subs = await stripe.subscriptions.list({
-      customer: customerId,
-      status: "active",
-      limit: 1,
-    });
+    const lsData = await lsResponse.json();
+    const subscriptions: Array<{ attributes: { status: string; renews_at?: string; ends_at?: string } }> =
+      lsData?.data ?? [];
 
-    const hasActive = subs.data.length > 0;
+    const activeSub = subscriptions.find(
+      (s) => s.attributes.status === "active" || s.attributes.status === "on_trial",
+    );
+
+    const hasActive = Boolean(activeSub);
     const subscriptionEnd = hasActive
-      ? new Date(subs.data[0].current_period_end * 1000).toISOString()
+      ? (activeSub!.attributes.renews_at || activeSub!.attributes.ends_at || null)
       : null;
 
     // Sync profile.current_plan for trustworthy client gating
