@@ -16,12 +16,6 @@ const EXTERNAL_PRO_CHECKOUT_URL =
   Deno.env.get("PRO_CHECKOUT_URL") ||
   Deno.env.get("CHECKOUT_URL") ||
   Deno.env.get("ALTERNATIVE_CHECKOUT_URL");
-const PUBLIC_APP_URL = Deno.env.get("PUBLIC_APP_URL") || "";
-
-const getOrigin = (req: Request) =>
-  req.headers.get("origin") ||
-  req.headers.get("referer")?.split("/").slice(0, 3).join("/") ||
-  PUBLIC_APP_URL;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -92,17 +86,11 @@ serve(async (req) => {
     }
 
     const checkoutUrl = new URL(EXTERNAL_PRO_CHECKOUT_URL);
-    const origin = getOrigin(req);
-    const reference = crypto.randomUUID();
-
-    checkoutUrl.searchParams.set("prefill_email", user.email);
+    checkoutUrl.searchParams.set("email", user.email);
+    checkoutUrl.searchParams.set("user_id", user.id);
     checkoutUrl.searchParams.set("plan", "pro");
     checkoutUrl.searchParams.set("amount_cents", String(PRO_MONTHLY_CENTS));
-    checkoutUrl.searchParams.set("client_reference_id", reference);
-    if (origin) {
-      checkoutUrl.searchParams.set("success_url", `${origin}/subscription-success?ref=${reference}`);
-      checkoutUrl.searchParams.set("cancel_url", `${origin}/plans`);
-    }
+    if (validPromo?.id) checkoutUrl.searchParams.set("promo_id", validPromo.id);
     if (validPromo?.code) checkoutUrl.searchParams.set("promo_code", validPromo.code);
 
     logStep("External subscription checkout prepared", {

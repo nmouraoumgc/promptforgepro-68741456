@@ -38,10 +38,9 @@ serve(async (req) => {
     const user = userData.user;
     if (!user?.id) throw new Error("User not authenticated");
 
-    const resolvedPortalUrl = billingPortalUrl
-      .replaceAll("{USER_ID}", encodeURIComponent(user.id))
-      .replaceAll("{EMAIL}", encodeURIComponent(user.email ?? ""));
-    const url = new URL(resolvedPortalUrl);
+    const url = new URL(billingPortalUrl);
+    url.searchParams.set("user_id", user.id);
+    if (user.email) url.searchParams.set("email", user.email);
 
     logStep("External billing portal prepared", { userId: user.id });
 
