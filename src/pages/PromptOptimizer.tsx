@@ -34,7 +34,16 @@ export default function PromptOptimizer() {
   const [inputPrompt, setInputPrompt] = useState('');
   const [optimizations, setOptimizations] = useState<OptimizationVariant[]>([]);
   const [isOptimizing, setIsOptimizing] = useState(false);
-  const [score, setScore] = useState<{ clarity: number; specificity: number; structure: number; creativity: number; overall: number } | null>(null);
+  const [score, setScore] = useState<{
+    clarity: number;
+    context: number;
+    aiRole: number;
+    constraints: number;
+    outputFormat: number;
+    successCriteria: number;
+    genericResponseRisk: number;
+    overall: number;
+  } | null>(null);
   const [selectedOptimization, setSelectedOptimization] = useState<OptimizationVariant | null>(null);
   const [currentPromptId] = useState(() => `prompt-${Date.now()}`); // Track optimizations per session
   const { toast } = useToast();
@@ -115,7 +124,16 @@ export default function PromptOptimizer() {
       const detailed = optimizations.find(o => o.type === 'detailed');
       if (detailed) {
         setInputPrompt(detailed.content);
-        setScore({ clarity: 88, specificity: 85, structure: 92, creativity: 70, overall: 84 });
+        setScore({
+          clarity: 88,
+          context: 84,
+          aiRole: 82,
+          constraints: 86,
+          outputFormat: 90,
+          successCriteria: 80,
+          genericResponseRisk: 24,
+          overall: 84,
+        });
         toast({ title: isEnglish ? 'Prompt improved!' : 'Prompt melhorado!', description: isEnglish ? 'Automatic fixes were applied' : 'As correções automáticas foram aplicadas' });
       }
     }
@@ -212,7 +230,11 @@ export default function PromptOptimizer() {
               <div className="text-center py-12 text-muted-foreground">
                 <Sparkles className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p className="font-medium">{isEnglish ? 'Optimize a prompt to see the score' : 'Otimiza um prompt para ver o score'}</p>
-                <p className="text-xs mt-2">{isEnglish ? 'The score analyzes clarity, specificity, structure and creativity' : 'O score analisa clareza, especificidade, estrutura e criatividade'}</p>
+                <p className="text-xs mt-2">
+                  {isEnglish
+                    ? 'The score analyzes clarity, context, AI role, constraints, output format, success criteria and generic-response risk'
+                    : 'O score analisa clareza, contexto, papel da IA, restrições, formato de output, critérios de sucesso e risco de resposta genérica'}
+                </p>
               </div>
             </CardContent>
           </Card>

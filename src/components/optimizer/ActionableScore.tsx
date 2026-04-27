@@ -9,9 +9,12 @@ import { ProBadge } from '@/components/gating/FeatureGate';
 interface ScoreData {
   overall: number;
   clarity: number;
-  specificity: number;
-  structure: number;
-  creativity: number;
+  context: number;
+  aiRole: number;
+  constraints: number;
+  outputFormat: number;
+  successCriteria: number;
+  genericResponseRisk: number;
 }
 
 interface ActionableScoreProps {
@@ -33,14 +36,23 @@ const getImprovementSuggestions = (score: ScoreData): string[] => {
   if (score.clarity < 80) {
     suggestions.push('Define melhor o objetivo principal do prompt');
   }
-  if (score.specificity < 75) {
-    suggestions.push('Adiciona exemplos concretos do output esperado');
+  if (score.context < 75) {
+    suggestions.push('Adiciona mais contexto: público-alvo, cenário e objetivo final');
   }
-  if (score.structure < 80) {
-    suggestions.push('Organiza o prompt em secções claras (contexto, instruções, restrições)');
+  if (score.aiRole < 75) {
+    suggestions.push('Atribui um papel claro à IA (ex: consultor, editor, especialista)');
   }
-  if (score.creativity < 60) {
-    suggestions.push('Adiciona liberdade criativa ou exemplos inspiradores');
+  if (score.constraints < 75) {
+    suggestions.push('Define restrições explícitas para reduzir ambiguidade');
+  }
+  if (score.outputFormat < 75) {
+    suggestions.push('Especifica o formato de output esperado (lista, tabela, JSON, etc.)');
+  }
+  if (score.successCriteria < 70) {
+    suggestions.push('Inclui critérios de sucesso para avaliar a qualidade da resposta');
+  }
+  if (score.genericResponseRisk > 55) {
+    suggestions.push('Reduz o risco de resposta genérica com detalhes e exemplos concretos');
   }
   if (score.overall < 70) {
     suggestions.push('Reduz instruções vagas como "bom" ou "interessante"');
@@ -57,9 +69,12 @@ const getImprovementSuggestions = (score: ScoreData): string[] => {
 
 const scoreLabels: Record<string, string> = {
   clarity: 'Clareza',
-  specificity: 'Especificidade',
-  structure: 'Estrutura',
-  creativity: 'Criatividade',
+  context: 'Contexto',
+  aiRole: 'Papel da IA',
+  constraints: 'Restrições',
+  outputFormat: 'Formato de output',
+  successCriteria: 'Critérios de sucesso',
+  genericResponseRisk: 'Risco de resposta genérica',
 };
 
 export default function ActionableScore({ score, onAutoFix }: ActionableScoreProps) {
@@ -99,9 +114,11 @@ export default function ActionableScore({ score, onAutoFix }: ActionableScorePro
                   <div key={key} className="space-y-1">
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">{scoreLabels[key]}</span>
-                      <span className={value < 70 ? 'text-warning' : 'text-foreground'}>{value}%</span>
+                      <span className={value < 70 ? 'text-warning' : 'text-foreground'}>
+                        {key === 'genericResponseRisk' ? `${value}%` : `${value}%`}
+                      </span>
                     </div>
-                    <Progress value={value} className="h-2" />
+                    <Progress value={key === 'genericResponseRisk' ? 100 - value : value} className="h-2" />
                   </div>
                 ))}
             </div>
