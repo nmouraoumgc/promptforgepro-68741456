@@ -244,6 +244,15 @@
     "premiumDesc": "Acesso completo a todos os Packs",
     "viewPlans": "Ver planos",
     "upgrade": "Fazer upgrade",
+    "billingTitle": "Portal de faturação",
+    "billingDesc": "Gere tudo o que é faturação num só lugar.",
+    "billingFeatureMethods": "Atualizar métodos de pagamento",
+    "billingFeatureInvoices": "Ver e descarregar faturas",
+    "billingFeatureManage": "Cancelar ou atualizar a subscrição",
+    "openBillingPortal": "Abrir portal de faturação",
+    "openingPortal": "A abrir portal...",
+    "billingErrorTitle": "Não foi possível abrir o portal",
+    "billingErrorDesc": "Por favor tenta novamente em instantes.",
     "actions": "Ações",
     "signOut": "Terminar sessão"
   }
