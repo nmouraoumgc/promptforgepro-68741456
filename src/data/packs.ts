@@ -1,5 +1,10 @@
 import { Pack } from '@/types/packs';
 
+type PackLocalizationOverride = Partial<Omit<Pack, 'categories' | 'prompts'>> & {
+  categories?: Array<Partial<Pack['categories'][number]>>;
+  prompts?: Record<string, Array<Partial<Pack['prompts'][string][number]>>>;
+};
+
 export const PACKS: Pack[] = [
   {
     id: 'tiktok-viral',
@@ -567,6 +572,224 @@ export const getPackBySlug = (slug: string): Pack | undefined => {
 
 export const getPacksByCategory = (category: string): Pack[] => {
   return PACKS.filter(pack => pack.outcomeCategory === category);
+};
+
+const EN_PACK_OVERRIDES: Record<string, PackLocalizationOverride> = {
+  'real-estate': {
+    name: '50 prompts to sell more real estate',
+    promise: 'Scripts and messages to generate more property visits, offers, and closings.',
+    description: 'Designed for agents and broker teams who need to turn cold leads into qualified buyers.',
+    audience: 'Real estate agents and broker teams',
+    benefits: [
+      'Ready prompts for WhatsApp, ads, and follow-up',
+      'Approaches for home buyers and investors',
+      'Focused on booked visits and closed deals',
+    ],
+    categories: [
+      { label: 'Lead Gen', description: 'Attract and qualify new leads' },
+      { label: 'Follow-up', description: 'Recover interest and move to offer' },
+    ],
+    prompts: {
+      captacao: [
+        {
+          title: 'Visit-focused ad copy',
+          description: 'Text designed to increase booked visits',
+          content: 'Create an ad for a {{property_type}} in {{neighborhood}} focused on booking visits this week. Highlight 3 real differentiators, ideal buyer profile, and an ethical urgency CTA.',
+          variables: ['property_type', 'neighborhood'],
+        },
+        {
+          title: 'Lead qualification script',
+          description: 'Separates curious leads from real buyers',
+          content: 'Build a lead qualification script for {{property_type}} with 7 strategic questions to identify budget, buying timeline, and household decision process.',
+          variables: ['property_type'],
+        },
+      ],
+      'follow-up': [
+        {
+          title: 'Follow-up after silence',
+          description: 'Re-engages leads without sounding pushy',
+          content: 'Write 5 follow-up messages for a lead who visited {{property}} and stopped replying. Keep a consultative tone, address common objections, and include a CTA for next step (new visit/offer).',
+          variables: ['property'],
+        },
+        {
+          title: 'Price objection response',
+          description: 'Defends property value with context',
+          content: 'Create a reply for the objection "{{objection}}" on a {{price_range}} property, reinforcing value-for-money, market comparison, and a negotiation path.',
+          variables: ['objection', 'price_range'],
+        },
+      ],
+    },
+  },
+  ecommerce: {
+    name: '50 prompts to sell more in e-commerce',
+    promise: 'Product descriptions and copy that increase clicks, add-to-cart, and conversion.',
+    description: 'For online stores that want to turn product catalogs into pages that sell.',
+    audience: 'E-commerce owners, social commerce teams, and marketplace sellers',
+    benefits: [
+      'Persuasive product descriptions without hype',
+      'Copy adapted to different niches and price points',
+      'Templates for PDPs, ads, and remarketing',
+    ],
+    categories: [
+      { label: 'Descriptions', description: 'Turn features into buyer benefits' },
+      { label: 'Conversion', description: 'Increase add-to-cart and checkout rate' },
+    ],
+    prompts: {
+      descricao: [
+        {
+          title: 'Benefit-driven description',
+          description: 'Highlights practical value for the customer',
+          content: 'Write a product description for {{product}} focused on real benefits for {{audience}}. Structure: problem, solution, 5 benefits, proof points, and CTA.',
+          variables: ['product', 'audience'],
+        },
+        {
+          title: 'SEO + conversion description',
+          description: 'Balances organic search and sales performance',
+          content: 'Create an SEO-optimized description for {{product}} using the keyword "{{keyword}}" without losing commercial tone and mobile readability.',
+          variables: ['product', 'keyword'],
+        },
+      ],
+      conversao: [
+        {
+          title: 'Add-to-cart CTA set',
+          description: 'Action phrases with low friction',
+          content: 'Generate 10 CTAs for a {{product}} page focused on increasing add-to-cart, highlighting purchase security, delivery, and guarantee.',
+          variables: ['product'],
+        },
+        {
+          title: 'Abandoned cart remarketing',
+          description: 'Recovers lost sales',
+          content: 'Create a 3-message abandoned cart sequence for {{product}} (1h, 24h, 72h) with progressive incentives and urgency.',
+          variables: ['product'],
+        },
+      ],
+    },
+  },
+  legal: {
+    name: '50 prompts to speed up legal work',
+    promise: 'Templates for legal research, summaries, and clearer client communication.',
+    description: 'For lawyers and legal assistants who need more speed without losing precision.',
+    audience: 'Solo lawyers, law firms, and legal assistants',
+    benefits: [
+      'Frameworks for motions, summaries, and legal memos',
+      'Checklists to review risks and missing points',
+      'Clearer communication for non-legal clients',
+    ],
+    categories: [
+      { label: 'Research', description: 'Organize facts, theses, and precedents' },
+      { label: 'Communication', description: 'Explain legal scenarios clearly' },
+    ],
+    prompts: {
+      pesquisa: [
+        {
+          title: 'Strategic case summary',
+          description: 'Turns long documents into an actionable brief',
+          content: 'Create a strategic summary of {{case}} with: facts, timeline, disputed points, risks, opportunities, and recommended next steps.',
+          variables: ['case'],
+        },
+        {
+          title: 'Pre-filing checklist',
+          description: 'Prevents omissions in legal documents',
+          content: 'Build a review checklist for {{document_type}} covering evidence, legal grounds, requests, deadlines, and argument consistency before filing.',
+          variables: ['document_type'],
+        },
+      ],
+      comunicacao: [
+        {
+          title: 'Client-friendly legal explanation',
+          description: 'Translates legal jargon into plain language',
+          content: 'Explain the legal scenario of {{topic}} for a non-legal client in clear language, including risks, probability of success, and options.',
+          variables: ['topic'],
+        },
+        {
+          title: 'Case status update email',
+          description: 'Professional and objective communication',
+          content: 'Write a case update email for {{client}} about {{case_reference}} with a reassuring tone, current status, and next milestones.',
+          variables: ['client', 'case_reference'],
+        },
+      ],
+    },
+  },
+  hr: {
+    name: '50 prompts to hire faster and better',
+    promise: 'Prompts to attract qualified candidates, run better interviews, and improve hiring decisions.',
+    description: 'HR pack to reduce time-to-fill and improve hiring quality.',
+    audience: 'HR teams, recruiters, and hiring managers',
+    benefits: [
+      'Stronger job descriptions that attract better talent',
+      'Competency-based interview scripts',
+      'Candidate communication templates',
+    ],
+    categories: [
+      { label: 'Job Posts', description: 'Attract role-fit candidates' },
+      { label: 'Interviews', description: 'Assess with clear criteria' },
+    ],
+    prompts: {
+      vaga: [
+        {
+          title: 'Performance-oriented job description',
+          description: 'Attracts candidates aligned with real outcomes',
+          content: 'Create a job description for {{role}} at {{company}} focused on expected outcomes in the first 90 days, responsibilities, and knockout criteria.',
+          variables: ['role', 'company'],
+        },
+        {
+          title: 'Job opening announcement',
+          description: 'Copy for LinkedIn and communities',
+          content: 'Write a job post for {{role}} highlighting company value proposition, ideal profile, and clear application CTA.',
+          variables: ['role'],
+        },
+      ],
+      entrevista: [
+        {
+          title: 'Competency interview questions',
+          description: 'Evaluates behavior and practical ability',
+          content: 'Generate 12 competency-based interview questions for {{role}}, grouped by: technical skill, collaboration, problem solving, and ownership.',
+          variables: ['role'],
+        },
+        {
+          title: 'Interview scorecard',
+          description: 'Standardizes candidate comparison',
+          content: 'Create a scorecard to evaluate candidates for {{role}} with criteria, weights, scoring scale, and red flags.',
+          variables: ['role'],
+        },
+      ],
+    },
+  },
+};
+
+const mergeLocalizedPack = (pack: Pack, override?: PackLocalizationOverride): Pack => {
+  if (!override) return pack;
+
+  const localizedCategories = override.categories
+    ? pack.categories.map((category, index) => ({ ...category, ...(override.categories?.[index] || {}) }))
+    : pack.categories;
+
+  const localizedPrompts = override.prompts
+    ? Object.entries(pack.prompts).reduce((acc, [categoryKey, prompts]) => {
+        const overridePrompts = override.prompts?.[categoryKey] || [];
+        acc[categoryKey] = prompts.map((prompt, index) => ({ ...prompt, ...(overridePrompts[index] || {}) }));
+        return acc;
+      }, {} as Pack['prompts'])
+    : pack.prompts;
+
+  return {
+    ...pack,
+    ...override,
+    categories: localizedCategories,
+    prompts: localizedPrompts,
+  };
+};
+
+export const getLocalizedPackBySlug = (slug: string, isEnglish: boolean): Pack | undefined => {
+  const pack = getPackBySlug(slug);
+  if (!pack || !isEnglish) return pack;
+  return mergeLocalizedPack(pack, EN_PACK_OVERRIDES[slug]);
+};
+
+export const getLocalizedPacksByCategory = (category: string, isEnglish: boolean): Pack[] => {
+  const packs = getPacksByCategory(category);
+  if (!isEnglish) return packs;
+  return packs.map(pack => mergeLocalizedPack(pack, EN_PACK_OVERRIDES[pack.slug]));
 };
 
 export const getFreePreviewPrompts = (pack: Pack): number => {

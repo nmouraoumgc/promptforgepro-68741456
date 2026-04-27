@@ -19,7 +19,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { usePlanStore } from '@/stores/planStore';
-import { getPackBySlug } from '@/data/packs';
+import { getLocalizedPackBySlug } from '@/data/packs';
 import { PackPreview } from '@/components/packs';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
@@ -40,7 +40,7 @@ export default function PackDetail() {
   const isEnglish = (i18n.resolvedLanguage || i18n.language || 'pt').startsWith('en');
   const hasAccess = canAccess('canAccessPromptPacks');
   
-  const pack = getPackBySlug(slug || '');
+  const pack = getLocalizedPackBySlug(slug || '', isEnglish);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>('');
 

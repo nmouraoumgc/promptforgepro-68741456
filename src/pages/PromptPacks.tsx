@@ -3,7 +3,7 @@ import { Video, TrendingUp, Zap, Lightbulb, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { PackCard } from '@/components/packs';
-import { PACKS, getPacksByCategory } from '@/data/packs';
+import { PACKS, getLocalizedPacksByCategory } from '@/data/packs';
 import { OUTCOME_CATEGORIES, OutcomeCategory } from '@/types/packs';
 import { usePlanStore } from '@/stores/planStore';
 import { useNavigate } from 'react-router-dom';
@@ -26,7 +26,7 @@ export default function PromptPacks() {
   // Group packs by outcome category
   const categories = Object.keys(OUTCOME_CATEGORIES) as OutcomeCategory[];
   const packsByCategory = categories.reduce((acc, cat) => {
-    const packs = getPacksByCategory(cat);
+    const packs = getLocalizedPacksByCategory(cat, isEnglish);
     if (packs.length > 0) {
       acc[cat] = packs;
     }
