@@ -3,7 +3,7 @@ import { Video, TrendingUp, Zap, Lightbulb, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { PackCard } from '@/components/packs';
-import { PACKS, getPacksByCategory } from '@/data/packs';
+import { PACKS, getLocalizedPacksByCategory } from '@/data/packs';
 import { OUTCOME_CATEGORIES, OutcomeCategory } from '@/types/packs';
 import { usePlanStore } from '@/stores/planStore';
 import { useNavigate } from 'react-router-dom';
@@ -26,7 +26,7 @@ export default function PromptPacks() {
   // Group packs by outcome category
   const categories = Object.keys(OUTCOME_CATEGORIES) as OutcomeCategory[];
   const packsByCategory = categories.reduce((acc, cat) => {
-    const packs = getPacksByCategory(cat);
+    const packs = getLocalizedPacksByCategory(cat, isEnglish);
     if (packs.length > 0) {
       acc[cat] = packs;
     }
@@ -42,15 +42,15 @@ export default function PromptPacks() {
         className="text-center max-w-2xl mx-auto"
       >
         <Badge className="mb-4 bg-primary/10 text-primary border-0">
-          {isEnglish ? 'Ready Solutions' : 'Soluções Prontas'}
+          {isEnglish ? 'Profession Packs' : 'Packs por Profissão'}
         </Badge>
         <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
           {isEnglish ? 'Outcome Packs' : 'Packs de Resultados'}
         </h1>
         <p className="text-lg text-muted-foreground">
           {isEnglish
-            ? 'Tested templates that solve real problems. Choose the outcome you need, not generic prompts.'
-            : 'Templates testados que resolvem problemas reais. Escolhe o resultado que precisas, não prompts genéricos.'}
+            ? 'Sell outcomes, not prompts. Pick packs built for your profession and the real result you want.'
+            : 'Venda resultados, não prompts. Escolha packs criados para a sua profissão e para o resultado real que você quer.'}
         </p>
       </motion.div>
 
@@ -62,9 +62,9 @@ export default function PromptPacks() {
         className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto"
       >
         {[
-          { icon: Zap, label: isEnglish ? 'Instant Outcome' : 'Resultado Imediato', desc: isEnglish ? 'Ready-to-use templates' : 'Templates prontos a usar' },
-          { icon: TrendingUp, label: isEnglish ? 'Tested' : 'Testados', desc: isEnglish ? 'Validated with real data' : 'Validados com dados reais' },
-          { icon: Lightbulb, label: isEnglish ? 'Adaptable' : 'Adaptáveis', desc: isEnglish ? 'Customizable variables' : 'Variáveis personalizáveis' },
+          { icon: Zap, label: isEnglish ? 'Real Cases' : 'Casos Reais', desc: isEnglish ? 'Use-cases from each profession' : 'Casos de uso por profissão' },
+          { icon: TrendingUp, label: isEnglish ? 'Result Promise' : 'Promessa de Resultado', desc: isEnglish ? 'Each pack leads to a business outcome' : 'Cada pack aponta para um resultado de negócio' },
+          { icon: Lightbulb, label: isEnglish ? 'Action-Ready' : 'Pronto para Ação', desc: isEnglish ? 'Use today with minimal adaptation' : 'Use hoje com pouca adaptação' },
         ].map(({ icon: Icon, label, desc }, i) => (
           <div
             key={i}
