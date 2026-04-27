@@ -35,7 +35,14 @@ serve(async (req) => {
 
 Given an original prompt, you must:
 1. Score its quality on these dimensions (0-100):
-   - clarity, specificity, structure, creativity, overall
+   - clarity
+   - context
+   - aiRole
+   - constraints
+   - outputFormat
+   - successCriteria
+   - genericResponseRisk (higher = more likely to generate generic responses)
+   - overall
 
 2. Generate 5 optimized variations:
    - shorter: shorter and more direct
@@ -56,7 +63,16 @@ IMPORTANT: Respond ONLY with valid JSON, no markdown or extra text.
 
 Format:
 {
-  "score": { "clarity": 75, "specificity": 60, "structure": 80, "creativity": 65, "overall": 70 },
+  "score": {
+    "clarity": 75,
+    "context": 60,
+    "aiRole": 80,
+    "constraints": 65,
+    "outputFormat": 70,
+    "successCriteria": 55,
+    "genericResponseRisk": 45,
+    "overall": 68
+  },
   "optimizations": [
     { "type": "shorter", "content": "...", "explanation": "...", "changes": ["...", "..."] },
     { "type": "detailed", "content": "...", "explanation": "...", "changes": ["...", "..."] },
@@ -71,9 +87,12 @@ Format:
 Dado um prompt original, deves:
 1. Avaliar a qualidade do prompt nas seguintes dimensões (0-100):
    - clarity: clareza do objetivo
-   - specificity: nível de detalhe e especificidade  
-   - structure: organização e estrutura
-   - creativity: potencial criativo
+   - context: qualidade do contexto fornecido
+   - aiRole: clareza do papel atribuído à IA
+   - constraints: definição de limites/restrições
+   - outputFormat: definição do formato de output esperado
+   - successCriteria: critérios para avaliar sucesso/qualidade
+   - genericResponseRisk: risco de resposta genérica (quanto maior, pior)
    - overall: pontuação geral
 
 2. Gerar 5 variações otimizadas:
@@ -95,7 +114,16 @@ IMPORTANTE: Responde APENAS com JSON válido, sem markdown ou explicações adic
 
 Formato da resposta:
 {
-  "score": { "clarity": 75, "specificity": 60, "structure": 80, "creativity": 65, "overall": 70 },
+  "score": {
+    "clarity": 75,
+    "context": 60,
+    "aiRole": 80,
+    "constraints": 65,
+    "outputFormat": 70,
+    "successCriteria": 55,
+    "genericResponseRisk": 45,
+    "overall": 68
+  },
   "optimizations": [
     { "type": "shorter", "content": "...", "explanation": "...", "changes": ["...", "..."] },
     { "type": "detailed", "content": "...", "explanation": "...", "changes": ["...", "..."] },
@@ -167,11 +195,22 @@ Formato da resposta:
     }
 
     const result = JSON.parse(jsonContent.trim());
+    const rawScore = result?.score ?? {};
+    const normalizedScore = {
+      clarity: Number(rawScore.clarity ?? 0),
+      context: Number(rawScore.context ?? rawScore.specificity ?? 0),
+      aiRole: Number(rawScore.aiRole ?? 0),
+      constraints: Number(rawScore.constraints ?? 0),
+      outputFormat: Number(rawScore.outputFormat ?? rawScore.structure ?? 0),
+      successCriteria: Number(rawScore.successCriteria ?? 0),
+      genericResponseRisk: Number(rawScore.genericResponseRisk ?? (100 - Number(rawScore.creativity ?? 50))),
+      overall: Number(rawScore.overall ?? 0),
+    };
 
     console.log('Successfully optimized prompt');
 
     return new Response(
-      JSON.stringify(result),
+      JSON.stringify({ ...result, score: normalizedScore }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 

@@ -55,10 +55,12 @@ export interface PromptVariable {
 export interface PromptScore {
   overall: number;
   clarity: number;
-  specificity: number;
-  structure: number;
-  outputControl: number;
-  creativity: number;
+  context: number;
+  aiRole: number;
+  constraints: number;
+  outputFormat: number;
+  successCriteria: number;
+  genericResponseRisk: number;
 }
 
 export interface PromptFeedback {
