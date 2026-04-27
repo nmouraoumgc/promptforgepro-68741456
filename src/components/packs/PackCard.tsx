@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Lock, ChevronRight, Play, PenTool, Youtube } from 'lucide-react';
+import { Lock, ChevronRight, Play, PenTool, Youtube, Home, Scale, Users, ShoppingBag } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,10 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Play,
   PenTool,
   Youtube,
+  Home,
+  Scale,
+  Users,
+  ShoppingBag,
   Instagram: Play, // Fallback
 };
 
