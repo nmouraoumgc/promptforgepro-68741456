@@ -113,27 +113,18 @@ serve(async (req) => {
 
     const origin = req.headers.get("origin") || req.headers.get("referer")?.split("/").slice(0, 3).join("/") || "";
 
-    const alternativeCheckoutUrl =
-      Deno.env.get("PRO_ALTERNATIVE_CHECKOUT_URL") ??
-      Deno.env.get("ALTERNATIVE_CHECKOUT_URL") ??
-      "";
-
-    let session: Awaited<ReturnType<typeof stripe.checkout.sessions.create>> | null = null;
-    try {
-      session = await stripe.checkout.sessions.create({
-        mode: "subscription",
-        customer: customerId,
-        customer_email: customerId ? undefined : user.email,
-        line_items: [
-          {
-            price_data: {
-              currency: "eur",
-              recurring: { interval: "month" },
-              product_data: {
-                name: "PromptForge Pro",
-                description: "Monthly Pro subscription — unlimited optimizations, history, A/B tests",
-              },
-              unit_amount: PRO_MONTHLY_CENTS,
+    const session = await stripe.checkout.sessions.create({
+      mode: "subscription",
+      customer: customerId,
+      customer_email: customerId ? undefined : user.email,
+      line_items: [
+        {
+          price_data: {
+            currency: "eur",
+            recurring: { interval: "month" },
+            product_data: {
+              name: "PromptForge Pro",
+              description: "Monthly Pro subscription — unlimited optimizations, history, A/B tests",
             },
             quantity: 1,
           },
