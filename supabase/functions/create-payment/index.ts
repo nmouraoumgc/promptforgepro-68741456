@@ -109,25 +109,16 @@ serve(async (req) => {
 
     const origin = req.headers.get("origin") || req.headers.get("referer")?.split("/").slice(0, 3).join("/") || "";
 
-    const alternativeCheckoutUrl =
-      Deno.env.get("PREMIUM_ALTERNATIVE_CHECKOUT_URL") ??
-      Deno.env.get("ALTERNATIVE_CHECKOUT_URL") ??
-      "";
-
-    let session: Awaited<ReturnType<typeof stripe.checkout.sessions.create>> | null = null;
-    try {
-      session = await stripe.checkout.sessions.create({
-        mode: "payment",
-        customer_email: email,
-        line_items: [
-          {
-            price_data: {
-              currency: "eur",
-              product_data: {
-                name: "PromptForge Premium Pack",
-                description: "Lifetime access to all premium Prompt Packs",
-              },
-              unit_amount: finalPriceCents,
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      customer_email: email,
+      line_items: [
+        {
+          price_data: {
+            currency: "eur",
+            product_data: {
+              name: "PromptForge Premium Pack",
+              description: "Lifetime access to all premium Prompt Packs",
             },
             quantity: 1,
           },
