@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
-import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -13,6 +12,10 @@ const logStep = (step: string, details?: unknown) => {
 };
 
 const PRO_MONTHLY_CENTS = 900; // 9€/month
+const EXTERNAL_PRO_CHECKOUT_URL =
+  Deno.env.get("PRO_CHECKOUT_URL") ||
+  Deno.env.get("CHECKOUT_URL") ||
+  Deno.env.get("ALTERNATIVE_CHECKOUT_URL");
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -25,8 +28,9 @@ serve(async (req) => {
   );
 
   try {
-    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
+    if (!EXTERNAL_PRO_CHECKOUT_URL) {
+      throw new Error("External checkout is not configured. Set PRO_CHECKOUT_URL or CHECKOUT_URL");
+    }
 
     let promoCode: string | null = null;
     try {
@@ -81,110 +85,20 @@ serve(async (req) => {
       validPromo = promo as PromoCodeRow;
     }
 
-    const stripe = new Stripe(stripeKey, { apiVersion: "2024-06-20" });
+    const checkoutUrl = new URL(EXTERNAL_PRO_CHECKOUT_URL);
+    checkoutUrl.searchParams.set("email", user.email);
+    checkoutUrl.searchParams.set("user_id", user.id);
+    checkoutUrl.searchParams.set("plan", "pro");
+    checkoutUrl.searchParams.set("amount_cents", String(PRO_MONTHLY_CENTS));
+    if (validPromo?.id) checkoutUrl.searchParams.set("promo_id", validPromo.id);
+    if (validPromo?.code) checkoutUrl.searchParams.set("promo_code", validPromo.code);
 
-    // Reuse existing Stripe customer when possible
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
-    const customerId = customers.data.length > 0 ? customers.data[0].id : undefined;
-
-    // Build optional discount via Stripe Coupon
-    let discounts: { coupon: string }[] | undefined = undefined;
-    if (validPromo) {
-      if (validPromo.discount_type === "percentage") {
-        const coupon = await stripe.coupons.create({
-          percent_off: validPromo.discount_value,
-          duration: validPromo.duration_months && validPromo.duration_months > 0 ? "repeating" : "once",
-          duration_in_months: validPromo.duration_months && validPromo.duration_months > 0 ? validPromo.duration_months : undefined,
-          name: validPromo.code,
-        });
-        discounts = [{ coupon: coupon.id }];
-      } else if (validPromo.discount_type === "fixed") {
-        const coupon = await stripe.coupons.create({
-          amount_off: Math.round(validPromo.discount_value * 100),
-          currency: "eur",
-          duration: validPromo.duration_months && validPromo.duration_months > 0 ? "repeating" : "once",
-          duration_in_months: validPromo.duration_months && validPromo.duration_months > 0 ? validPromo.duration_months : undefined,
-          name: validPromo.code,
-        });
-        discounts = [{ coupon: coupon.id }];
-      }
-      // free_days handled via subscription_data.trial_period_days below
-    }
-
-    const origin = req.headers.get("origin") || req.headers.get("referer")?.split("/").slice(0, 3).join("/") || "";
-
-    const session = await stripe.checkout.sessions.create({
-      mode: "subscription",
-      customer: customerId,
-      customer_email: customerId ? undefined : user.email,
-      line_items: [
-        {
-          price_data: {
-            currency: "eur",
-            recurring: { interval: "month" },
-            product_data: {
-              name: "PromptForge Pro",
-              description: "Monthly Pro subscription — unlimited optimizations, history, A/B tests",
-            },
-            quantity: 1,
-          },
-        ],
-        discounts,
-        subscription_data: validPromo?.discount_type === "free_days" && validPromo.discount_value > 0
-          ? { trial_period_days: Math.round(validPromo.discount_value) }
-          : undefined,
-        success_url: `${origin}/subscription-success?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${origin}/plans`,
-        metadata: {
-          user_id: user.id,
-          plan: "pro",
-          promo_id: validPromo?.id || "",
-          promo_code: validPromo?.code || "",
-        },
-      });
-    } catch (stripeError) {
-      const stripeErrorMessage =
-        stripeError instanceof Error ? stripeError.message : String(stripeError);
-
-      if (
-        stripeErrorMessage
-          .toLowerCase()
-          .includes("cannot currently make live charges") &&
-        alternativeCheckoutUrl
-      ) {
-        logStep("Stripe unavailable, using alternative checkout", {
-          userId: user.id,
-          alternativeCheckoutUrl,
-        });
-
-        return new Response(
-          JSON.stringify({
-            url: alternativeCheckoutUrl,
-            provider: "alternative",
-            warning:
-              "Stripe is temporarily unavailable for live charges. Redirecting to an alternative checkout.",
-          }),
-          {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 200,
-          },
-        );
-      }
-
-      throw stripeError;
-    }
-
-    if (!session?.url || !session.id) {
-      throw new Error("Failed to create checkout session");
-    }
-
-    logStep("Stripe subscription session created", {
-      sessionId: session.id,
+    logStep("External subscription checkout prepared", {
       userId: user.id,
       hasPromo: Boolean(validPromo?.code),
     });
 
-    return new Response(JSON.stringify({ url: session.url, provider: "stripe", sessionId: session.id }), {
+    return new Response(JSON.stringify({ url: checkoutUrl.toString(), provider: "external" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });

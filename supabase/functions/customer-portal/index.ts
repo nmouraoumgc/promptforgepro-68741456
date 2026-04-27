@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
-import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -18,8 +17,10 @@ serve(async (req) => {
   }
 
   try {
-    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
+    const billingPortalUrl = Deno.env.get("BILLING_PORTAL_URL");
+    if (!billingPortalUrl) {
+      throw new Error("Billing portal is not configured. Set BILLING_PORTAL_URL");
+    }
 
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -35,27 +36,15 @@ serve(async (req) => {
     if (userError) throw new Error(`Authentication error: ${userError.message}`);
 
     const user = userData.user;
-    if (!user?.email) throw new Error("User not authenticated or email not available");
+    if (!user?.id) throw new Error("User not authenticated");
 
-    const stripe = new Stripe(stripeKey, { apiVersion: "2024-06-20" });
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
-    const customerId = customers.data[0]?.id ?? (
-      await stripe.customers.create({
-        email: user.email,
-        metadata: { user_id: user.id },
-      })
-    ).id;
+    const url = new URL(billingPortalUrl);
+    url.searchParams.set("user_id", user.id);
+    if (user.email) url.searchParams.set("email", user.email);
 
-    const origin = req.headers.get("origin") || req.headers.get("referer")?.split("/").slice(0, 3).join("/") || "";
+    logStep("External billing portal prepared", { userId: user.id });
 
-    const portalSession = await stripe.billingPortal.sessions.create({
-      customer: customerId,
-      return_url: `${origin}/account`,
-    });
-
-    logStep("Stripe portal session created", { userId: user.id });
-
-    return new Response(JSON.stringify({ url: portalSession.url }), {
+    return new Response(JSON.stringify({ url: url.toString() }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
