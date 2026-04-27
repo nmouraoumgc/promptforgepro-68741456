@@ -172,6 +172,14 @@ const Checkout = () => {
         body: { email, promoCode: appliedPromo?.code },
       });
       if (error) throw new Error(error.message);
+      if (data?.warning) {
+        toast({
+          title: isEnglish ? "Alternative checkout" : "Checkout alternativo",
+          description: isEnglish
+            ? "Stripe is temporarily unavailable. Redirecting you to an alternative payment page."
+            : "A Stripe está temporariamente indisponível. Vamos redirecionar para um pagamento alternativo.",
+        });
+      }
       if (data?.url) {
         window.location.href = data.url;
       } else {
