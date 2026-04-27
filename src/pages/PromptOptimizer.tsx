@@ -12,6 +12,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { OptimizationLimitNotice, AuthGate } from '@/components/gating/FeatureGate';
 import ActionableScore from '@/components/optimizer/ActionableScore';
 import ImprovementsList from '@/components/optimizer/ImprovementsList';
+import BeforeAfterShowcase from '@/components/optimizer/BeforeAfterShowcase';
 import { supabase } from '@/integrations/supabase/client';
 
 const mockOptimizations: OptimizationVariant[] = [
@@ -154,6 +155,11 @@ export default function PromptOptimizer() {
 
   const remainingOptimizations = currentPlan === 'free' ? 3 - getOptimizationCount(currentPromptId) : null;
 
+  const shorterOptimization = optimizations.find((o) => o.type === 'shorter');
+  const detailedOptimization = optimizations.find((o) => o.type === 'detailed');
+  const technicalOptimization = optimizations.find((o) => o.type === 'technical');
+
+
   return (
     <div className="p-6 space-y-6 animate-fade-in">
       {/* Optimization limit notice for free users */}
@@ -240,6 +246,19 @@ export default function PromptOptimizer() {
           </Card>
         )}
       </div>
+
+      {/* Before / After learning showcase */}
+      {optimizations.length > 0 && detailedOptimization && (
+        <BeforeAfterShowcase
+          isEnglish={isEnglish}
+          beforePrompt={inputPrompt}
+          afterPrompt={detailedOptimization.content}
+          explanation={selectedOptimization?.explanation || detailedOptimization.explanation || (isEnglish ? 'The optimized version adds context, structure and clear constraints so the AI can produce a higher-quality result.' : 'A versão otimizada adiciona contexto, estrutura e restrições claras para a IA gerar um resultado de maior qualidade.')}
+          shortVersion={shorterOptimization?.content || detailedOptimization.content}
+          advancedVersion={technicalOptimization?.content || detailedOptimization.content}
+          onCopy={copyToClipboard}
+        />
+      )}
 
       {/* Improvements explanation */}
       {selectedOptimization && inputPrompt && (
