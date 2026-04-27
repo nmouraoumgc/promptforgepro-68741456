@@ -172,12 +172,12 @@ const Checkout = () => {
         body: { email, promoCode: appliedPromo?.code },
       });
       if (error) throw new Error(error.message);
-      if (data?.warning) {
+      if (data?.provider === "external") {
         toast({
           title: isEnglish ? "Alternative checkout" : "Checkout alternativo",
           description: isEnglish
-            ? "Stripe is temporarily unavailable. Redirecting you to an alternative payment page."
-            : "A Stripe está temporariamente indisponível. Vamos redirecionar para um pagamento alternativo.",
+            ? "Redirecting you to our secure external payment page."
+            : "Vamos redirecionar para a nossa página externa de pagamento seguro.",
         });
       }
       if (data?.url) {
@@ -359,7 +359,7 @@ const Checkout = () => {
               <div className="mt-6 pt-4 border-t border-border space-y-2">
                 <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
                   <Shield className="h-4 w-4" />
-                  <span>{isEnglish ? "Secure payment. Stripe checkout with alternative payment methods enabled." : "Pagamento seguro. Checkout Stripe com métodos de pagamento alternativos ativados."}</span>
+                  <span>{isEnglish ? "Secure external payment processing." : "Processamento de pagamento externo e seguro."}</span>
                 </div>
                 <p className="text-center text-sm text-muted-foreground">
                   {isEnglish ? "No subscription. No recurring charges." : "Sem subscrição. Sem cobranças recorrentes."}

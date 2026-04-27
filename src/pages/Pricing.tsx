@@ -212,12 +212,12 @@ export default function Pricing() {
         return;
       }
 
-      if (data?.warning) {
+      if (data?.provider === 'external') {
         toast({
           title: isEnglish ? 'Alternative checkout' : 'Checkout alternativo',
           description: isEnglish
-            ? 'Stripe is temporarily unavailable. Redirecting to an alternative payment page.'
-            : 'A Stripe está temporariamente indisponível. Vamos redirecionar para um pagamento alternativo.',
+            ? 'Redirecting to our secure external payment page.'
+            : 'A redirecionar para a nossa página externa de pagamento seguro.',
         });
       }
 

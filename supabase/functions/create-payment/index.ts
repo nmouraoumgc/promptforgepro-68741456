@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
-import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -13,6 +12,16 @@ const logStep = (step: string, details?: unknown) => {
 };
 
 const BASE_PRICE_CENTS = 1900; // 19€
+const EXTERNAL_CHECKOUT_URL =
+  Deno.env.get("PREMIUM_CHECKOUT_URL") ||
+  Deno.env.get("CHECKOUT_URL") ||
+  Deno.env.get("ALTERNATIVE_CHECKOUT_URL");
+const PUBLIC_APP_URL = Deno.env.get("PUBLIC_APP_URL") || "";
+
+const getOrigin = (req: Request) =>
+  req.headers.get("origin") ||
+  req.headers.get("referer")?.split("/").slice(0, 3).join("/") ||
+  PUBLIC_APP_URL;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -30,8 +39,9 @@ serve(async (req) => {
   );
 
   try {
-    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
+    if (!EXTERNAL_CHECKOUT_URL) {
+      throw new Error("External checkout is not configured. Set PREMIUM_CHECKOUT_URL or CHECKOUT_URL");
+    }
 
     let guestEmail: string | null = null;
     let promoCode: string | null = null;
@@ -105,77 +115,27 @@ serve(async (req) => {
       }
     }
 
-    const stripe = new Stripe(stripeKey, { apiVersion: "2024-06-20" });
+    const checkoutUrl = new URL(EXTERNAL_CHECKOUT_URL);
+    const origin = getOrigin(req);
+    const reference = crypto.randomUUID();
 
-    const origin = req.headers.get("origin") || req.headers.get("referer")?.split("/").slice(0, 3).join("/") || "";
-
-    const session = await stripe.checkout.sessions.create({
-      mode: "payment",
-      customer_email: email,
-      line_items: [
-        {
-          price_data: {
-            currency: "eur",
-            product_data: {
-              name: "PromptForge Premium Pack",
-              description: "Lifetime access to all premium Prompt Packs",
-            },
-            quantity: 1,
-          },
-        ],
-        success_url: `${origin}/purchase-success?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${origin}/checkout`,
-        metadata: {
-          user_id: userId || "",
-          plan: "premium",
-          promo_id: validPromo?.id || "",
-          promo_code: validPromo?.code || "",
-        },
-      });
-    } catch (stripeError) {
-      const stripeErrorMessage =
-        stripeError instanceof Error ? stripeError.message : String(stripeError);
-
-      if (
-        stripeErrorMessage
-          .toLowerCase()
-          .includes("cannot currently make live charges") &&
-        alternativeCheckoutUrl
-      ) {
-        logStep("Stripe unavailable, using alternative checkout", {
-          userId,
-          alternativeCheckoutUrl,
-        });
-
-        return new Response(
-          JSON.stringify({
-            url: alternativeCheckoutUrl,
-            provider: "alternative",
-            warning:
-              "Stripe is temporarily unavailable for live charges. Redirecting to an alternative checkout.",
-          }),
-          {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 200,
-          },
-        );
-      }
-
-      throw stripeError;
+    checkoutUrl.searchParams.set("prefill_email", email);
+    checkoutUrl.searchParams.set("plan", "premium");
+    checkoutUrl.searchParams.set("amount_cents", String(finalPriceCents));
+    checkoutUrl.searchParams.set("client_reference_id", reference);
+    if (origin) {
+      checkoutUrl.searchParams.set("success_url", `${origin}/purchase-success?ref=${reference}`);
+      checkoutUrl.searchParams.set("cancel_url", `${origin}/checkout`);
     }
+    if (validPromo?.code) checkoutUrl.searchParams.set("promo_code", validPromo.code);
 
-    if (!session?.url || !session.id) {
-      throw new Error("Failed to create checkout session");
-    }
-
-    logStep("Stripe checkout session created", {
-      sessionId: session.id,
+    logStep("External checkout prepared", {
       hasPromo: Boolean(validPromo?.code),
       hasUser: Boolean(userId),
       finalPriceCents,
     });
 
-    return new Response(JSON.stringify({ url: session.url, provider: "stripe", sessionId: session.id }), {
+    return new Response(JSON.stringify({ url: checkoutUrl.toString(), provider: "external" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
