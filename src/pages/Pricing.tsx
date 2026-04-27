@@ -534,7 +534,7 @@ export default function Pricing() {
               {isLoadingPro ? (
                 <span className="flex items-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  {isEnglish ? 'Redirecting to Paddle...' : 'A redirecionar para Paddle...'}
+                  {isEnglish ? 'Redirecting to secure checkout...' : 'A redirecionar para checkout seguro...'}
                 </span>
               ) : (
                 <span className="flex items-center gap-2">

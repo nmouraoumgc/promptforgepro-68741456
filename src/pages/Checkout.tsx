@@ -351,7 +351,7 @@ const Checkout = () => {
               <div className="mt-6 pt-4 border-t border-border space-y-2">
                 <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
                   <Shield className="h-4 w-4" />
-                  <span>{isEnglish ? "Secure payment. Processed by Stripe." : "Pagamento seguro. Processado pela Stripe."}</span>
+                  <span>{isEnglish ? "Secure payment. Stripe checkout with alternative payment methods enabled." : "Pagamento seguro. Checkout Stripe com métodos de pagamento alternativos ativados."}</span>
                 </div>
                 <p className="text-center text-sm text-muted-foreground">
                   {isEnglish ? "No subscription. No recurring charges." : "Sem subscrição. Sem cobranças recorrentes."}
