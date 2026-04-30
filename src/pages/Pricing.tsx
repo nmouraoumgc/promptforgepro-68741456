@@ -103,6 +103,13 @@ export default function Pricing() {
         return;
       }
       if (authLoading) return;
+      // Auto-apply the 2€ first-month discount
+      setProAppliedPromo({
+        code: '1PROFREE',
+        discount_type: 'fixed',
+        discount_value: 7,
+        duration_months: 1,
+      });
       setShowProPromoDialog(true);
       return;
     }
