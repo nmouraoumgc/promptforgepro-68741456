@@ -1,0 +1,1 @@
+revoke execute on function public.sync_profile_plan_from_subscription() from public, anon, authenticated;
