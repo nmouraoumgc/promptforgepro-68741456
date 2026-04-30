@@ -78,12 +78,12 @@ export default function Pricing() {
     description: isEnglish
       ? 'For users who rely on PromptForge every day at work'
       : 'Para quem usa o PromptForge como ferramenta diária de trabalho',
-    price: '9€',
-    priceDetail: isEnglish ? '/month' : '/mês',
+    price: '2€',
+    priceDetail: isEnglish ? 'first month' : 'no primeiro mês',
     features: isEnglish
-      ? ['30-day free trial', 'Unlimited optimizations', 'Version history', 'A/B prompt testing', 'Detailed scoring', 'Prompt export']
-      : ['30 dias grátis', 'Otimizações ilimitadas', 'Histórico de versões', 'Testes A/B de prompts', 'Pontuação detalhada', 'Exportação de prompts'],
-    cta: isEnglish ? 'Start 30-day free trial' : 'Começar 30 dias grátis',
+      ? ['Just 2€ first month', 'Unlimited optimizations', 'Version history', 'A/B prompt testing', 'Detailed scoring', 'Prompt export']
+      : ['Apenas 2€ no primeiro mês', 'Otimizações ilimitadas', 'Histórico de versões', 'Testes A/B de prompts', 'Pontuação detalhada', 'Exportação de prompts'],
+    cta: isEnglish ? 'Try Pro for 2€' : 'Experimentar Pro por 2€',
   };
 
   const handleSelectPlan = async (planId: PlanType) => {
