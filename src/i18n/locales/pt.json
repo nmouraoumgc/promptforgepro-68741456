@@ -255,5 +255,20 @@
     "billingErrorDesc": "Por favor tenta novamente em instantes.",
     "actions": "Ações",
     "signOut": "Terminar sessão"
+  },
+  "proTrial": {
+    "badge": "Oferta limitada",
+    "title": "Experimenta o Pro por apenas 2€",
+    "subtitle": "Desbloqueia tudo no primeiro mês com um desconto especial.",
+    "firstMonth": "no primeiro mês",
+    "thenPrice": "Depois 9€/mês — cancela quando quiseres.",
+    "features": {
+      "unlimited": "Otimizações ilimitadas",
+      "abTesting": "Testes A/B avançados",
+      "history": "Histórico de versões completo",
+      "export": "Exportação de prompts"
+    },
+    "cta": "Começar por 2€",
+    "dismiss": "Talvez mais tarde"
   }
 }

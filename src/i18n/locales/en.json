@@ -255,5 +255,20 @@
     "billingErrorDesc": "Please try again in a moment.",
     "actions": "Actions",
     "signOut": "Sign out"
+  },
+  "proTrial": {
+    "badge": "Limited offer",
+    "title": "Try Pro for just 2€",
+    "subtitle": "Unlock everything in your first month with a special discount.",
+    "firstMonth": "first month",
+    "thenPrice": "Then 9€/month — cancel anytime.",
+    "features": {
+      "unlimited": "Unlimited optimizations",
+      "abTesting": "Advanced A/B testing",
+      "history": "Full version history",
+      "export": "Prompt export"
+    },
+    "cta": "Start for 2€",
+    "dismiss": "Maybe later"
   }
 }
