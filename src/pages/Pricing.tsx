@@ -173,15 +173,18 @@ export default function Pricing() {
         return;
       }
 
-      const { initializePaddle, getPaddlePriceId } = await import('@/lib/paddle');
+      const { initializePaddle, getPaddlePriceId, getPaddleDiscountId } = await import('@/lib/paddle');
       await initializePaddle();
-      const paddlePriceId = await getPaddlePriceId('pro_monthly');
+      const [paddlePriceId, paddleDiscountId] = await Promise.all([
+        getPaddlePriceId('pro_monthly'),
+        proAppliedPromo?.code ? getPaddleDiscountId(proAppliedPromo.code) : Promise.resolve(undefined),
+      ]);
 
       window.Paddle.Checkout.open({
         items: [{ priceId: paddlePriceId, quantity: 1 }],
         customer: { email: user.email! },
         customData: { userId: user.id },
-        discountCode: proAppliedPromo?.code,
+        discountId: paddleDiscountId,
         settings: {
           displayMode: 'overlay',
           successUrl: `${window.location.origin}/subscription-success`,

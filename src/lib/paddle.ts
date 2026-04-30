@@ -70,3 +70,22 @@ export async function getPaddlePriceId(priceId: string): Promise<string> {
   priceCache.set(cacheKey, data.paddleId);
   return data.paddleId;
 }
+
+const discountCache = new Map<string, string>();
+
+export async function getPaddleDiscountId(discountCode: string): Promise<string> {
+  const environment = getPaddleEnvironment();
+  const normalizedCode = discountCode.trim().toUpperCase();
+  const cacheKey = `${environment}:${normalizedCode}`;
+  const cached = discountCache.get(cacheKey);
+  if (cached) return cached;
+
+  const { data, error } = await supabase.functions.invoke("get-paddle-price", {
+    body: { discountCode: normalizedCode, environment },
+  });
+  if (error || !data?.discountId) {
+    throw new Error(`Failed to resolve discount: ${normalizedCode}`);
+  }
+  discountCache.set(cacheKey, data.discountId);
+  return data.discountId;
+}
