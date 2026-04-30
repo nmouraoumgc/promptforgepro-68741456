@@ -27,26 +27,11 @@ const SubscriptionSuccess = () => {
 
   useEffect(() => {
     const verifySubscription = async () => {
-      const sessionId = searchParams.get("session_id");
-      
-      if (sessionId) {
-        try {
-          // Check subscription status
-          const { data, error } = await supabase.functions.invoke("check-subscription");
-
-          if (error) {
-            console.error("Verification error:", error);
-          } else if (data?.subscribed) {
-            console.log("Subscription verified:", data);
-            // Refresh profile to get updated plan
-            await fetchProfile();
-          }
-        } catch (error) {
-          console.error("Error verifying subscription:", error);
-        }
+      try {
+        await fetchProfile();
+      } catch (err) {
+        console.error("Profile refresh error:", err);
       }
-
-      // Set plan locally
       setPlan("pro");
       setIsVerifying(false);
     };
