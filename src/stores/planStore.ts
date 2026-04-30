@@ -4,13 +4,12 @@ import { PlanType, PLAN_LIMITS, PlanLimits } from '@/types/plans';
 import { useAuthStore } from '@/stores/authStore';
 
 interface PlanStore {
-  // Optimistic local plan - only used as fallback while profile loads.
-  // The DB profile.current_plan is ALWAYS the source of truth for entitlements.
-  _localPlan: PlanType;
-  optimizationCounts: Record<string, number>;
-
-  // Computed (do not call directly — use `currentPlan` getter below)
+  // SECURITY: This is mirrored from profiles.current_plan via the auth subscription
+  // below. Do NOT rely on persisted localStorage for entitlement — the subscription
+  // overwrites it on every auth/profile change. setPlan() is kept for legacy callers
+  // but is overridden as soon as the profile loads.
   currentPlan: PlanType;
+  optimizationCounts: Record<string, number>;
 
   setPlan: (plan: PlanType) => void;
   incrementOptimizationCount: (promptId: string) => void;
@@ -32,26 +31,13 @@ const ADMIN_LIMITS: PlanLimits = {
   canDuplicatePrompts: true,
 };
 
-// Resolve the effective plan: profile (server-authoritative) wins over local cache.
-function resolvePlan(localPlan: PlanType): PlanType {
-  const profilePlan = useAuthStore.getState().profile?.current_plan;
-  return profilePlan ?? localPlan;
-}
-
 export const usePlanStore = create<PlanStore>()(
   persist(
     (set, get) => ({
-      _localPlan: 'free',
+      currentPlan: 'free',
       optimizationCounts: {},
 
-      // Getter property — recomputed on every access via Zustand selector.
-      get currentPlan() {
-        return resolvePlan(get()._localPlan);
-      },
-
-      // Kept for backwards compat (e.g. dev/test). In production the webhook
-      // + DB trigger update profile.current_plan; the UI reads through.
-      setPlan: (plan) => set({ _localPlan: plan }),
+      setPlan: (plan) => set({ currentPlan: plan }),
 
       incrementOptimizationCount: (promptId) => {
         set((state) => ({
@@ -66,42 +52,45 @@ export const usePlanStore = create<PlanStore>()(
 
       canOptimize: (promptId) => {
         if (useAuthStore.getState().isAdmin) return true;
-        const limits = PLAN_LIMITS[resolvePlan(get()._localPlan)];
+        const limits = PLAN_LIMITS[get().currentPlan];
         const count = get().optimizationCounts[promptId] || 0;
         return count < limits.maxOptimizationsPerPrompt;
       },
 
       getLimits: () => {
         if (useAuthStore.getState().isAdmin) return ADMIN_LIMITS;
-        return PLAN_LIMITS[resolvePlan(get()._localPlan)];
+        return PLAN_LIMITS[get().currentPlan];
       },
 
       canAccess: (feature) => {
         if (useAuthStore.getState().isAdmin) return true;
-        const limits = PLAN_LIMITS[resolvePlan(get()._localPlan)];
+        const limits = PLAN_LIMITS[get().currentPlan];
         return limits[feature] as boolean;
       },
 
       hasFullAccess: () => {
         if (useAuthStore.getState().isAdmin) return true;
-        return resolvePlan(get()._localPlan) === 'premium';
+        return get().currentPlan === 'premium';
       },
     }),
     {
       name: 'promptforge-plan',
-      // Only persist counters — never persist the plan itself (otherwise tampered
-      // localStorage would unlock features).
+      // Only persist optimization counters; NEVER persist the plan itself
+      // (so tampering localStorage cannot unlock paid features).
       partialize: (state) => ({ optimizationCounts: state.optimizationCounts }),
     }
   )
 );
 
-// Force re-render of components subscribed to planStore whenever the profile changes.
-// Without this, Zustand wouldn't know the computed `currentPlan` getter changed value.
-useAuthStore.subscribe((state, prev) => {
-  if (state.profile?.current_plan !== prev.profile?.current_plan ||
-      state.isAdmin !== prev.isAdmin) {
-    // Touch a benign field to broadcast a change to subscribers.
-    usePlanStore.setState({ _localPlan: usePlanStore.getState()._localPlan });
+// SECURITY: Mirror the server-authoritative profile.current_plan into the store.
+// This runs whenever auth state changes (login, signout, profile refetch, webhook
+// update polled by success pages). Without this, planStore would be stuck at
+// whatever was last set client-side — including unauthenticated 'free'.
+let lastSyncedPlan: PlanType | null = null;
+useAuthStore.subscribe((state) => {
+  const serverPlan = state.profile?.current_plan ?? 'free';
+  if (serverPlan !== lastSyncedPlan) {
+    lastSyncedPlan = serverPlan;
+    usePlanStore.setState({ currentPlan: serverPlan });
   }
 });
