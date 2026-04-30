@@ -81,9 +81,9 @@ export default function Pricing() {
     price: '9€',
     priceDetail: isEnglish ? '/month' : '/mês',
     features: isEnglish
-      ? ['Unlimited optimizations', 'Version history', 'A/B prompt testing', 'Detailed scoring', 'Prompt export']
-      : ['Otimizações ilimitadas', 'Histórico de versões', 'Testes A/B de prompts', 'Pontuação detalhada', 'Exportação de prompts'],
-    cta: isEnglish ? 'Subscribe to Pro' : 'Subscrever Pro',
+      ? ['30-day free trial', 'Unlimited optimizations', 'Version history', 'A/B prompt testing', 'Detailed scoring', 'Prompt export']
+      : ['30 dias grátis', 'Otimizações ilimitadas', 'Histórico de versões', 'Testes A/B de prompts', 'Pontuação detalhada', 'Exportação de prompts'],
+    cta: isEnglish ? 'Start 30-day free trial' : 'Começar 30 dias grátis',
   };
 
   const handleSelectPlan = async (planId: PlanType) => {
