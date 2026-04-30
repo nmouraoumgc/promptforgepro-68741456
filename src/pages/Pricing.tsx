@@ -81,8 +81,8 @@ export default function Pricing() {
     price: '2€',
     priceDetail: isEnglish ? 'first month' : 'no primeiro mês',
     features: isEnglish
-      ? ['Just 2€ first month', 'Unlimited optimizations', 'Version history', 'A/B prompt testing', 'Detailed scoring', 'Prompt export']
-      : ['Apenas 2€ no primeiro mês', 'Otimizações ilimitadas', 'Histórico de versões', 'Testes A/B de prompts', 'Pontuação detalhada', 'Exportação de prompts'],
+      ? ['2€ first month, then 9€/month', 'Unlimited optimizations', 'Version history', 'A/B prompt testing', 'Detailed scoring', 'Prompt export']
+      : ['2€ no primeiro mês, depois 9€/mês', 'Otimizações ilimitadas', 'Histórico de versões', 'Testes A/B de prompts', 'Pontuação detalhada', 'Exportação de prompts'],
     cta: isEnglish ? 'Try Pro for 2€' : 'Experimentar Pro por 2€',
   };
 
@@ -425,16 +425,12 @@ export default function Pricing() {
                     {BASE_PRO_PRICE}€/{isEnglish ? 'month' : 'mês'}
                   </span>
                   <span className="text-2xl font-bold text-primary">
-                    {proFinalPrice.toFixed(2)}€/{isEnglish ? 'month' : 'mês'}
+                    {proFinalPrice.toFixed(2)}€ <span className="text-sm font-medium">{isEnglish ? 'first month' : 'no primeiro mês'}</span>
                   </span>
                   <span className="text-xs text-primary font-medium">
-                    {proAppliedPromo.duration_months > 0
-                      ? isEnglish
-                        ? `${proAppliedPromo.discount_value}${proAppliedPromo.discount_type === 'percentage' ? '%' : '€'} discount for ${proAppliedPromo.duration_months} months, then ${BASE_PRO_PRICE}€/month`
-                        : `${proAppliedPromo.discount_value}${proAppliedPromo.discount_type === 'percentage' ? '%' : '€'} de desconto durante ${proAppliedPromo.duration_months} meses, depois ${BASE_PRO_PRICE}€/mês`
-                      : isEnglish
-                        ? `You save ${proDiscount.toFixed(2)}€ with ${proAppliedPromo.code}`
-                        : `Poupas ${proDiscount.toFixed(2)}€ com ${proAppliedPromo.code}`}
+                    {isEnglish
+                      ? `Then ${BASE_PRO_PRICE}€/month — cancel anytime`
+                      : `Depois ${BASE_PRO_PRICE}€/mês — cancela quando quiseres`}
                   </span>
                 </div>
               ) : (
