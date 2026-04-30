@@ -4,6 +4,7 @@ import { Header } from './Header';
 import { useEffect } from 'react';
 import { usePromptStore } from '@/stores/promptStore';
 import { PaymentTestModeBanner } from '@/components/PaymentTestModeBanner';
+import { PastDueBanner } from '@/components/PastDueBanner';
 
 export function AppLayout() {
   const { darkMode } = usePromptStore();
@@ -20,6 +21,7 @@ export function AppLayout() {
   return (
     <div className="flex h-screen flex-col bg-background">
       <PaymentTestModeBanner />
+      <PastDueBanner />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar />
         <div className="flex flex-1 flex-col overflow-hidden">

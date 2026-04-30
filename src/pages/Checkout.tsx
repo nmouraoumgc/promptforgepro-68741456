@@ -27,7 +27,7 @@ const Checkout = () => {
   const [promoError, setPromoError] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, profile } = useAuthStore();
+  const { user, profile, isLoading: authLoading } = useAuthStore();
   const { i18n } = useTranslation();
   const isEnglish = (i18n.resolvedLanguage || i18n.language || "pt").startsWith("en");
   const valueItems = isEnglish
@@ -51,6 +51,22 @@ const Checkout = () => {
   useEffect(() => {
     if (profile?.current_plan === "premium") navigate("/packs");
   }, [profile, navigate]);
+
+  // Force authentication before checkout. Without a logged-in user, the webhook
+  // cannot link the purchase to an account and the user would lose access.
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate(`/login?redirect=${encodeURIComponent('/checkout')}`, { replace: true });
+    }
+  }, [authLoading, user, navigate]);
+
+  if (authLoading || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   const handleApplyPromo = async () => {
     setPromoError("");
@@ -228,16 +244,14 @@ const Checkout = () => {
                   <Input
                     id="email"
                     type="email"
-                    placeholder={isEnglish ? "your-email@example.com" : "o-teu-email@exemplo.com"}
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    disabled={isLoading}
-                    className="h-12"
+                    value={user.email ?? ''}
+                    readOnly
+                    disabled
+                    className="h-12 bg-muted/40 cursor-not-allowed"
                   />
-                  {user && (
-                    <p className="text-xs text-muted-foreground">{isEnglish ? `Signed in as ${user.email}` : `Autenticado como ${user.email}`}</p>
-                  )}
+                  <p className="text-xs text-muted-foreground">
+                    {isEnglish ? `Invoice will be issued to ${user.email}` : `A fatura será emitida para ${user.email}`}
+                  </p>
                 </div>
 
                 {/* Promo code */}

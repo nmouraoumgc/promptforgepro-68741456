@@ -29,6 +29,7 @@ import Terms from "@/pages/legal/Terms";
 import Refunds from "@/pages/legal/Refunds";
 import Privacy from "@/pages/legal/Privacy";
 import NotFound from "./pages/NotFound";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -62,12 +63,12 @@ const App = () => (
             <Route path="/packs/:slug" element={<PackDetail />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/pricing" element={<Pricing />} />
-            <Route path="/checkout" element={<Checkout />} />
-            <Route path="/purchase-success" element={<PurchaseSuccess />} />
-            <Route path="/subscription-success" element={<SubscriptionSuccess />} />
-            <Route path="/account" element={<Account />} />
-            <Route path="/planos" element={<Plans />} />
-            <Route path="/admin" element={<Admin />} />
+            <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
+            <Route path="/purchase-success" element={<ProtectedRoute><PurchaseSuccess /></ProtectedRoute>} />
+            <Route path="/subscription-success" element={<ProtectedRoute><SubscriptionSuccess /></ProtectedRoute>} />
+            <Route path="/account" element={<ProtectedRoute><Account /></ProtectedRoute>} />
+            <Route path="/planos" element={<ProtectedRoute><Plans /></ProtectedRoute>} />
+            <Route path="/admin" element={<ProtectedRoute requireAdmin><Admin /></ProtectedRoute>} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

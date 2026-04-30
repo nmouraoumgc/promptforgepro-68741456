@@ -145,6 +145,13 @@ async function handleTransactionCompleted(data: any, env: PaddleEnv) {
   console.log('Premium purchase recorded', { userId, txn: id, env });
 }
 
+async function handleTransactionPaymentFailed(data: any, env: PaddleEnv) {
+  // Subscription.updated also fires with status=past_due, so the DB trigger
+  // already keeps the user as Pro during the grace window. Here we just log
+  // for observability; the frontend reads `status='past_due'` from subscriptions.
+  console.log('payment_failed', { txn: data?.id, sub: data?.subscriptionId, env });
+}
+
 async function handleWebhook(req: Request, env: PaddleEnv) {
   const event = await verifyWebhook(req, env);
 
@@ -160,6 +167,9 @@ async function handleWebhook(req: Request, env: PaddleEnv) {
       break;
     case EventName.TransactionCompleted:
       await handleTransactionCompleted(event.data, env);
+      break;
+    case EventName.TransactionPaymentFailed:
+      await handleTransactionPaymentFailed(event.data, env);
       break;
     default:
       console.log('Unhandled event:', event.eventType);

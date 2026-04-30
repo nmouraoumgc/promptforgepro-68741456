@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Flame, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,8 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectTo = searchParams.get('redirect') || '/';
   const { toast } = useToast();
   const { signIn } = useAuthStore();
   const { i18n } = useTranslation();
@@ -39,7 +41,7 @@ export default function Login() {
         title: isEnglish ? 'Welcome back!' : 'Bem-vindo de volta!',
         description: isEnglish ? 'Signed in successfully.' : 'Sessão iniciada com sucesso.',
       });
-      navigate('/');
+      navigate(redirectTo);
     }
 
     setIsLoading(false);
