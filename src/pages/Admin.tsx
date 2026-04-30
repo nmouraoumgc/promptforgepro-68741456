@@ -322,13 +322,26 @@ export default function Admin() {
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="packs">
-          <TabsList className="mb-6">
+        <Tabs defaultValue="overview">
+          <TabsList className="mb-6 flex-wrap h-auto">
+            <TabsTrigger value="overview" className="gap-2">
+              <LayoutDashboard className="h-4 w-4" />
+              Overview
+            </TabsTrigger>
             <TabsTrigger value="packs">Prompt Packs</TabsTrigger>
             <TabsTrigger value="users">Utilizadores</TabsTrigger>
             <TabsTrigger value="purchases">Compras</TabsTrigger>
             <TabsTrigger value="promo">Códigos de Promoção</TabsTrigger>
           </TabsList>
+
+          {/* Overview Tab */}
+          <TabsContent value="overview">
+            {isLoading ? (
+              <div className="text-center py-12 text-muted-foreground">A carregar estatísticas…</div>
+            ) : (
+              <AdminOverview users={users} purchases={purchases} subscriptions={subscriptions} />
+            )}
+          </TabsContent>
 
           {/* Packs Tab */}
           <TabsContent value="packs">
