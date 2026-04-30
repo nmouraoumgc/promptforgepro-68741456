@@ -4,22 +4,24 @@ import { PlanType, PLAN_LIMITS, PlanLimits } from '@/types/plans';
 import { useAuthStore } from '@/stores/authStore';
 
 interface PlanStore {
+  // Optimistic local plan - only used as fallback while profile loads.
+  // The DB profile.current_plan is ALWAYS the source of truth for entitlements.
+  _localPlan: PlanType;
+  optimizationCounts: Record<string, number>;
+
+  // Computed (do not call directly — use `currentPlan` getter below)
   currentPlan: PlanType;
-  optimizationCounts: Record<string, number>; // promptId -> count
-  
-  // Actions
+
   setPlan: (plan: PlanType) => void;
   incrementOptimizationCount: (promptId: string) => void;
   getOptimizationCount: (promptId: string) => number;
   canOptimize: (promptId: string) => boolean;
-  
-  // Feature checks
+
   getLimits: () => PlanLimits;
   canAccess: (feature: keyof PlanLimits) => boolean;
   hasFullAccess: () => boolean;
 }
 
-// Admin limits - full access to everything
 const ADMIN_LIMITS: PlanLimits = {
   maxOptimizationsPerPrompt: Infinity,
   canAccessVersionHistory: true,
@@ -30,14 +32,27 @@ const ADMIN_LIMITS: PlanLimits = {
   canDuplicatePrompts: true,
 };
 
+// Resolve the effective plan: profile (server-authoritative) wins over local cache.
+function resolvePlan(localPlan: PlanType): PlanType {
+  const profilePlan = useAuthStore.getState().profile?.current_plan;
+  return profilePlan ?? localPlan;
+}
+
 export const usePlanStore = create<PlanStore>()(
   persist(
     (set, get) => ({
-      currentPlan: 'free',
+      _localPlan: 'free',
       optimizationCounts: {},
-      
-      setPlan: (plan) => set({ currentPlan: plan }),
-      
+
+      // Getter property — recomputed on every access via Zustand selector.
+      get currentPlan() {
+        return resolvePlan(get()._localPlan);
+      },
+
+      // Kept for backwards compat (e.g. dev/test). In production the webhook
+      // + DB trigger update profile.current_plan; the UI reads through.
+      setPlan: (plan) => set({ _localPlan: plan }),
+
       incrementOptimizationCount: (promptId) => {
         set((state) => ({
           optimizationCounts: {
@@ -46,41 +61,47 @@ export const usePlanStore = create<PlanStore>()(
           },
         }));
       },
-      
-      getOptimizationCount: (promptId) => {
-        return get().optimizationCounts[promptId] || 0;
-      },
-      
+
+      getOptimizationCount: (promptId) => get().optimizationCounts[promptId] || 0,
+
       canOptimize: (promptId) => {
-        // Admins can always optimize
         if (useAuthStore.getState().isAdmin) return true;
-        
-        const limits = PLAN_LIMITS[get().currentPlan];
+        const limits = PLAN_LIMITS[resolvePlan(get()._localPlan)];
         const count = get().optimizationCounts[promptId] || 0;
         return count < limits.maxOptimizationsPerPrompt;
       },
-      
+
       getLimits: () => {
-        // Admins get full access
         if (useAuthStore.getState().isAdmin) return ADMIN_LIMITS;
-        return PLAN_LIMITS[get().currentPlan];
+        return PLAN_LIMITS[resolvePlan(get()._localPlan)];
       },
-      
+
       canAccess: (feature) => {
-        // Admins can access everything
         if (useAuthStore.getState().isAdmin) return true;
-        
-        const limits = PLAN_LIMITS[get().currentPlan];
+        const limits = PLAN_LIMITS[resolvePlan(get()._localPlan)];
         return limits[feature] as boolean;
       },
-      
+
       hasFullAccess: () => {
-        // Check if user has admin role or premium plan
-        return useAuthStore.getState().isAdmin || get().currentPlan === 'premium';
+        if (useAuthStore.getState().isAdmin) return true;
+        return resolvePlan(get()._localPlan) === 'premium';
       },
     }),
     {
       name: 'promptforge-plan',
+      // Only persist counters — never persist the plan itself (otherwise tampered
+      // localStorage would unlock features).
+      partialize: (state) => ({ optimizationCounts: state.optimizationCounts }),
     }
   )
 );
+
+// Force re-render of components subscribed to planStore whenever the profile changes.
+// Without this, Zustand wouldn't know the computed `currentPlan` getter changed value.
+useAuthStore.subscribe((state, prev) => {
+  if (state.profile?.current_plan !== prev.profile?.current_plan ||
+      state.isAdmin !== prev.isAdmin) {
+    // Touch a benign field to broadcast a change to subscribers.
+    usePlanStore.setState({ _localPlan: usePlanStore.getState()._localPlan });
+  }
+});
