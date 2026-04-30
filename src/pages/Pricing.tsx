@@ -334,21 +334,21 @@ export default function Pricing() {
               <div className="flex items-center gap-3 flex-wrap">
                 <h3 className="text-xl font-semibold">{proPlan.name}</h3>
                 <span className="bg-primary/15 text-primary text-xs font-semibold px-2 py-0.5 rounded-full">
-                  {isEnglish ? '30 days free' : '30 dias grátis'}
+                  {isEnglish ? '2€ first month' : '2€ no primeiro mês'}
                 </span>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-xl font-bold">{proPlan.price}</span>
-                  <span className="text-muted-foreground text-sm">{proPlan.priceDetail}</span>
+                  <span className="text-xl font-bold">9€</span>
+                  <span className="text-muted-foreground text-sm">{isEnglish ? '/month' : '/mês'}</span>
                   <span className="text-muted-foreground text-xs ml-1">
-                    {isEnglish ? 'after trial' : 'após o trial'}
+                    {isEnglish ? 'after first month' : 'após o primeiro mês'}
                   </span>
                 </div>
               </div>
               <p className="text-sm text-muted-foreground">{proPlan.description}</p>
               <p className="text-xs text-muted-foreground">
                 {isEnglish
-                  ? 'No charge for 30 days. Cancel anytime before the trial ends.'
-                  : 'Sem cobrança durante 30 dias. Cancela quando quiseres antes do fim do trial.'}
+                  ? 'Just 2€ today, then 9€/month. Cancel anytime.'
+                  : 'Apenas 2€ hoje, depois 9€/mês. Cancela quando quiseres.'}
               </p>
               <div className="flex flex-wrap gap-x-4 gap-y-1 pt-2">
                 {proPlan.features.map((feature) => (
