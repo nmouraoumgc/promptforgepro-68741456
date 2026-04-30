@@ -187,69 +187,27 @@ export default function Pricing() {
     setIsLoadingPro(true);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast({
-          title: isEnglish ? 'Session expired' : 'Sessão expirada',
-          description: isEnglish ? 'Please sign in again.' : 'Por favor inicia sessão novamente.',
-          variant: 'destructive',
-        });
+      if (!user) {
         navigate('/login');
         return;
       }
 
-      const { data, error } = await supabase.functions.invoke('create-subscription', {
-        body: { promoCode: proAppliedPromo?.code || null },
-        headers: { Authorization: `Bearer ${session.access_token}` },
+      const { initializePaddle, getPaddlePriceId } = await import('@/lib/paddle');
+      await initializePaddle();
+      const paddlePriceId = await getPaddlePriceId('pro_monthly');
+
+      window.Paddle.Checkout.open({
+        items: [{ priceId: paddlePriceId, quantity: 1 }],
+        customer: { email: user.email! },
+        customData: { userId: user.id },
+        discountCode: proAppliedPromo?.code,
+        settings: {
+          displayMode: 'overlay',
+          successUrl: `${window.location.origin}/subscription-success`,
+          allowLogout: false,
+          variant: 'one-page',
+        },
       });
-
-      if (data?.error) {
-        toast({
-          title: isEnglish ? 'Subscription creation error' : 'Erro ao criar subscrição',
-          description: data.message || data.error,
-          variant: 'destructive',
-        });
-        return;
-      }
-
-      if (data?.provider === 'external') {
-        toast({
-          title: isEnglish ? 'Alternative checkout' : 'Checkout alternativo',
-          description: isEnglish
-            ? 'Redirecting to our secure external payment page.'
-            : 'A redirecionar para a nossa página externa de pagamento seguro.',
-        });
-      }
-
-      if (error) {
-        let description = isEnglish ? 'Please try again.' : 'Por favor tenta novamente.';
-        try {
-          const ctx = (error as any).context;
-          if (ctx && typeof ctx.json === 'function') {
-            const body = await ctx.json();
-            if (body?.message) description = body.message;
-            else if (body?.error) description = body.error;
-          }
-        } catch { /* ignore parse errors */ }
-        toast({
-          title: isEnglish ? 'Subscription creation error' : 'Erro ao criar subscrição',
-          description,
-          variant: 'destructive',
-        });
-        return;
-      }
-
-      if (data?.url) {
-        window.location.href = data.url;
-      } else {
-        toast({
-          title: isEnglish ? 'Subscription creation error' : 'Erro ao criar subscrição',
-          description: isEnglish
-            ? 'Could not start checkout. Please try again.'
-            : 'Não foi possível iniciar o checkout. Tenta novamente.',
-          variant: 'destructive',
-        });
-      }
     } catch (err) {
       console.error('Subscription error:', err);
       toast({
