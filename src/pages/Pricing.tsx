@@ -275,9 +275,9 @@ export default function Pricing() {
                     <span className="text-4xl font-bold">{plan.price}</span>
                     <span className="text-muted-foreground text-sm">{plan.priceDetail}</span>
                   </div>
-                  {plan.id === 'premium' && (
+                  {plan.id === 'pro' && (
                     <p className="text-xs text-muted-foreground mt-1.5">
-                      {isEnglish ? 'Immediate access after purchase.' : 'Acesso imediato após compra.'}
+                      {isEnglish ? 'Then 9€/month — cancel anytime.' : 'Depois 9€/mês — cancela quando quiseres.'}
                     </p>
                   )}
                 </div>
