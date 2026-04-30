@@ -15,18 +15,32 @@ async function resolvePaddlePrice(priceId: string, environment: PaddleEnv): Prom
   return data.data[0].id;
 }
 
+async function resolvePaddleDiscount(discountCode: string, environment: PaddleEnv): Promise<string> {
+  const response = await gatewayFetch(
+    environment,
+    `/discounts?code=${encodeURIComponent(discountCode)}&status=active`,
+  );
+  const data = await response.json();
+  if (!data.data?.length) throw new Error(`Discount not found: ${discountCode}`);
+  return data.data[0].id;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { priceId, environment } = await req.json();
-    if (!priceId) throw new Error('priceId is required');
+    const { priceId, discountCode, environment } = await req.json();
+    if (!priceId && !discountCode) throw new Error('priceId or discountCode is required');
     const env: PaddleEnv = environment === 'live' ? 'live' : 'sandbox';
 
-    const paddleId = await resolvePaddlePrice(String(priceId), env);
-    return new Response(JSON.stringify({ paddleId }), {
+    const [paddleId, discountId] = await Promise.all([
+      priceId ? resolvePaddlePrice(String(priceId), env) : Promise.resolve(undefined),
+      discountCode ? resolvePaddleDiscount(String(discountCode), env) : Promise.resolve(undefined),
+    ]);
+
+    return new Response(JSON.stringify({ paddleId, discountId }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
