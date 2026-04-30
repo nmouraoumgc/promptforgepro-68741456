@@ -324,14 +324,25 @@ export default function Pricing() {
         <Card className={`border-border ${currentPlan === 'pro' ? 'ring-2 ring-primary' : ''}`}>
           <div className="p-6 flex flex-col md:flex-row md:items-center gap-6">
             <div className="flex-1 space-y-2">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-wrap">
                 <h3 className="text-xl font-semibold">{proPlan.name}</h3>
+                <span className="bg-primary/15 text-primary text-xs font-semibold px-2 py-0.5 rounded-full">
+                  {isEnglish ? '30 days free' : '30 dias grátis'}
+                </span>
                 <div className="flex items-baseline gap-1">
                   <span className="text-xl font-bold">{proPlan.price}</span>
                   <span className="text-muted-foreground text-sm">{proPlan.priceDetail}</span>
+                  <span className="text-muted-foreground text-xs ml-1">
+                    {isEnglish ? 'after trial' : 'após o trial'}
+                  </span>
                 </div>
               </div>
               <p className="text-sm text-muted-foreground">{proPlan.description}</p>
+              <p className="text-xs text-muted-foreground">
+                {isEnglish
+                  ? 'No charge for 30 days. Cancel anytime before the trial ends.'
+                  : 'Sem cobrança durante 30 dias. Cancela quando quiseres antes do fim do trial.'}
+              </p>
               <div className="flex flex-wrap gap-x-4 gap-y-1 pt-2">
                 {proPlan.features.map((feature) => (
                   <span key={feature} className="text-xs text-muted-foreground flex items-center gap-1.5">
