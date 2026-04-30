@@ -398,11 +398,11 @@ export default function Pricing() {
       <Dialog open={showProPromoDialog} onOpenChange={setShowProPromoDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{isEnglish ? 'Start your 30-day free trial' : 'Começar 30 dias grátis'}</DialogTitle>
+            <DialogTitle>{isEnglish ? 'Try Pro for 2€' : 'Experimentar Pro por 2€'}</DialogTitle>
             <DialogDescription>
               {isEnglish
-                ? '0,00€ today. After 30 days, 9€/month — cancel anytime in your account.'
-                : '0,00€ hoje. Após 30 dias, 9€/mês — cancela quando quiseres na tua conta.'}
+                ? '2€ today. From the second month, 9€/month — cancel anytime in your account.'
+                : '2€ hoje. A partir do segundo mês, 9€/mês — cancela quando quiseres na tua conta.'}
             </DialogDescription>
           </DialogHeader>
 
