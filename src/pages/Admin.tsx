@@ -59,6 +59,16 @@ interface Purchase {
   created_at: string;
 }
 
+interface Subscription {
+  id: string;
+  user_id: string;
+  status: string;
+  price_id: string;
+  environment: string;
+  current_period_end: string | null;
+  created_at: string;
+}
+
 export default function Admin() {
   const navigate = useNavigate();
   const { toast: showToast } = useToast();
@@ -68,6 +78,7 @@ export default function Admin() {
   const [packs, setPacks] = useState<PromptPack[]>([]);
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [purchases, setPurchases] = useState<Purchase[]>([]);
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   
