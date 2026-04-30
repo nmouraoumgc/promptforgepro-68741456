@@ -141,6 +141,14 @@ export default function Admin() {
     
     if (purchasesData) setPurchases(purchasesData);
 
+    // Fetch subscriptions (admins can see all)
+    const { data: subsData } = await supabase
+      .from('subscriptions')
+      .select('id, user_id, status, price_id, environment, current_period_end, created_at')
+      .order('created_at', { ascending: false });
+
+    if (subsData) setSubscriptions(subsData as Subscription[]);
+
     // Fetch promo codes
     await fetchPromoCodes();
 
