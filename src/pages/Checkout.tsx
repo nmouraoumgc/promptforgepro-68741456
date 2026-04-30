@@ -244,16 +244,14 @@ const Checkout = () => {
                   <Input
                     id="email"
                     type="email"
-                    placeholder={isEnglish ? "your-email@example.com" : "o-teu-email@exemplo.com"}
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    disabled={isLoading}
-                    className="h-12"
+                    value={user.email ?? ''}
+                    readOnly
+                    disabled
+                    className="h-12 bg-muted/40 cursor-not-allowed"
                   />
-                  {user && (
-                    <p className="text-xs text-muted-foreground">{isEnglish ? `Signed in as ${user.email}` : `Autenticado como ${user.email}`}</p>
-                  )}
+                  <p className="text-xs text-muted-foreground">
+                    {isEnglish ? `Invoice will be issued to ${user.email}` : `A fatura será emitida para ${user.email}`}
+                  </p>
                 </div>
 
                 {/* Promo code */}
