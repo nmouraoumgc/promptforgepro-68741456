@@ -287,6 +287,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_promo_usage: { Args: { _code: string }; Returns: boolean }
       redeem_promo_code: {
         Args: { _code: string; _plan: Database["public"]["Enums"]["plan_type"] }
         Returns: {
