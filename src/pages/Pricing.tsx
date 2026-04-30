@@ -59,31 +59,31 @@ export default function Pricing() {
       cta: isEnglish ? 'Start free' : 'Começar grátis',
     },
     {
-      id: 'premium',
-      name: 'Premium',
-      description: isEnglish ? 'Full access to Prompt Packs' : 'Acesso completo aos Prompt Packs',
-      price: '19€',
-      priceDetail: isEnglish ? '— one-time payment' : '— pagamento único',
+      id: 'pro',
+      name: 'Pro',
+      description: isEnglish
+        ? 'For users who rely on PromptForge every day at work'
+        : 'Para quem usa o PromptForge como ferramenta diária de trabalho',
+      price: '2€',
+      priceDetail: isEnglish ? 'first month' : 'no primeiro mês',
       features: isEnglish
-        ? ['All premium Prompt Packs', 'Hooks, scripts, structures and CTAs', 'Professional templates', 'Future updates included']
-        : ['Todos os Prompt Packs premium', 'Hooks, scripts, estruturas e CTAs', 'Templates profissionais', 'Atualizações futuras incluídas'],
-      cta: isEnglish ? 'Unlock full access' : 'Desbloquear acesso completo',
+        ? ['2€ first month, then 9€/month', 'Unlimited optimizations', 'Version history', 'A/B prompt testing', 'Detailed scoring', 'Prompt export']
+        : ['2€ no primeiro mês, depois 9€/mês', 'Otimizações ilimitadas', 'Histórico de versões', 'Testes A/B de prompts', 'Pontuação detalhada', 'Exportação de prompts'],
+      cta: isEnglish ? 'Try Pro for 2€' : 'Experimentar Pro por 2€',
       highlight: true,
     },
   ];
 
-  const proPlan: PricingPlan = {
-    id: 'pro',
-    name: 'Pro',
-    description: isEnglish
-      ? 'For users who rely on PromptForge every day at work'
-      : 'Para quem usa o PromptForge como ferramenta diária de trabalho',
-    price: '2€',
-    priceDetail: isEnglish ? 'first month' : 'no primeiro mês',
+  const premiumPlan: PricingPlan = {
+    id: 'premium',
+    name: 'Premium',
+    description: isEnglish ? 'Full access to Prompt Packs' : 'Acesso completo aos Prompt Packs',
+    price: '19€',
+    priceDetail: isEnglish ? '— one-time payment' : '— pagamento único',
     features: isEnglish
-      ? ['2€ first month, then 9€/month', 'Unlimited optimizations', 'Version history', 'A/B prompt testing', 'Detailed scoring', 'Prompt export']
-      : ['2€ no primeiro mês, depois 9€/mês', 'Otimizações ilimitadas', 'Histórico de versões', 'Testes A/B de prompts', 'Pontuação detalhada', 'Exportação de prompts'],
-    cta: isEnglish ? 'Try Pro for 2€' : 'Experimentar Pro por 2€',
+      ? ['All premium Prompt Packs', 'Hooks, scripts, structures and CTAs', 'Professional templates', 'Future updates included']
+      : ['Todos os Prompt Packs premium', 'Hooks, scripts, estruturas e CTAs', 'Templates profissionais', 'Atualizações futuras incluídas'],
+    cta: isEnglish ? 'Unlock full access' : 'Desbloquear acesso completo',
   };
 
   const handleSelectPlan = async (planId: PlanType) => {
@@ -275,9 +275,9 @@ export default function Pricing() {
                     <span className="text-4xl font-bold">{plan.price}</span>
                     <span className="text-muted-foreground text-sm">{plan.priceDetail}</span>
                   </div>
-                  {plan.id === 'premium' && (
+                  {plan.id === 'pro' && (
                     <p className="text-xs text-muted-foreground mt-1.5">
-                      {isEnglish ? 'Immediate access after purchase.' : 'Acesso imediato após compra.'}
+                      {isEnglish ? 'Then 9€/month — cancel anytime.' : 'Depois 9€/mês — cancela quando quiseres.'}
                     </p>
                   )}
                 </div>
@@ -325,36 +325,35 @@ export default function Pricing() {
         <div className="flex items-center gap-4 mb-8">
           <div className="flex-1 h-px bg-border" />
           <span className="text-sm text-muted-foreground font-medium flex items-center gap-2">
-            <Zap className="h-4 w-4" />
-            {isEnglish ? 'For advanced users' : 'Para utilizadores avançados'}
+            <Sparkles className="h-4 w-4" />
+            {isEnglish ? 'One-time purchase' : 'Compra única'}
           </span>
           <div className="flex-1 h-px bg-border" />
         </div>
 
-        <Card className={`border-border ${currentPlan === 'pro' ? 'ring-2 ring-primary' : ''}`}>
+        <Card className={`border-border ${currentPlan === 'premium' ? 'ring-2 ring-primary' : ''}`}>
           <div className="p-6 flex flex-col md:flex-row md:items-center gap-6">
             <div className="flex-1 space-y-2">
               <div className="flex items-center gap-3 flex-wrap">
-                <h3 className="text-xl font-semibold">{proPlan.name}</h3>
+                <h3 className="text-xl font-semibold">{premiumPlan.name}</h3>
                 <span className="bg-primary/15 text-primary text-xs font-semibold px-2 py-0.5 rounded-full">
-                  {isEnglish ? '2€ first month' : '2€ no primeiro mês'}
+                  {isEnglish ? 'One-time payment' : 'Pagamento único'}
                 </span>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-xl font-bold">9€</span>
-                  <span className="text-muted-foreground text-sm">{isEnglish ? '/month' : '/mês'}</span>
-                  <span className="text-muted-foreground text-xs ml-1">
-                    {isEnglish ? 'after first month' : 'após o primeiro mês'}
+                  <span className="text-xl font-bold">19€</span>
+                  <span className="text-muted-foreground text-sm">
+                    {isEnglish ? '— lifetime access' : '— acesso vitalício'}
                   </span>
                 </div>
               </div>
-              <p className="text-sm text-muted-foreground">{proPlan.description}</p>
+              <p className="text-sm text-muted-foreground">{premiumPlan.description}</p>
               <p className="text-xs text-muted-foreground">
                 {isEnglish
-                  ? 'Just 2€ today, then 9€/month. Cancel anytime.'
-                  : 'Apenas 2€ hoje, depois 9€/mês. Cancela quando quiseres.'}
+                  ? 'Immediate access after purchase. Future updates included.'
+                  : 'Acesso imediato após compra. Atualizações futuras incluídas.'}
               </p>
               <div className="flex flex-wrap gap-x-4 gap-y-1 pt-2">
-                {proPlan.features.map((feature) => (
+                {premiumPlan.features.map((feature) => (
                   <span key={feature} className="text-xs text-muted-foreground flex items-center gap-1.5">
                     <Check className="h-3 w-3 text-muted-foreground" />
                     {feature}
@@ -365,23 +364,18 @@ export default function Pricing() {
 
             <Button
               className="shrink-0 shadow-md"
-              disabled={currentPlan === 'pro' || isLoadingPro}
-              onClick={() => handleSelectPlan('pro')}
+              disabled={currentPlan === 'premium'}
+              onClick={() => handleSelectPlan('premium')}
             >
-              {currentPlan === 'pro' ? (
+              {currentPlan === 'premium' ? (
                 <>
                   <Check className="h-4 w-4 mr-2" />
                   {isEnglish ? 'Current plan' : 'Plano atual'}
                 </>
-              ) : isLoadingPro ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  {isEnglish ? 'Redirecting...' : 'A redirecionar...'}
-                </>
               ) : (
                 <>
-                  <Zap className="h-4 w-4 mr-2" />
-                  {proPlan.cta}
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  {premiumPlan.cta}
                 </>
               )}
             </Button>
