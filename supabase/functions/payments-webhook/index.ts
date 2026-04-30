@@ -1,5 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import { verifyWebhook, EventName, type PaddleEnv } from '../_shared/paddle.ts';
+import { verifyWebhook, EventName, gatewayFetch, type PaddleEnv } from '../_shared/paddle.ts';
 
 let _supabase: ReturnType<typeof createClient> | null = null;
 function getSupabase() {
@@ -12,15 +12,33 @@ function getSupabase() {
   return _supabase;
 }
 
-// Map our human-readable price IDs to PromptForge plan tiers.
-function priceIdToPlan(priceId: string): 'pro' | 'premium' | null {
-  if (priceId === 'pro_monthly') return 'pro';
-  if (priceId === 'premium_one_time') return 'premium';
-  return null;
+// ---------- Promo redemption tracking ----------
+// Paddle webhooks include the discount object as `discount` (with `id` and `code`).
+async function incrementPromoUsage(env: PaddleEnv, discount: any) {
+  if (!discount?.id) return;
+  try {
+    // Resolve the discount code from Paddle (the webhook event sometimes only carries the id).
+    let code: string | undefined = discount.code;
+    if (!code) {
+      const resp = await gatewayFetch(env, `/discounts/${discount.id}`);
+      const json = await resp.json();
+      code = json?.data?.code;
+    }
+    if (!code) return;
+
+    // Best-effort increment; we don't reject the webhook if the code isn't in our DB
+    // (could be a Paddle-only discount).
+    const { data, error } = await getSupabase().rpc('increment_promo_usage', { _code: code });
+    if (error) console.warn('promo increment failed', error.message);
+    else console.log('promo incremented', { code, ok: data });
+  } catch (e) {
+    console.warn('incrementPromoUsage error', e instanceof Error ? e.message : String(e));
+  }
 }
 
+// ---------- Subscription handlers ----------
 async function handleSubscriptionCreated(data: any, env: PaddleEnv) {
-  const { id, customerId, items, status, currentBillingPeriod, customData } = data;
+  const { id, customerId, items, status, currentBillingPeriod, customData, discount } = data;
 
   const userId = customData?.userId;
   if (!userId) {
@@ -52,13 +70,8 @@ async function handleSubscriptionCreated(data: any, env: PaddleEnv) {
     updated_at: new Date().toISOString(),
   }, { onConflict: 'paddle_subscription_id' });
 
-  // Sync profile.current_plan for client gating (only in live).
-  if (env === 'live') {
-    const plan = priceIdToPlan(priceId);
-    if (plan) {
-      await getSupabase().from('profiles').update({ current_plan: plan }).eq('id', userId);
-    }
-  }
+  // Plan sync is handled by the DB trigger `sync_profile_plan_from_subscription`.
+  await incrementPromoUsage(env, discount);
 }
 
 async function handleSubscriptionUpdated(data: any, env: PaddleEnv) {
@@ -77,6 +90,8 @@ async function handleSubscriptionUpdated(data: any, env: PaddleEnv) {
 }
 
 async function handleSubscriptionCanceled(data: any, env: PaddleEnv) {
+  // We only flip status; current_period_end is preserved so the trigger keeps
+  // the user as Pro until the period actually ends (grace period).
   await getSupabase().from('subscriptions')
     .update({
       status: 'canceled',
@@ -84,23 +99,12 @@ async function handleSubscriptionCanceled(data: any, env: PaddleEnv) {
     })
     .eq('paddle_subscription_id', data.id)
     .eq('environment', env);
-
-  // Downgrade plan in profile when canceled in live.
-  if (env === 'live') {
-    const { data: sub } = await getSupabase()
-      .from('subscriptions')
-      .select('user_id, price_id')
-      .eq('paddle_subscription_id', data.id)
-      .maybeSingle();
-    if (sub && priceIdToPlan(sub.price_id as string) === 'pro') {
-      await getSupabase().from('profiles').update({ current_plan: 'free' }).eq('id', sub.user_id);
-    }
-  }
 }
 
 async function handleTransactionCompleted(data: any, env: PaddleEnv) {
-  // For one-time purchases (Premium). Subscriptions are handled separately.
-  const { id, customData, items, customerId, currencyCode } = data;
+  // One-time purchases (Premium). Subscription renewals also fire this event,
+  // so we filter by price external id.
+  const { id, customData, items, currencyCode, discount } = data;
   const userId = customData?.userId;
   if (!userId) {
     console.warn('transaction.completed: no userId in customData, skipping');
@@ -113,25 +117,32 @@ async function handleTransactionCompleted(data: any, env: PaddleEnv) {
     console.warn('transaction.completed: missing importMeta.externalId');
     return;
   }
-  const plan = priceIdToPlan(priceExternalId);
-  if (plan !== 'premium') return; // Pro is tracked via subscription events.
+  if (priceExternalId !== 'premium_one_time') return; // Pro renewals tracked via subscription events.
 
-  // Record the purchase (idempotent on stripe_payment_id slot).
-  const amountCents = Number(item?.price?.unitPrice?.amount ?? 0);
+  // Idempotency: skip if we already recorded this transaction id.
+  const { data: existing } = await getSupabase()
+    .from('purchases')
+    .select('id')
+    .eq('stripe_payment_id', id)
+    .maybeSingle();
+  if (existing) {
+    console.log('transaction already recorded', id);
+    return;
+  }
+
+  const amountCents = Number(item?.price?.unitPrice?.amount ?? 0) || 1900;
   await getSupabase().from('purchases').insert({
     user_id: userId,
     plan: 'premium',
-    amount_cents: amountCents || 1900,
+    amount_cents: amountCents,
     currency: (currencyCode || 'EUR').toUpperCase(),
     status: 'completed',
-    stripe_payment_id: id, // re-using existing column to store paddle txn id
+    stripe_payment_id: id,
   });
 
-  // Upgrade the profile in live only.
-  if (env === 'live') {
-    await getSupabase().from('profiles').update({ current_plan: 'premium' }).eq('id', userId);
-  }
-  console.log('Premium purchase recorded', { userId, txn: id, env, customerId });
+  // Plan sync handled by trigger.
+  await incrementPromoUsage(env, discount);
+  console.log('Premium purchase recorded', { userId, txn: id, env });
 }
 
 async function handleWebhook(req: Request, env: PaddleEnv) {
