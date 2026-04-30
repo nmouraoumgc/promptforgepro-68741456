@@ -78,12 +78,12 @@ export default function Pricing() {
     description: isEnglish
       ? 'For users who rely on PromptForge every day at work'
       : 'Para quem usa o PromptForge como ferramenta diária de trabalho',
-    price: '9€',
-    priceDetail: isEnglish ? '/month' : '/mês',
+    price: '2€',
+    priceDetail: isEnglish ? 'first month' : 'no primeiro mês',
     features: isEnglish
-      ? ['30-day free trial', 'Unlimited optimizations', 'Version history', 'A/B prompt testing', 'Detailed scoring', 'Prompt export']
-      : ['30 dias grátis', 'Otimizações ilimitadas', 'Histórico de versões', 'Testes A/B de prompts', 'Pontuação detalhada', 'Exportação de prompts'],
-    cta: isEnglish ? 'Start 30-day free trial' : 'Começar 30 dias grátis',
+      ? ['Just 2€ first month', 'Unlimited optimizations', 'Version history', 'A/B prompt testing', 'Detailed scoring', 'Prompt export']
+      : ['Apenas 2€ no primeiro mês', 'Otimizações ilimitadas', 'Histórico de versões', 'Testes A/B de prompts', 'Pontuação detalhada', 'Exportação de prompts'],
+    cta: isEnglish ? 'Try Pro for 2€' : 'Experimentar Pro por 2€',
   };
 
   const handleSelectPlan = async (planId: PlanType) => {
@@ -103,6 +103,13 @@ export default function Pricing() {
         return;
       }
       if (authLoading) return;
+      // Auto-apply the 2€ first-month discount
+      setProAppliedPromo({
+        code: '1PROFREE',
+        discount_type: 'fixed',
+        discount_value: 7,
+        duration_months: 1,
+      });
       setShowProPromoDialog(true);
       return;
     }
@@ -327,21 +334,21 @@ export default function Pricing() {
               <div className="flex items-center gap-3 flex-wrap">
                 <h3 className="text-xl font-semibold">{proPlan.name}</h3>
                 <span className="bg-primary/15 text-primary text-xs font-semibold px-2 py-0.5 rounded-full">
-                  {isEnglish ? '30 days free' : '30 dias grátis'}
+                  {isEnglish ? '2€ first month' : '2€ no primeiro mês'}
                 </span>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-xl font-bold">{proPlan.price}</span>
-                  <span className="text-muted-foreground text-sm">{proPlan.priceDetail}</span>
+                  <span className="text-xl font-bold">9€</span>
+                  <span className="text-muted-foreground text-sm">{isEnglish ? '/month' : '/mês'}</span>
                   <span className="text-muted-foreground text-xs ml-1">
-                    {isEnglish ? 'after trial' : 'após o trial'}
+                    {isEnglish ? 'after first month' : 'após o primeiro mês'}
                   </span>
                 </div>
               </div>
               <p className="text-sm text-muted-foreground">{proPlan.description}</p>
               <p className="text-xs text-muted-foreground">
                 {isEnglish
-                  ? 'No charge for 30 days. Cancel anytime before the trial ends.'
-                  : 'Sem cobrança durante 30 dias. Cancela quando quiseres antes do fim do trial.'}
+                  ? 'Just 2€ today, then 9€/month. Cancel anytime.'
+                  : 'Apenas 2€ hoje, depois 9€/mês. Cancela quando quiseres.'}
               </p>
               <div className="flex flex-wrap gap-x-4 gap-y-1 pt-2">
                 {proPlan.features.map((feature) => (
@@ -391,11 +398,11 @@ export default function Pricing() {
       <Dialog open={showProPromoDialog} onOpenChange={setShowProPromoDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{isEnglish ? 'Start your 30-day free trial' : 'Começar 30 dias grátis'}</DialogTitle>
+            <DialogTitle>{isEnglish ? 'Try Pro for 2€' : 'Experimentar Pro por 2€'}</DialogTitle>
             <DialogDescription>
               {isEnglish
-                ? '0,00€ today. After 30 days, 9€/month — cancel anytime in your account.'
-                : '0,00€ hoje. Após 30 dias, 9€/mês — cancela quando quiseres na tua conta.'}
+                ? '2€ today. From the second month, 9€/month — cancel anytime in your account.'
+                : '2€ hoje. A partir do segundo mês, 9€/mês — cancela quando quiseres na tua conta.'}
             </DialogDescription>
           </DialogHeader>
 
