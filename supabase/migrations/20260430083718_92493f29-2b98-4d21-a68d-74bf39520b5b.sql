@@ -1,0 +1,1 @@
+drop policy if exists "Anyone can view active promo codes" on public.promo_codes;

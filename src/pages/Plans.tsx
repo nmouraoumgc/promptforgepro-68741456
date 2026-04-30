@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -19,8 +19,23 @@ export default function Plans() {
   const { currentPlan: localPlan } = usePlanStore();
   const { toast } = useToast();
   const [isLoadingPortal, setIsLoadingPortal] = useState(false);
+  const [hasPaddleSubscription, setHasPaddleSubscription] = useState(false);
 
   const currentPlan = profile?.current_plan || localPlan;
+
+  // Detect any subscription row (active, past_due or canceled-in-grace-period)
+  // so we can offer the customer portal even after a cancellation.
+  useEffect(() => {
+    if (!user) { setHasPaddleSubscription(false); return; }
+    supabase
+      .from('subscriptions')
+      .select('id')
+      .eq('user_id', user.id)
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => setHasPaddleSubscription(!!data));
+  }, [user]);
+
 
   const planFeatures = [
     { key: 'maxOptimizationsPerPrompt', label: t('plans.features.optimizations'), format: (v: number) => v === Infinity ? t('plans.features.unlimited') : `${v}` },
@@ -95,13 +110,13 @@ export default function Plans() {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  {currentPlan === 'pro' && (
+                  {hasPaddleSubscription && (
                     <Button variant="outline" onClick={handleManageSubscription} disabled={isLoadingPortal}>
                       {isLoadingPortal ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Settings className="h-4 w-4 mr-2" />}
                       {t('plans.manageSubscription')}
                     </Button>
                   )}
-                  {currentPlan === 'free' && (
+                  {currentPlan === 'free' && !hasPaddleSubscription && (
                     <Button onClick={() => navigate('/pricing')}>{t('plans.upgrade')}</Button>
                   )}
                 </div>
