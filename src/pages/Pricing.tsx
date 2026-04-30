@@ -122,64 +122,38 @@ export default function Pricing() {
 
     setProPromoError('');
 
-    try {
-      const { data: promo, error: promoError } = await supabase
-        .from('promo_codes')
-        .select('*')
-        .eq('code', code)
-        .maybeSingle();
+    const { data, error } = await supabase.rpc('validate_promo_code', {
+      _code: code,
+      _plan: 'pro',
+    });
 
-      if (promoError) {
-        setProPromoError(
-          isEnglish
-            ? 'Could not verify the code. Please try again.'
-            : 'Não foi possível verificar o código. Tenta novamente.'
-        );
-        return;
-      }
-      if (!promo) {
-        setProPromoError(isEnglish ? 'Invalid code.' : 'Código inválido.');
-        return;
-      }
-      if (!promo.is_active) {
-        setProPromoError(isEnglish ? 'Inactive code.' : 'Código inativo.');
-        return;
-      }
-      if (promo.max_uses > 0 && (promo.current_uses ?? 0) >= promo.max_uses) {
-        setProPromoError(
-          isEnglish
-            ? 'This code has reached its usage limit.'
-            : 'Este código atingiu o limite de utilizações.'
-        );
-        return;
-      }
-      const expiresAt = new Date(promo.expires_at);
-      expiresAt.setHours(23, 59, 59, 999);
-      if (expiresAt < new Date()) {
-        setProPromoError(isEnglish ? 'Expired code.' : 'Código expirado.');
-        return;
-      }
-      if (!promo.applicable_plan_types.includes('pro')) {
-        setProPromoError(
-          isEnglish ? 'Code not valid for this plan.' : 'Código não aplicável a este plano.'
-        );
-        return;
-      }
-
-      setProAppliedPromo({
-        code: promo.code,
-        discount_type: promo.discount_type as ProPromo['discount_type'],
-        discount_value: promo.discount_value,
-        duration_months: promo.duration_months ?? 0,
-      });
-      setProPromoError('');
-    } catch {
-      setProPromoError(
-        isEnglish
-          ? 'Could not verify the code. Please try again.'
-          : 'Não foi possível verificar o código. Tenta novamente.'
-      );
+    if (error) {
+      const msg = error.message || '';
+      const map: Record<string, string> = {
+        PROMO_NOT_FOUND: isEnglish ? 'Invalid code.' : 'Código inválido.',
+        PROMO_INACTIVE: isEnglish ? 'Inactive code.' : 'Código inativo.',
+        PROMO_EXPIRED: isEnglish ? 'Expired code.' : 'Código expirado.',
+        PROMO_LIMIT_REACHED: isEnglish ? 'Code usage limit reached.' : 'Código atingiu o limite de utilizações.',
+        PROMO_NOT_APPLICABLE: isEnglish ? 'Code not valid for this plan.' : 'Código não aplicável a este plano.',
+      };
+      const key = Object.keys(map).find((k) => msg.includes(k));
+      setProPromoError(key ? map[key] : (isEnglish ? 'Could not verify the code.' : 'Não foi possível verificar o código.'));
+      return;
     }
+
+    const promo = (data as any[])?.[0];
+    if (!promo) {
+      setProPromoError(isEnglish ? 'Invalid code.' : 'Código inválido.');
+      return;
+    }
+
+    setProAppliedPromo({
+      code: promo.code,
+      discount_type: promo.discount_type as ProPromo['discount_type'],
+      discount_value: Number(promo.discount_value),
+      duration_months: promo.duration_months ?? 0,
+    });
+    setProPromoError('');
   };
 
   const handleConfirmProSubscription = async () => {

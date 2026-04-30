@@ -61,78 +61,40 @@ const Checkout = () => {
       return;
     }
 
-    try {
-      const { data: promo, error: promoError } = await supabase
-        .from('promo_codes')
-        .select('*')
-        .eq('code', code)
-        .maybeSingle();
+    const { data, error } = await supabase.rpc('validate_promo_code', {
+      _code: code,
+      _plan: 'premium',
+    });
 
-      if (promoError) {
-        setPromoError(
-          isEnglish
-            ? "Could not verify the code. Please try again."
-            : "Não foi possível verificar o código. Tenta novamente."
-        );
-        return;
-      }
-      if (!promo) {
-        setPromoError(isEnglish ? "Invalid code." : "Código inválido.");
-        return;
-      }
-      if (!promo.is_active) {
-        setPromoError(isEnglish ? "Inactive code." : "Código inativo.");
-        return;
-      }
-      if (promo.max_uses > 0 && (promo.current_uses ?? 0) >= promo.max_uses) {
-        setPromoError(
-          isEnglish
-            ? "This code has reached its usage limit."
-            : "Este código atingiu o limite de utilizações."
-        );
-        return;
-      }
-      const expiresAt = new Date(promo.expires_at);
-      expiresAt.setHours(23, 59, 59, 999);
-      if (expiresAt < new Date()) {
-        setPromoError(isEnglish ? "Expired code." : "Código expirado.");
-        return;
-      }
-      if (promo.discount_type === "free_days") {
-        setPromoError(
-          isEnglish
-            ? "This code is only valid for Pro subscriptions."
-            : "Este código é apenas válido para a subscrição Pro."
-        );
-        return;
-      }
-      if (!promo.applicable_plan_types.includes("premium")) {
-        setPromoError(
-          isEnglish
-            ? "This code is not valid for Premium."
-            : "Este código não é válido para o plano Premium."
-        );
-        return;
-      }
-
-      setAppliedPromo({
-        code: promo.code,
-        discount_type: promo.discount_type as 'percentage' | 'fixed',
-        discount_value: promo.discount_value,
-      });
-      toast({
-        title: isEnglish ? "Code applied!" : "Código aplicado!",
-        description: isEnglish
-          ? `${promo.code} was applied successfully.`
-          : `${promo.code} foi aplicado com sucesso.`,
-      });
-    } catch {
-      setPromoError(
-        isEnglish
-          ? "Could not verify the code. Please try again."
-          : "Não foi possível verificar o código. Tenta novamente."
-      );
+    if (error) {
+      const msg = error.message || '';
+      const map: Record<string, string> = {
+        PROMO_NOT_FOUND: isEnglish ? 'Invalid code.' : 'Código inválido.',
+        PROMO_INACTIVE: isEnglish ? 'Inactive code.' : 'Código inativo.',
+        PROMO_EXPIRED: isEnglish ? 'Expired code.' : 'Código expirado.',
+        PROMO_LIMIT_REACHED: isEnglish ? 'Code usage limit reached.' : 'Código atingiu o limite de utilizações.',
+        PROMO_NOT_APPLICABLE: isEnglish ? 'Code not valid for Premium.' : 'Código não válido para Premium.',
+      };
+      const key = Object.keys(map).find((k) => msg.includes(k));
+      setPromoError(key ? map[key] : (isEnglish ? 'Could not verify the code.' : 'Não foi possível verificar o código.'));
+      return;
     }
+
+    const promo = (data as any[])?.[0];
+    if (!promo) {
+      setPromoError(isEnglish ? 'Invalid code.' : 'Código inválido.');
+      return;
+    }
+
+    setAppliedPromo({
+      code: promo.code,
+      discount_type: promo.discount_type as 'percentage' | 'fixed',
+      discount_value: Number(promo.discount_value),
+    });
+    toast({
+      title: isEnglish ? "Code applied!" : "Código aplicado!",
+      description: isEnglish ? `${promo.code} was applied successfully.` : `${promo.code} foi aplicado com sucesso.`,
+    });
   };
 
   const removePromo = () => {
