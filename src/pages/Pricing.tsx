@@ -81,9 +81,9 @@ export default function Pricing() {
     price: '9€',
     priceDetail: isEnglish ? '/month' : '/mês',
     features: isEnglish
-      ? ['Unlimited optimizations', 'Version history', 'A/B prompt testing', 'Detailed scoring', 'Prompt export']
-      : ['Otimizações ilimitadas', 'Histórico de versões', 'Testes A/B de prompts', 'Pontuação detalhada', 'Exportação de prompts'],
-    cta: isEnglish ? 'Subscribe to Pro' : 'Subscrever Pro',
+      ? ['30-day free trial', 'Unlimited optimizations', 'Version history', 'A/B prompt testing', 'Detailed scoring', 'Prompt export']
+      : ['30 dias grátis', 'Otimizações ilimitadas', 'Histórico de versões', 'Testes A/B de prompts', 'Pontuação detalhada', 'Exportação de prompts'],
+    cta: isEnglish ? 'Start 30-day free trial' : 'Começar 30 dias grátis',
   };
 
   const handleSelectPlan = async (planId: PlanType) => {
@@ -324,14 +324,25 @@ export default function Pricing() {
         <Card className={`border-border ${currentPlan === 'pro' ? 'ring-2 ring-primary' : ''}`}>
           <div className="p-6 flex flex-col md:flex-row md:items-center gap-6">
             <div className="flex-1 space-y-2">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-wrap">
                 <h3 className="text-xl font-semibold">{proPlan.name}</h3>
+                <span className="bg-primary/15 text-primary text-xs font-semibold px-2 py-0.5 rounded-full">
+                  {isEnglish ? '30 days free' : '30 dias grátis'}
+                </span>
                 <div className="flex items-baseline gap-1">
                   <span className="text-xl font-bold">{proPlan.price}</span>
                   <span className="text-muted-foreground text-sm">{proPlan.priceDetail}</span>
+                  <span className="text-muted-foreground text-xs ml-1">
+                    {isEnglish ? 'after trial' : 'após o trial'}
+                  </span>
                 </div>
               </div>
               <p className="text-sm text-muted-foreground">{proPlan.description}</p>
+              <p className="text-xs text-muted-foreground">
+                {isEnglish
+                  ? 'No charge for 30 days. Cancel anytime before the trial ends.'
+                  : 'Sem cobrança durante 30 dias. Cancela quando quiseres antes do fim do trial.'}
+              </p>
               <div className="flex flex-wrap gap-x-4 gap-y-1 pt-2">
                 {proPlan.features.map((feature) => (
                   <span key={feature} className="text-xs text-muted-foreground flex items-center gap-1.5">
@@ -380,9 +391,11 @@ export default function Pricing() {
       <Dialog open={showProPromoDialog} onOpenChange={setShowProPromoDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{isEnglish ? 'Subscribe to Pro' : 'Subscrever Pro'}</DialogTitle>
+            <DialogTitle>{isEnglish ? 'Start your 30-day free trial' : 'Começar 30 dias grátis'}</DialogTitle>
             <DialogDescription>
-              {isEnglish ? 'Add a promo code before proceeding to payment.' : 'Adiciona um código promocional antes de avançar para o pagamento.'}
+              {isEnglish
+                ? '0,00€ today. After 30 days, 9€/month — cancel anytime in your account.'
+                : '0,00€ hoje. Após 30 dias, 9€/mês — cancela quando quiseres na tua conta.'}
             </DialogDescription>
           </DialogHeader>
 
