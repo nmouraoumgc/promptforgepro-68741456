@@ -59,31 +59,31 @@ export default function Pricing() {
       cta: isEnglish ? 'Start free' : 'Começar grátis',
     },
     {
-      id: 'premium',
-      name: 'Premium',
-      description: isEnglish ? 'Full access to Prompt Packs' : 'Acesso completo aos Prompt Packs',
-      price: '19€',
-      priceDetail: isEnglish ? '— one-time payment' : '— pagamento único',
+      id: 'pro',
+      name: 'Pro',
+      description: isEnglish
+        ? 'For users who rely on PromptForge every day at work'
+        : 'Para quem usa o PromptForge como ferramenta diária de trabalho',
+      price: '2€',
+      priceDetail: isEnglish ? 'first month' : 'no primeiro mês',
       features: isEnglish
-        ? ['All premium Prompt Packs', 'Hooks, scripts, structures and CTAs', 'Professional templates', 'Future updates included']
-        : ['Todos os Prompt Packs premium', 'Hooks, scripts, estruturas e CTAs', 'Templates profissionais', 'Atualizações futuras incluídas'],
-      cta: isEnglish ? 'Unlock full access' : 'Desbloquear acesso completo',
+        ? ['2€ first month, then 9€/month', 'Unlimited optimizations', 'Version history', 'A/B prompt testing', 'Detailed scoring', 'Prompt export']
+        : ['2€ no primeiro mês, depois 9€/mês', 'Otimizações ilimitadas', 'Histórico de versões', 'Testes A/B de prompts', 'Pontuação detalhada', 'Exportação de prompts'],
+      cta: isEnglish ? 'Try Pro for 2€' : 'Experimentar Pro por 2€',
       highlight: true,
     },
   ];
 
-  const proPlan: PricingPlan = {
-    id: 'pro',
-    name: 'Pro',
-    description: isEnglish
-      ? 'For users who rely on PromptForge every day at work'
-      : 'Para quem usa o PromptForge como ferramenta diária de trabalho',
-    price: '2€',
-    priceDetail: isEnglish ? 'first month' : 'no primeiro mês',
+  const premiumPlan: PricingPlan = {
+    id: 'premium',
+    name: 'Premium',
+    description: isEnglish ? 'Full access to Prompt Packs' : 'Acesso completo aos Prompt Packs',
+    price: '19€',
+    priceDetail: isEnglish ? '— one-time payment' : '— pagamento único',
     features: isEnglish
-      ? ['2€ first month, then 9€/month', 'Unlimited optimizations', 'Version history', 'A/B prompt testing', 'Detailed scoring', 'Prompt export']
-      : ['2€ no primeiro mês, depois 9€/mês', 'Otimizações ilimitadas', 'Histórico de versões', 'Testes A/B de prompts', 'Pontuação detalhada', 'Exportação de prompts'],
-    cta: isEnglish ? 'Try Pro for 2€' : 'Experimentar Pro por 2€',
+      ? ['All premium Prompt Packs', 'Hooks, scripts, structures and CTAs', 'Professional templates', 'Future updates included']
+      : ['Todos os Prompt Packs premium', 'Hooks, scripts, estruturas e CTAs', 'Templates profissionais', 'Atualizações futuras incluídas'],
+    cta: isEnglish ? 'Unlock full access' : 'Desbloquear acesso completo',
   };
 
   const handleSelectPlan = async (planId: PlanType) => {
