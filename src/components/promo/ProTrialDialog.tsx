@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuthStore } from '@/stores/authStore';
 import { usePlanStore } from '@/stores/planStore';
 
+
 const STORAGE_KEY = 'pf_pro_trial_dialog_dismissed_v1';
 const HIDDEN_PATHS = ['/login', '/signup', '/checkout', '/pricing', '/purchase-success', '/subscription-success', '/admin'];
 
@@ -15,8 +16,8 @@ export function ProTrialDialog() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const { profile } = useAuthStore();
-  const { currentPlan: localPlan, isAdmin } = usePlanStore();
+  const { profile, isAdmin } = useAuthStore();
+  const { currentPlan: localPlan } = usePlanStore();
   const [open, setOpen] = useState(false);
 
   const currentPlan = profile?.current_plan || localPlan;
