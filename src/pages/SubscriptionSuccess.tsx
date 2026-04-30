@@ -12,7 +12,6 @@ import { useTranslation } from "react-i18next";
 const SubscriptionSuccess = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { setPlan } = usePlanStore();
   const { fetchProfile } = useAuthStore();
   const { i18n } = useTranslation();
   const isEnglish = (i18n.resolvedLanguage || i18n.language || "pt").startsWith("en");
@@ -26,18 +25,20 @@ const SubscriptionSuccess = () => {
   ];
 
   useEffect(() => {
-    const verifySubscription = async () => {
-      try {
+    let cancelled = false;
+    const start = Date.now();
+    const poll = async () => {
+      while (!cancelled && Date.now() - start < 15000) {
         await fetchProfile();
-      } catch (err) {
-        console.error("Profile refresh error:", err);
+        const plan = useAuthStore.getState().profile?.current_plan;
+        if (plan === 'pro' || plan === 'premium') break;
+        await new Promise((r) => setTimeout(r, 1500));
       }
-      setPlan("pro");
-      setIsVerifying(false);
+      if (!cancelled) setIsVerifying(false);
     };
-
-    verifySubscription();
-  }, [searchParams, setPlan, fetchProfile]);
+    poll();
+    return () => { cancelled = true; };
+  }, [fetchProfile]);
 
   if (isVerifying) {
     return (
