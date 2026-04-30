@@ -25,6 +25,9 @@ import Signup from "@/pages/Signup";
 import Account from "@/pages/Account";
 import Plans from "@/pages/Plans";
 import Admin from "@/pages/Admin";
+import Terms from "@/pages/legal/Terms";
+import Refunds from "@/pages/legal/Refunds";
+import Privacy from "@/pages/legal/Privacy";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,6 +42,11 @@ const App = () => (
           {/* Auth routes (no layout) */}
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+
+          {/* Public legal pages (no auth required) */}
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/refunds" element={<Refunds />} />
+          <Route path="/privacy" element={<Privacy />} />
           
           {/* App routes */}
           <Route element={<AppLayout />}>
