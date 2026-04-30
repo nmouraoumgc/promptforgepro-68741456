@@ -26,27 +26,12 @@ const PurchaseSuccess = () => {
 
   useEffect(() => {
     const verifyPayment = async () => {
-      const sessionId = searchParams.get("session_id");
-      
-      if (sessionId) {
-        try {
-          const { data, error } = await supabase.functions.invoke("verify-payment", {
-            body: { session_id: sessionId },
-          });
-
-          if (error) {
-            console.error("Verification error:", error);
-          } else if (data?.success) {
-            console.log("Payment verified:", data);
-            // Refresh profile to get updated plan
-            await fetchProfile();
-          }
-        } catch (error) {
-          console.error("Error verifying payment:", error);
-        }
+      // Paddle webhook updates the profile server-side; just refresh.
+      try {
+        await fetchProfile();
+      } catch (err) {
+        console.error("Profile refresh error:", err);
       }
-
-      // Always set plan locally as fallback
       setPlan("premium");
       setIsVerifying(false);
     };

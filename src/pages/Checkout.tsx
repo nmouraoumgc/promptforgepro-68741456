@@ -168,23 +168,22 @@ const Checkout = () => {
 
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("create-payment", {
-        body: { email, promoCode: appliedPromo?.code },
+      const { initializePaddle, getPaddlePriceId } = await import("@/lib/paddle");
+      await initializePaddle();
+      const paddlePriceId = await getPaddlePriceId("premium_one_time");
+
+      window.Paddle.Checkout.open({
+        items: [{ priceId: paddlePriceId, quantity: 1 }],
+        customer: { email },
+        customData: user ? { userId: user.id } : undefined,
+        discountCode: appliedPromo?.code,
+        settings: {
+          displayMode: "overlay",
+          successUrl: `${window.location.origin}/purchase-success`,
+          allowLogout: false,
+          variant: "one-page",
+        },
       });
-      if (error) throw new Error(error.message);
-      if (data?.provider === "external") {
-        toast({
-          title: isEnglish ? "Alternative checkout" : "Checkout alternativo",
-          description: isEnglish
-            ? "Redirecting you to our secure external payment page."
-            : "Vamos redirecionar para a nossa página externa de pagamento seguro.",
-        });
-      }
-      if (data?.url) {
-        window.location.href = data.url;
-      } else {
-        throw new Error("No checkout URL returned");
-      }
     } catch (error) {
       console.error("Checkout error:", error);
       toast({
@@ -192,6 +191,7 @@ const Checkout = () => {
         description: isEnglish ? "Could not start the payment. Please try again." : "Não foi possível iniciar o pagamento. Por favor tenta novamente.",
         variant: "destructive",
       });
+    } finally {
       setIsLoading(false);
     }
   };
