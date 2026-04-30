@@ -4,8 +4,9 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Package, Users, CreditCard, Plus, Edit, Trash2, 
   ToggleLeft, ToggleRight, Search, Ticket, Copy,
-  CheckCircle, XCircle
+  CheckCircle, XCircle, LayoutDashboard
 } from 'lucide-react';
+import { AdminOverview } from '@/components/admin/AdminOverview';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -58,6 +59,16 @@ interface Purchase {
   created_at: string;
 }
 
+interface Subscription {
+  id: string;
+  user_id: string;
+  status: string;
+  price_id: string;
+  environment: string;
+  current_period_end: string | null;
+  created_at: string;
+}
+
 export default function Admin() {
   const navigate = useNavigate();
   const { toast: showToast } = useToast();
@@ -67,6 +78,7 @@ export default function Admin() {
   const [packs, setPacks] = useState<PromptPack[]>([]);
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [purchases, setPurchases] = useState<Purchase[]>([]);
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -128,6 +140,14 @@ export default function Admin() {
       .order('created_at', { ascending: false });
     
     if (purchasesData) setPurchases(purchasesData);
+
+    // Fetch subscriptions (admins can see all)
+    const { data: subsData } = await supabase
+      .from('subscriptions')
+      .select('id, user_id, status, price_id, environment, current_period_end, created_at')
+      .order('created_at', { ascending: false });
+
+    if (subsData) setSubscriptions(subsData as Subscription[]);
 
     // Fetch promo codes
     await fetchPromoCodes();
@@ -302,13 +322,26 @@ export default function Admin() {
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="packs">
-          <TabsList className="mb-6">
+        <Tabs defaultValue="overview">
+          <TabsList className="mb-6 flex-wrap h-auto">
+            <TabsTrigger value="overview" className="gap-2">
+              <LayoutDashboard className="h-4 w-4" />
+              Overview
+            </TabsTrigger>
             <TabsTrigger value="packs">Prompt Packs</TabsTrigger>
             <TabsTrigger value="users">Utilizadores</TabsTrigger>
             <TabsTrigger value="purchases">Compras</TabsTrigger>
             <TabsTrigger value="promo">Códigos de Promoção</TabsTrigger>
           </TabsList>
+
+          {/* Overview Tab */}
+          <TabsContent value="overview">
+            {isLoading ? (
+              <div className="text-center py-12 text-muted-foreground">A carregar estatísticas…</div>
+            ) : (
+              <AdminOverview users={users} purchases={purchases} subscriptions={subscriptions} />
+            )}
+          </TabsContent>
 
           {/* Packs Tab */}
           <TabsContent value="packs">
