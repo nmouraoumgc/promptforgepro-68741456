@@ -4,9 +4,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Check, Sparkles, Zap, FileText, RefreshCw, Lightbulb, Loader2 } from "lucide-react";
-import { usePlanStore } from "@/stores/planStore";
 import { useAuthStore } from "@/stores/authStore";
-import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from "react-i18next";
 
 const PurchaseSuccess = () => {
