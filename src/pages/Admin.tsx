@@ -4,8 +4,9 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Package, Users, CreditCard, Plus, Edit, Trash2, 
   ToggleLeft, ToggleRight, Search, Ticket, Copy,
-  CheckCircle, XCircle
+  CheckCircle, XCircle, LayoutDashboard
 } from 'lucide-react';
+import { AdminOverview } from '@/components/admin/AdminOverview';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
