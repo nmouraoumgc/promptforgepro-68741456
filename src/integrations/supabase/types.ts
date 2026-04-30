@@ -287,6 +287,15 @@ export type Database = {
         }
         Returns: boolean
       }
+      redeem_promo_code: {
+        Args: { _code: string; _plan: Database["public"]["Enums"]["plan_type"] }
+        Returns: {
+          code: string
+          discount_type: string
+          discount_value: number
+          duration_months: number
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "user"
