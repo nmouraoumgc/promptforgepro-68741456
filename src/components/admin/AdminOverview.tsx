@@ -226,7 +226,7 @@ export function AdminOverview({ users, purchases, subscriptions }: Props) {
       </div>
 
       {/* Secondary KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
         <SmallStat icon={Crown} label="Premium" value={stats.premiumUsers} />
         <SmallStat icon={Sparkles} label="Pro" value={stats.proUsers} />
         <SmallStat
@@ -235,6 +235,8 @@ export function AdminOverview({ users, purchases, subscriptions }: Props) {
           value={`${stats.conversionRate.toFixed(1)}%`}
         />
         <SmallStat icon={ShoppingCart} label="ARPU" value={fmtEur(stats.arpu)} />
+        <SmallStat icon={Sparkles} label="Em trial" value={stats.trialingSubs} />
+        <SmallStat icon={TrendingUp} label="Past Due" value={stats.pastDueSubs} />
       </div>
 
       {/* Charts */}
