@@ -14,6 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      checkout_attempts: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          ip: string | null
+          price_id: string | null
+          reason: string | null
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          ip?: string | null
+          price_id?: string | null
+          reason?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          ip?: string | null
+          price_id?: string | null
+          reason?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      dunning_notifications: {
+        Row: {
+          id: string
+          reminder_type: string
+          sent_at: string
+          subscription_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          reminder_type: string
+          sent_at?: string
+          subscription_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          reminder_type?: string
+          sent_at?: string
+          subscription_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       pack_prompts: {
         Row: {
           category: string | null
@@ -246,6 +303,27 @@ export type Database = {
           product_id?: string
           status?: string
           updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      trial_redemptions: {
+        Row: {
+          paddle_subscription_id: string | null
+          paddle_transaction_id: string | null
+          redeemed_at: string
+          user_id: string
+        }
+        Insert: {
+          paddle_subscription_id?: string | null
+          paddle_transaction_id?: string | null
+          redeemed_at?: string
+          user_id: string
+        }
+        Update: {
+          paddle_subscription_id?: string | null
+          paddle_transaction_id?: string | null
+          redeemed_at?: string
           user_id?: string
         }
         Relationships: []
