@@ -36,6 +36,35 @@ async function incrementPromoUsage(env: PaddleEnv, discount: any) {
   }
 }
 
+const TRIAL_PRICE_IDS = new Set(['pro_monthly_trial_7d', 'pro_trial_access_7d']);
+
+async function recordTrialRedemption(userId: string, subscriptionId?: string, transactionId?: string) {
+  try {
+    await getSupabase().from('trial_redemptions').upsert({
+      user_id: userId,
+      paddle_subscription_id: subscriptionId ?? null,
+      paddle_transaction_id: transactionId ?? null,
+    }, { onConflict: 'user_id' });
+  } catch (e) {
+    console.warn('recordTrialRedemption failed', e instanceof Error ? e.message : String(e));
+  }
+}
+
+async function triggerInitialDunning(userId: string, subscriptionId: string) {
+  try {
+    await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-dunning-email`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+      },
+      body: JSON.stringify({ userId, subscriptionId, type: 'initial' }),
+    });
+  } catch (e) {
+    console.warn('triggerInitialDunning failed', e instanceof Error ? e.message : String(e));
+  }
+}
+
 // ---------- Subscription handlers ----------
 async function handleSubscriptionCreated(data: any, env: PaddleEnv) {
   const { id, customerId, items, status, currentBillingPeriod, customData, discount } = data;
@@ -70,12 +99,25 @@ async function handleSubscriptionCreated(data: any, env: PaddleEnv) {
     updated_at: new Date().toISOString(),
   }, { onConflict: 'paddle_subscription_id' });
 
+  // If this is the 7-day paid-trial subscription, record trial redemption.
+  if (TRIAL_PRICE_IDS.has(priceId)) {
+    await recordTrialRedemption(userId, id);
+  }
+
   // Plan sync is handled by the DB trigger `sync_profile_plan_from_subscription`.
   await incrementPromoUsage(env, discount);
 }
 
 async function handleSubscriptionUpdated(data: any, env: PaddleEnv) {
-  const { id, status, currentBillingPeriod, scheduledChange } = data;
+  const { id, status, currentBillingPeriod, scheduledChange, customData } = data;
+
+  // Detect transition into past_due to fire initial dunning email.
+  const { data: existing } = await getSupabase()
+    .from('subscriptions')
+    .select('user_id, status')
+    .eq('paddle_subscription_id', id)
+    .eq('environment', env)
+    .maybeSingle();
 
   await getSupabase().from('subscriptions')
     .update({
@@ -87,6 +129,11 @@ async function handleSubscriptionUpdated(data: any, env: PaddleEnv) {
     })
     .eq('paddle_subscription_id', id)
     .eq('environment', env);
+
+  if (status === 'past_due' && existing?.status !== 'past_due') {
+    const userId = (existing?.user_id as string | undefined) ?? customData?.userId;
+    if (userId) await triggerInitialDunning(userId, id);
+  }
 }
 
 async function handleSubscriptionCanceled(data: any, env: PaddleEnv) {
