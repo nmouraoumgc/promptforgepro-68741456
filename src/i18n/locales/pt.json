@@ -259,8 +259,8 @@
   "proTrial": {
     "badge": "Oferta limitada",
     "title": "Experimenta o Pro por apenas 2€",
-    "subtitle": "Desbloqueia tudo no primeiro mês com um desconto especial.",
-    "firstMonth": "no primeiro mês",
+    "subtitle": "Desbloqueia tudo durante 7 dias. Depois 9€/mês — cancela quando quiseres.",
+    "firstMonth": "por 7 dias",
     "thenPrice": "Depois 9€/mês — cancela quando quiseres.",
     "features": {
       "unlimited": "Otimizações ilimitadas",

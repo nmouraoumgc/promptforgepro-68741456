@@ -259,8 +259,8 @@
   "proTrial": {
     "badge": "Limited offer",
     "title": "Try Pro for just 2€",
-    "subtitle": "Unlock everything in your first month with a special discount.",
-    "firstMonth": "first month",
+    "subtitle": "Unlock everything for 7 days. Then 9€/month — cancel anytime.",
+    "firstMonth": "for 7 days",
     "thenPrice": "Then 9€/month — cancel anytime.",
     "features": {
       "unlimited": "Unlimited optimizations",

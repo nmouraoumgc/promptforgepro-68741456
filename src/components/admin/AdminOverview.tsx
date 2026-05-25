@@ -83,15 +83,23 @@ export function AdminOverview({ users, purchases, subscriptions }: Props) {
       .filter((p) => new Date(p.created_at) >= startOfMonth)
       .reduce((s, p) => s + p.amount_cents, 0);
 
-    // Active live Pro subs = MRR @ 9€
+    // Active live Pro subs = MRR @ 9€ (includes trial price)
+    const proPriceIds = new Set(['pro_monthly', 'pro_monthly_trial_7d']);
     const activeProSubs = subscriptions.filter(
       (s) =>
         s.environment === 'live' &&
-        s.price_id === 'pro_monthly' &&
+        proPriceIds.has(s.price_id) &&
         ['active', 'trialing', 'past_due'].includes(s.status) &&
         (!s.current_period_end || new Date(s.current_period_end) > now)
     ).length;
     const mrrCents = activeProSubs * 900;
+
+    const trialingSubs = subscriptions.filter(
+      (s) => s.environment === 'live' && s.status === 'trialing'
+    ).length;
+    const pastDueSubs = subscriptions.filter(
+      (s) => s.environment === 'live' && s.status === 'past_due'
+    ).length;
 
     const proUsers = users.filter((u) => u.current_plan === 'pro').length;
     const premiumUsers = users.filter((u) => u.current_plan === 'premium').length;
@@ -110,6 +118,8 @@ export function AdminOverview({ users, purchases, subscriptions }: Props) {
       monthRevenueCents,
       mrrCents,
       activeProSubs,
+      trialingSubs,
+      pastDueSubs,
       proUsers,
       premiumUsers,
       freeUsers,
@@ -216,7 +226,7 @@ export function AdminOverview({ users, purchases, subscriptions }: Props) {
       </div>
 
       {/* Secondary KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
         <SmallStat icon={Crown} label="Premium" value={stats.premiumUsers} />
         <SmallStat icon={Sparkles} label="Pro" value={stats.proUsers} />
         <SmallStat
@@ -225,6 +235,8 @@ export function AdminOverview({ users, purchases, subscriptions }: Props) {
           value={`${stats.conversionRate.toFixed(1)}%`}
         />
         <SmallStat icon={ShoppingCart} label="ARPU" value={fmtEur(stats.arpu)} />
+        <SmallStat icon={Sparkles} label="Em trial" value={stats.trialingSubs} />
+        <SmallStat icon={TrendingUp} label="Past Due" value={stats.pastDueSubs} />
       </div>
 
       {/* Charts */}
