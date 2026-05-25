@@ -164,6 +164,12 @@ async function handleTransactionCompleted(data: any, env: PaddleEnv) {
     console.warn('transaction.completed: missing importMeta.externalId');
     return;
   }
+
+  // Record trial redemption on the €2 one-time access transaction.
+  if (priceExternalId === 'pro_trial_access_7d') {
+    await recordTrialRedemption(userId, undefined, id);
+    return;
+  }
   if (priceExternalId !== 'premium_one_time') return; // Pro renewals tracked via subscription events.
 
   // Idempotency: skip if we already recorded this transaction id.
