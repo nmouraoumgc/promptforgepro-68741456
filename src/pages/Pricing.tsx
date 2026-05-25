@@ -65,11 +65,11 @@ export default function Pricing() {
         ? 'For users who rely on PromptForge every day at work'
         : 'Para quem usa o PromptForge como ferramenta diária de trabalho',
       price: '2€',
-      priceDetail: isEnglish ? 'first month' : 'no primeiro mês',
+      priceDetail: isEnglish ? 'for 7 days' : 'por 7 dias',
       features: isEnglish
-        ? ['2€ first month, then 9€/month', 'Unlimited optimizations', 'Version history', 'A/B prompt testing', 'Detailed scoring', 'Prompt export']
-        : ['2€ no primeiro mês, depois 9€/mês', 'Otimizações ilimitadas', 'Histórico de versões', 'Testes A/B de prompts', 'Pontuação detalhada', 'Exportação de prompts'],
-      cta: isEnglish ? 'Try Pro for 2€' : 'Experimentar Pro por 2€',
+        ? ['2€ for 7 days, then 9€/month', 'Unlimited optimizations', 'Version history', 'A/B prompt testing', 'Detailed scoring', 'Prompt export']
+        : ['2€ por 7 dias, depois 9€/mês', 'Otimizações ilimitadas', 'Histórico de versões', 'Testes A/B de prompts', 'Pontuação detalhada', 'Exportação de prompts'],
+      cta: isEnglish ? 'Try Pro for 2€ / 7 days' : 'Experimentar Pro por 2€ / 7 dias',
       highlight: true,
     },
   ];
@@ -103,13 +103,9 @@ export default function Pricing() {
         return;
       }
       if (authLoading) return;
-      // Auto-apply the 2€ first-month discount
-      setProAppliedPromo({
-        code: '1PROFREE',
-        discount_type: 'fixed',
-        discount_value: 7,
-        duration_months: 1,
-      });
+      // Show confirmation dialog. No auto-promo: the 2€/7-day trial is now
+      // built into the Paddle prices, not a discount code.
+      setProAppliedPromo(null);
       setShowProPromoDialog(true);
       return;
     }
@@ -173,25 +169,80 @@ export default function Pricing() {
         return;
       }
 
+      // Pre-checkout anti-fraud / trial-redemption check.
+      const intent = proAppliedPromo?.code ? 'pro_normal' : 'pro_trial';
+      try {
+        const { data: check } = await supabase.functions.invoke('pre-checkout-check', {
+          body: { intent },
+        });
+        if (check && check.allowed === false) {
+          const reasonMap: Record<string, string> = {
+            disposable_email: isEnglish
+              ? 'Disposable email addresses are not allowed. Please use a permanent email.'
+              : 'Emails temporários não são permitidos. Usa um email permanente.',
+            trial_already_used: isEnglish
+              ? 'You have already used your trial. Subscribe directly for 9€/month.'
+              : 'Já utilizaste o teu trial. Subscreve diretamente por 9€/mês.',
+            too_many_attempts: isEnglish
+              ? 'Too many failed attempts. Please try again later.'
+              : 'Demasiadas tentativas falhadas. Tenta novamente mais tarde.',
+          };
+          toast({
+            title: isEnglish ? 'Checkout blocked' : 'Checkout bloqueado',
+            description: reasonMap[check.reason as string] ?? (isEnglish ? 'Unable to proceed.' : 'Não foi possível prosseguir.'),
+            variant: 'destructive',
+          });
+          setIsLoadingPro(false);
+          return;
+        }
+      } catch (e) {
+        // Fail open — pre-check should not block checkout on internal errors.
+        console.warn('pre-checkout-check failed, continuing', e);
+      }
+
       const { initializePaddle, getPaddlePriceId, getPaddleDiscountId } = await import('@/lib/paddle');
       await initializePaddle();
-      const [paddlePriceId, paddleDiscountId] = await Promise.all([
-        getPaddlePriceId('pro_monthly'),
-        proAppliedPromo?.code ? getPaddleDiscountId(proAppliedPromo.code) : Promise.resolve(undefined),
-      ]);
 
-      window.Paddle.Checkout.open({
-        items: [{ priceId: paddlePriceId, quantity: 1 }],
-        customer: { email: user.email! },
-        customData: { userId: user.id },
-        discountId: paddleDiscountId,
-        settings: {
-          displayMode: 'overlay',
-          successUrl: `${window.location.origin}/subscription-success`,
-          allowLogout: false,
-          variant: 'one-page',
-        },
-      });
+      if (proAppliedPromo?.code) {
+        // Promo flow: normal monthly price with discount code.
+        const [paddlePriceId, paddleDiscountId] = await Promise.all([
+          getPaddlePriceId('pro_monthly'),
+          getPaddleDiscountId(proAppliedPromo.code),
+        ]);
+        window.Paddle.Checkout.open({
+          items: [{ priceId: paddlePriceId, quantity: 1 }],
+          customer: { email: user.email! },
+          customData: { userId: user.id },
+          discountId: paddleDiscountId,
+          settings: {
+            displayMode: 'overlay',
+            successUrl: `${window.location.origin}/subscription-success`,
+            allowLogout: false,
+            variant: 'one-page',
+          },
+        });
+      } else {
+        // Default flow: paid 7-day trial — €2 one-time + subscription with 7-day trial.
+        // Same checkout, same card. Paddle charges €2 now, then €9/month after 7 days.
+        const [trialAccessId, subscriptionId] = await Promise.all([
+          getPaddlePriceId('pro_trial_access_7d'),
+          getPaddlePriceId('pro_monthly_trial_7d'),
+        ]);
+        window.Paddle.Checkout.open({
+          items: [
+            { priceId: trialAccessId, quantity: 1 },
+            { priceId: subscriptionId, quantity: 1 },
+          ],
+          customer: { email: user.email! },
+          customData: { userId: user.id },
+          settings: {
+            displayMode: 'overlay',
+            successUrl: `${window.location.origin}/subscription-success`,
+            allowLogout: false,
+            variant: 'one-page',
+          },
+        });
+      }
     } catch (err) {
       console.error('Subscription error:', err);
       toast({
