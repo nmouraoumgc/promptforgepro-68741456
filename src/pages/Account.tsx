@@ -77,6 +77,14 @@ export default function Account() {
       if (error) throw new Error(error.message);
       if (data?.error) throw new Error(localizeApiError(data.error, isEnglish));
 
+      if (data?.no_billing) {
+        toast({
+          title: t('account.noBillingTitle'),
+          description: t('account.noBillingDesc'),
+        });
+        return;
+      }
+
       if (data?.url) {
         window.location.href = data.url;
       } else {

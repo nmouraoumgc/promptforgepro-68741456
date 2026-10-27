@@ -253,6 +253,8 @@
     "openingPortal": "A abrir portal...",
     "billingErrorTitle": "Não foi possível abrir o portal",
     "billingErrorDesc": "Por favor tenta novamente em instantes.",
+    "noBillingTitle": "Ainda não tens faturação associada",
+    "noBillingDesc": "Ainda não existe nenhum método de pagamento ou fatura associado à tua conta. A faturação aparece aqui após o primeiro pagamento.",
     "actions": "Ações",
     "signOut": "Terminar sessão"
   },

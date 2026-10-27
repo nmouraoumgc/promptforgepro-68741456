@@ -253,6 +253,8 @@
     "openingPortal": "Opening portal...",
     "billingErrorTitle": "Could not open billing portal",
     "billingErrorDesc": "Please try again in a moment.",
+    "noBillingTitle": "No billing on file yet",
+    "noBillingDesc": "There is no payment method or invoice linked to your account yet. Billing will appear here after your first payment.",
     "actions": "Actions",
     "signOut": "Sign out"
   },
