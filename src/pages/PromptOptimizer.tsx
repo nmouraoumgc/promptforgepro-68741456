@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { toPlainText } from '@/lib/plainText';
 import { useTranslation } from 'react-i18next';
 import { Sparkles, Zap, FileText, Copy, Info } from 'lucide-react';
@@ -34,7 +35,15 @@ const improvementExamples = [
 ];
 
 export default function PromptOptimizer() {
-  const [inputPrompt, setInputPrompt] = useState('');
+  const location = useLocation();
+  const navigate = useNavigate();
+  const prefill = (location.state as { prefill?: string } | null)?.prefill;
+  const [inputPrompt, setInputPrompt] = useState(prefill ?? '');
+  // Prefill from a Learn lesson ("Experimenta já"), then clear the history state so a reload starts clean.
+  useEffect(() => {
+    if (prefill) navigate(location.pathname, { replace: true, state: null });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [optimizations, setOptimizations] = useState<OptimizationVariant[]>([]);
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [score, setScore] = useState<{

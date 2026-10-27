@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { Check, Copy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,13 +7,13 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { toPlainText } from '@/lib/plainText';
-import { extractVars, fillTemplate, templateParts, varLabel } from '@/lib/templateVariables';
+import { extractVars, fillTemplate, templateParts, varLabel, type LabelOverrides } from '@/lib/templateVariables';
 
 /** Read-only template text with {{vars}} shown as highlighted [FRIENDLY LABEL] (or filled values). */
-export function TemplateText({ template, values = {}, isEnglish, className }: {
-  template: string; values?: Record<string, string>; isEnglish: boolean; className?: string;
+export function TemplateText({ template, values = {}, isEnglish, className, labels }: {
+  template: string; values?: Record<string, string>; isEnglish: boolean; className?: string; labels?: LabelOverrides;
 }) {
-  const parts = useMemo(() => templateParts(template, values, isEnglish), [template, values, isEnglish]);
+  const parts = useMemo(() => templateParts(template, values, isEnglish, labels), [template, values, isEnglish, labels]);
   return (
     <p className={cn('text-sm whitespace-pre-wrap break-words', className)} data-testid="template-text">
       {parts.map((p, i) =>
@@ -37,7 +37,13 @@ export function TemplateText({ template, values = {}, isEnglish, className }: {
 }
 
 /** Inline form: one field per {{variable}}, live preview, and copy of the filled text. */
-export function TemplateFiller({ template, isEnglish, idPrefix }: { template: string; isEnglish: boolean; idPrefix: string }) {
+export function TemplateFiller({ template, isEnglish, idPrefix, labels, extraActions }: {
+  template: string; isEnglish: boolean; idPrefix: string;
+  /** Per-template label overrides: { varName: [label, example] }. */
+  labels?: LabelOverrides;
+  /** Extra buttons rendered next to Copy; receives the current filled plain text. */
+  extraActions?: (filledText: string, missingCount: number) => ReactNode;
+}) {
   const { toast } = useToast();
   const vars = useMemo(() => extractVars(template), [template]);
   const [values, setValues] = useState<Record<string, string>>({});
@@ -46,7 +52,7 @@ export function TemplateFiller({ template, isEnglish, idPrefix }: { template: st
   const missing = vars.filter((v) => !(values[v] ?? '').trim());
 
   const copy = async () => {
-    await navigator.clipboard.writeText(toPlainText(fillTemplate(template, values, isEnglish)));
+    await navigator.clipboard.writeText(toPlainText(fillTemplate(template, values, isEnglish, labels)));
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
     const h = missing.length
@@ -66,7 +72,7 @@ export function TemplateFiller({ template, isEnglish, idPrefix }: { template: st
       {vars.length > 0 && (
         <div className="grid gap-3 sm:grid-cols-2">
           {vars.map((v) => {
-            const { label, example } = varLabel(v, isEnglish);
+            const { label, example } = varLabel(v, isEnglish, labels);
             const id = `${idPrefix}-${v}`;
             const long = /^(Cola aqui|Paste)/.test(example);
             const common = {
@@ -86,15 +92,18 @@ export function TemplateFiller({ template, isEnglish, idPrefix }: { template: st
       )}
 
       <div className="p-3 bg-muted/50 rounded-lg border border-border/50">
-        <TemplateText template={template} values={values} isEnglish={isEnglish} className="text-foreground/90" />
+        <TemplateText template={template} values={values} isEnglish={isEnglish} labels={labels} className="text-foreground/90" />
       </div>
 
       <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-xs text-muted-foreground" aria-live="polite" data-testid="copy-hint">{hint}</p>
-        <Button variant="outline" size="sm" onClick={copy} className="w-full sm:w-auto shrink-0">
-          {copied ? <Check className="h-4 w-4 mr-2 text-primary" /> : <Copy className="h-4 w-4 mr-2" />}
-          {isEnglish ? 'Copy' : 'Copiar'}
-        </Button>
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
+          {extraActions?.(toPlainText(fillTemplate(template, values, isEnglish, labels)), missing.length)}
+          <Button variant="outline" size="sm" onClick={copy} className="w-full sm:w-auto shrink-0">
+            {copied ? <Check className="h-4 w-4 mr-2 text-primary" /> : <Copy className="h-4 w-4 mr-2" />}
+            {isEnglish ? 'Copy' : 'Copiar'}
+          </Button>
+        </div>
       </div>
     </div>
   );

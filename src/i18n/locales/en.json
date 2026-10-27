@@ -128,12 +128,6 @@
     "language": "Language",
     "languageDesc": "Choose the interface language"
   },
-  "learn": {
-    "tipsTitle": "Quick Tips",
-    "tipsDesc": "Improve your prompts with these techniques",
-    "lessonsTitle": "Lessons",
-    "lessonsDesc": "Learn to create professional prompts"
-  },
   "showcase": {
     "cardTitle": "High-Quality Prompt Example",
     "viewDetails": "View details",

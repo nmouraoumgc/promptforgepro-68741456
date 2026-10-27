@@ -67,8 +67,8 @@ export default function Pricing() {
       price: '2€',
       priceDetail: isEnglish ? 'for 7 days' : 'por 7 dias',
       features: isEnglish
-        ? ['2€ for 7 days, then 9€/month', 'Unlimited optimizations', 'Version history', 'A/B prompt testing', 'Detailed scoring', 'Prompt export']
-        : ['2€ por 7 dias, depois 9€/mês', 'Otimizações ilimitadas', 'Histórico de versões', 'Testes A/B de prompts', 'Pontuação detalhada', 'Exportação de prompts'],
+        ? ['2€ for 7 days, then 9€/month', 'Unlimited optimizations', 'Version history', 'A/B prompt testing', 'Detailed scoring', 'Prompt export', 'All Learn lessons']
+        : ['2€ por 7 dias, depois 9€/mês', 'Otimizações ilimitadas', 'Histórico de versões', 'Testes A/B de prompts', 'Pontuação detalhada', 'Exportação de prompts', 'Todas as lições do Aprender'],
       cta: isEnglish ? 'Try Pro for 2€ / 7 days' : 'Experimentar Pro por 2€ / 7 dias',
       highlight: true,
     },
@@ -81,8 +81,8 @@ export default function Pricing() {
     price: '19€',
     priceDetail: isEnglish ? '— one-time payment' : '— pagamento único',
     features: isEnglish
-      ? ['All premium Prompt Packs', 'Hooks, scripts, structures and CTAs', 'Professional templates', 'Future updates included']
-      : ['Todos os Prompt Packs premium', 'Hooks, scripts, estruturas e CTAs', 'Templates profissionais', 'Atualizações futuras incluídas'],
+      ? ['All premium Prompt Packs', 'Hooks, scripts, structures and CTAs', 'Professional templates', 'All Learn lessons', 'Future updates included']
+      : ['Todos os Prompt Packs premium', 'Hooks, scripts, estruturas e CTAs', 'Templates profissionais', 'Todas as lições do Aprender', 'Atualizações futuras incluídas'],
     cta: isEnglish ? 'Unlock full access' : 'Desbloquear acesso completo',
   };
 

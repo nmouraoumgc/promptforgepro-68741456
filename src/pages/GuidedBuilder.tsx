@@ -121,6 +121,7 @@ export default function GuidedBuilder() {
     if (!isEnglish) return label;
     return ({
       'Genérico (qualquer IA)': 'Generic (any AI)',
+      'Imagens do ChatGPT': 'ChatGPT images',
     } as Record<string, string>)[label] || label;
   };
   const toneLabel = (label: string) => {

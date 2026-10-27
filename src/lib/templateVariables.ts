@@ -182,8 +182,12 @@ const humanise = (name: string) => {
 };
 
 /** Label + example placeholder for a variable in the given site language (falls back to the other map, then a humanised name). */
-export function varLabel(name: string, isEnglish: boolean): { label: string; example: string } {
+export type LabelOverrides = Record<string, VarLabel | string[]>;
+
+export function varLabel(name: string, isEnglish: boolean, overrides?: LabelOverrides): { label: string; example: string } {
   const key = name.trim();
+  const o = overrides?.[key];
+  if (o && o[0]) return { label: o[0], example: o[1] ?? '' };
   const hit = (isEnglish ? VAR_LABELS_EN[key] ?? VAR_LABELS_PT[key] : VAR_LABELS_PT[key] ?? VAR_LABELS_EN[key]);
   return hit ? { label: hit[0], example: hit[1] } : { label: humanise(key), example: '' };
 }
@@ -200,7 +204,7 @@ export function extractVars(template: string): string[] {
 export type TemplatePart = { text: string; varName?: string; filled?: boolean };
 
 /** Splits a template into text and variable parts; unfilled variables become [LABEL IN CAPS]. */
-export function templateParts(template: string, values: Record<string, string>, isEnglish: boolean): TemplatePart[] {
+export function templateParts(template: string, values: Record<string, string>, isEnglish: boolean, overrides?: LabelOverrides): TemplatePart[] {
   const parts: TemplatePart[] = [];
   let last = 0;
   for (const m of template.matchAll(VAR_RE)) {
@@ -208,12 +212,12 @@ export function templateParts(template: string, values: Record<string, string>, 
     const v = (values[m[1]] ?? '').trim();
     parts.push(v
       ? { text: v, varName: m[1], filled: true }
-      : { text: `[${varLabel(m[1], isEnglish).label.toLocaleUpperCase(isEnglish ? 'en' : 'pt-PT')}]`, varName: m[1], filled: false });
+      : { text: `[${varLabel(m[1], isEnglish, overrides).label.toLocaleUpperCase(isEnglish ? 'en' : 'pt-PT')}]`, varName: m[1], filled: false });
     last = m.index! + m[0].length;
   }
   if (last < template.length) parts.push({ text: template.slice(last) });
   return parts;
 }
 
-export const fillTemplate = (template: string, values: Record<string, string>, isEnglish: boolean) =>
-  templateParts(template, values, isEnglish).map((p) => p.text).join('');
+export const fillTemplate = (template: string, values: Record<string, string>, isEnglish: boolean, overrides?: LabelOverrides) =>
+  templateParts(template, values, isEnglish, overrides).map((p) => p.text).join('');

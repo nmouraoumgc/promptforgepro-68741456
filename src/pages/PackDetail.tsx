@@ -21,6 +21,7 @@ import { usePacks } from '@/data/packsDb';
 import { PackPreview } from '@/components/packs';
 import { TemplateFiller } from '@/components/templates/TemplateFiller';
 import { cn } from '@/lib/utils';
+import { usePageMeta } from '@/lib/pageMeta';
 import { useTranslation } from 'react-i18next';
 
 const categoryIcons: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -40,6 +41,7 @@ export default function PackDetail() {
   
   const { packs, isLoading: packsLoading } = usePacks(isEnglish);
   const pack = packs.find((p) => p.slug === (slug || ''));
+  usePageMeta(pack ? { title: pack.name, description: pack.promise || pack.description } : null, isEnglish);
   const [activeCategory, setActiveCategory] = useState<string>('');
 
   // Initialize active category when pack loads

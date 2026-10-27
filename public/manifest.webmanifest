@@ -1,14 +1,14 @@
 {
   "name": "PromptForge Pro",
   "short_name": "PromptForge",
-  "description": "Crie, otimize e teste prompts profissionais com IA",
+  "description": "Cria, otimiza e testa prompts profissionais com IA",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
-  "lang": "pt-BR",
+  "lang": "pt-PT",
   "categories": ["productivity", "utilities"],
   "icons": [
     {

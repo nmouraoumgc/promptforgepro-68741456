@@ -71,6 +71,115 @@ export type Database = {
         }
         Relationships: []
       }
+      learn_lesson_content: {
+        Row: {
+          body_en: Json
+          body_pt: Json
+          lesson_id: string
+          updated_at: string
+        }
+        Insert: {
+          body_en: Json
+          body_pt: Json
+          lesson_id: string
+          updated_at?: string
+        }
+        Update: {
+          body_en?: Json
+          body_pt?: Json
+          lesson_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "learn_lesson_content_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: true
+            referencedRelation: "learn_lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      learn_lessons: {
+        Row: {
+          created_at: string
+          duration_min: number
+          id: string
+          is_active: boolean
+          is_free: boolean
+          level: string
+          sector: string | null
+          slug: string
+          sort_order: number
+          summary_en: string
+          summary_pt: string
+          title_en: string
+          title_pt: string
+          track: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          duration_min?: number
+          id?: string
+          is_active?: boolean
+          is_free?: boolean
+          level?: string
+          sector?: string | null
+          slug: string
+          sort_order?: number
+          summary_en: string
+          summary_pt: string
+          title_en: string
+          title_pt: string
+          track: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          duration_min?: number
+          id?: string
+          is_active?: boolean
+          is_free?: boolean
+          level?: string
+          sector?: string | null
+          slug?: string
+          sort_order?: number
+          summary_en?: string
+          summary_pt?: string
+          title_en?: string
+          title_pt?: string
+          track?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      learn_progress: {
+        Row: {
+          completed_at: string
+          lesson_id: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string
+          lesson_id: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string
+          lesson_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "learn_progress_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "learn_lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pack_prompts: {
         Row: {
           category: string | null

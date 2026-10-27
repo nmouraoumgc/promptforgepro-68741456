@@ -31,6 +31,18 @@ const getScoreLabel = (score: number, en: boolean): { label: string; color: stri
   return { label: en ? 'Needs a lot of work' : 'Precisa de muito trabalho', color: 'text-destructive' };
 };
 
+/** Learn lesson that best addresses the weakest part of the score. */
+const lessonForScore = (score: ScoreData): string => {
+  const gaps: [string, number][] = [
+    ['contexto-negocio', 75 - score.context],
+    ['formato-certo', 75 - score.outputFormat],
+    ['erros-comuns', score.genericResponseRisk - 55],
+    ['anatomia-prompt', Math.max(80 - score.clarity, 75 - score.aiRole, 75 - score.constraints, 70 - score.successCriteria)],
+  ];
+  const [slug, gap] = gaps.sort((a, b) => b[1] - a[1])[0];
+  return gap > 0 ? slug : 'iterar';
+};
+
 const getImprovementSuggestions = (score: ScoreData, en: boolean): string[] => {
   const suggestions: string[] = [];
   
@@ -171,7 +183,7 @@ export default function ActionableScore({ score, onAutoFix }: ActionableScorePro
                   {isEnglish ? 'Auto-fix' : 'Corrigir automaticamente'}
                 </Button>
               )}
-              <Link to="/learn" className={needsImprovement ? '' : 'col-span-2'}>
+              <Link to={`/learn/${lessonForScore(score)}`} data-testid="learn-improve" className={needsImprovement ? '' : 'col-span-2'}>
                 <Button variant="outline" className="w-full gap-2">
                   <BookOpen className="h-4 w-4" />
                   {isEnglish ? 'Learn how to improve' : 'Aprender a melhorar'}

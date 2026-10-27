@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { CheckCircle2, Circle, Wand2, Sparkles, GitCompare, X } from 'lucide-react';
+import { CheckCircle2, Circle, Wand2, Sparkles, GitCompare, GraduationCap, X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -8,12 +8,21 @@ import { usePromptStore } from '@/stores/promptStore';
 import { useIsEnglish } from '@/i18n/lang';
 
 const onboardingStepsEn = [
+  { id: 'learn', title: 'Take lesson 1', description: 'Anatomy of a good prompt: 5 minutes, free', icon: GraduationCap, link: '/learn/anatomia-prompt', action: 'Start' },
   { id: 'create', title: 'Create your first prompt', description: 'Use the guided builder to create a structured prompt', icon: Wand2, link: '/builder', action: 'Create Prompt' },
   { id: 'optimize', title: 'Optimize a prompt', description: 'See how to automatically improve your prompts', icon: Sparkles, link: '/optimizer', action: 'Optimize' },
   { id: 'compare', title: 'Compare and save', description: 'Test different versions and save the best ones', icon: GitCompare, link: '/tester', action: 'Compare' },
 ];
 
 const onboardingStepsPt = [
+  {
+    id: 'learn',
+    title: 'Faz a lição 1',
+    description: 'Anatomia de um bom prompt: 5 minutos, grátis',
+    icon: GraduationCap,
+    link: '/learn/anatomia-prompt',
+    action: 'Começar',
+  },
   {
     id: 'create',
     title: 'Cria o teu primeiro prompt',
@@ -88,7 +97,7 @@ export default function OnboardingChecklist() {
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">
-            {isEnglish ? '🚀 Get started in 3 simple steps' : '🚀 Começa em 3 Passos Simples'}
+            {isEnglish ? `🚀 Get started in ${onboardingSteps.length} simple steps` : `🚀 Começa em ${onboardingSteps.length} passos simples`}
           </CardTitle>
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleDismiss}>
             <X className="h-4 w-4" />

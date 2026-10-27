@@ -128,12 +128,6 @@
     "language": "Idioma",
     "languageDesc": "Escolhe o idioma da interface"
   },
-  "learn": {
-    "tipsTitle": "Dicas Rápidas",
-    "tipsDesc": "Melhora os teus prompts com estas técnicas",
-    "lessonsTitle": "Lições",
-    "lessonsDesc": "Aprende a criar prompts profissionais"
-  },
   "showcase": {
     "cardTitle": "Exemplo de Prompt de Alta Qualidade",
     "viewDetails": "Ver detalhes",

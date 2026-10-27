@@ -14,6 +14,8 @@ import VersionHistory from "@/pages/VersionHistory";
 import PromptTester from "@/pages/PromptTester";
 import QuickPrompt from "@/pages/QuickPrompt";
 import Learn from "@/pages/Learn";
+import LessonDetail from "@/pages/LessonDetail";
+import { RouteMeta } from '@/lib/pageMeta';
 import PromptPacks from "@/pages/PromptPacks";
 import PackDetail from "@/pages/PackDetail";
 import Settings from "@/pages/Settings";
@@ -40,6 +42,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <RouteMeta />
         <Routes>
           {/* Auth routes (no layout) */}
           <Route path="/login" element={<Login />} />
@@ -60,6 +63,7 @@ const App = () => (
             <Route path="/versions" element={<VersionHistory />} />
             <Route path="/tester" element={<PromptTester />} />
             <Route path="/learn" element={<Learn />} />
+            <Route path="/learn/:slug" element={<LessonDetail />} />
             <Route path="/packs" element={<PromptPacks />} />
             <Route path="/packs/:slug" element={<PackDetail />} />
             <Route path="/settings" element={<Settings />} />
