@@ -1,4 +1,6 @@
 import { useTranslation } from 'react-i18next';
+import { TemplateText } from '@/components/templates/TemplateFiller';
+import { useIsEnglish } from '@/i18n/lang';
 import { GitBranch, Clock, RotateCcw } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,6 +13,7 @@ import { format } from 'date-fns';
 import { pt, enUS } from 'date-fns/locale';
 
 export default function VersionHistory() {
+  const isEnglishUi = useIsEnglish();
   const { t, i18n } = useTranslation();
   const isEnglish = (i18n.resolvedLanguage || i18n.language || 'pt').startsWith('en');
   const locale = isEnglish ? enUS : pt;
@@ -74,7 +77,7 @@ export default function VersionHistory() {
                             <Clock className="h-3 w-3" />
                             {format(new Date(version.createdAt), dateFormat, { locale })}
                           </p>
-                          <p className="text-sm mt-2 line-clamp-2">{version.content}</p>
+                          <TemplateText template={version.content} isEnglish={isEnglishUi} className="mt-2 line-clamp-2" />
                         </div>
                         {prompt.currentVersionId !== version.id && (
                           <Button variant="outline" size="sm" onClick={() => revertToVersion(prompt.id, version.id)}>

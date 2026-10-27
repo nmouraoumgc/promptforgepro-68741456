@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { TemplateText } from '@/components/templates/TemplateFiller';
+import { useIsEnglish } from '@/i18n/lang';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Search, Star, Grid, List, Plus, Copy, Trash2, MoreHorizontal } from 'lucide-react';
@@ -13,6 +15,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
 export default function PromptLibrary() {
+  const isEnglishUi = useIsEnglish();
   const { t, i18n } = useTranslation();
   const isEnglish = (i18n.resolvedLanguage || i18n.language || 'pt').startsWith('en');
   const { prompts, toggleFavorite, deletePrompt, duplicatePrompt } = usePromptStore();
@@ -103,7 +106,7 @@ export default function PromptLibrary() {
                 </div>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground line-clamp-3 mb-3">{prompt.content}</p>
+                <TemplateText template={prompt.content} isEnglish={isEnglishUi} className="text-muted-foreground line-clamp-3 mb-3" />
                 <div className="flex gap-2 flex-wrap">
                   <Badge variant="outline">{prompt.category}</Badge>
                   {prompt.tags.slice(0, 2).map(tag => <Badge key={tag} variant="secondary">{tag}</Badge>)}

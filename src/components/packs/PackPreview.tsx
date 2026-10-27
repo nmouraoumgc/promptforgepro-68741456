@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Zap, CheckCircle, Copy, Lock } from 'lucide-react';
-import { toPlainText } from '@/lib/plainText';
+import { Zap, CheckCircle, Lock } from 'lucide-react';
+import { TemplateFiller } from '@/components/templates/TemplateFiller';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -225,10 +225,6 @@ export function PackPreview({ pack, onUnlock }: PackPreviewProps) {
   const copy = getPackCopy(pack.slug, isEnglish);
   const freePrompts = Object.values(pack.prompts).flat().filter((p) => p.isFreePreview);
   const lockedCount = Math.max(0, pack.totalPrompts - freePrompts.length);
-  const copyTemplate = (content: string) => {
-    navigator.clipboard.writeText(toPlainText(content));
-    toast({ title: isEnglish ? 'Copied!' : 'Copiado!', description: isEnglish ? 'Template copied to clipboard.' : 'Template copiado para a área de transferência.' });
-  };
 
   const handleGenerate = async () => {
     if (!tema.trim()) return;
@@ -308,17 +304,12 @@ export function PackPreview({ pack, onUnlock }: PackPreviewProps) {
             {isEnglish ? 'Free templates from this pack' : 'Templates grátis deste pack'}
           </h3>
           {freePrompts.map((p) => (
-            <div key={p.id} className="p-3 rounded-lg border border-border bg-background space-y-2">
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <p className="font-medium text-foreground">{p.title}</p>
-                  {p.description && <p className="text-xs text-muted-foreground">{p.description}</p>}
-                </div>
-                <Button variant="ghost" size="sm" onClick={() => copyTemplate(p.content)} aria-label={isEnglish ? 'Copy' : 'Copiar'}>
-                  <Copy className="h-4 w-4" />
-                </Button>
+            <div key={p.id} className="p-3 rounded-lg border border-border bg-background space-y-3">
+              <div>
+                <p className="font-medium text-foreground">{p.title}</p>
+                {p.description && <p className="text-xs text-muted-foreground">{p.description}</p>}
               </div>
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap">{p.content}</p>
+              <TemplateFiller template={p.content} isEnglish={isEnglish} idPrefix={`free-${p.id}`} />
             </div>
           ))}
           {lockedCount > 0 && (
