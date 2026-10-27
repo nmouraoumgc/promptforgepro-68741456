@@ -3,6 +3,9 @@ import App from "./App.tsx";
 import "./index.css";
 import "./i18n";
 import { registerServiceWorker } from "./registerServiceWorker";
+import { trackCampaignLanding } from "./lib/campaignLanding";
+
+trackCampaignLanding();
 
 registerServiceWorker();
 

@@ -54,9 +54,9 @@ Deno.serve(async (req) => {
       await admin.rpc('ensure_email_preferences', { _user_ids: ids });
       const { data: prefs } = await admin.from('email_preferences').select('user_id, marketing_unsubscribed, unsubscribe_token').in('user_id', ids.length ? ids : ['00000000-0000-0000-0000-000000000000']);
       const pref = new Map((prefs ?? []).map((p) => [p.user_id, p]));
-      const build = (r: { user_id: string; first_name: string | null }) => {
+      const build = (r: { id: string; user_id: string; first_name: string | null }) => {
         const t = pref.get(r.user_id)!.unsubscribe_token;
-        return { ...renderA1({ firstName: r.first_name, expiresLisbon, claimUrl: `${SITE}/pricing?code=EARLYA1`, unsubscribeUrl: `${SITE}/unsubscribe?t=${t}` }),
+        return { ...renderA1({ firstName: r.first_name, expiresLisbon, claimUrl: `${SITE}/pricing?code=EARLYA1&c=${encodeURIComponent(batch)}&r=${r.id}`, unsubscribeUrl: `${SITE}/unsubscribe?t=${t}` }),
           oneClick: `${Deno.env.get('SUPABASE_URL')}/functions/v1/unsubscribe?t=${t}` };
       };
       if (b.action === 'preview') return json({ pending: rows?.length ?? 0, expiresLisbon, sample: rows?.[0] ? build(rows[0]).html : null });
