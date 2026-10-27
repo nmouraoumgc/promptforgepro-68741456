@@ -1,6 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { authenticateRequest, corsHeaders } from "../_shared/auth.ts";
+import { PT_PT_RULES } from '../_shared/ptpt.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -149,7 +150,7 @@ ${labels.outputType}: ${outputTypeLabels[outputType] || (isEnglish ? 'text' : 't
         model: Deno.env.get('AI_MODEL') ?? 'openai/gpt-oss-120b',
         ...(Deno.env.get('AI_REASONING_EFFORT') ? { reasoning_effort: Deno.env.get('AI_REASONING_EFFORT') } : {}),
         messages: [
-          { role: 'system', content: systemPrompt },
+          { role: 'system', content: isEnglish ? systemPrompt : systemPrompt + PT_PT_RULES },
           { role: 'user', content: userRequest }
         ],
       }),

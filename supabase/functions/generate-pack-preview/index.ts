@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { authenticateRequest, corsHeaders } from "../_shared/auth.ts";
+import { PT_PT_RULES } from '../_shared/ptpt.ts';
 
 // Pack-specific prompts for different content types
 const getPackPrompt = (packSlug: string, tema: string, isPremium: boolean) => {
@@ -140,7 +141,7 @@ serve(async (req) => {
         model: Deno.env.get('AI_MODEL') ?? 'openai/gpt-oss-120b',
         ...(Deno.env.get('AI_REASONING_EFFORT') ? { reasoning_effort: Deno.env.get('AI_REASONING_EFFORT') } : {}),
         messages: [
-          { role: "system", content: system },
+          { role: "system", content: system + PT_PT_RULES },
           { role: "user", content: user },
         ],
       }),

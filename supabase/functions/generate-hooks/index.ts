@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { authenticateRequest, corsHeaders } from "../_shared/auth.ts";
+import { PT_PT_RULES } from '../_shared/ptpt.ts';
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -54,7 +55,7 @@ Responde APENAS com os hooks numerados, um por linha. Sem introdução nem expli
         model: Deno.env.get('AI_MODEL') ?? 'openai/gpt-oss-120b',
         ...(Deno.env.get('AI_REASONING_EFFORT') ? { reasoning_effort: Deno.env.get('AI_REASONING_EFFORT') } : {}),
         messages: [
-          { role: "system", content: systemPrompt },
+          { role: "system", content: systemPrompt + PT_PT_RULES },
           { role: "user", content: userPrompt },
         ],
         max_tokens: 1500, // was 500; raised because reasoning models (gpt-oss) count reasoning tokens here
