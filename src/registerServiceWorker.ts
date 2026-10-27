@@ -3,7 +3,7 @@ export function registerServiceWorker() {
     return;
   }
 
-  // Skip SW in iframes (Lovable editor preview) and on preview hosts to avoid stale caches.
+  // Skip SW in iframes and on preview/local hosts to avoid stale caches.
   const isInIframe = (() => {
     try {
       return window.self !== window.top;
@@ -15,12 +15,12 @@ export function registerServiceWorker() {
   const host = window.location.hostname;
   const isPreviewHost =
     host.includes("id-preview--") ||
-    host.includes("lovableproject.com") ||
+    host.endsWith(".vercel.app") ||
     host === "localhost" ||
     host === "127.0.0.1";
 
   if (isInIframe || isPreviewHost) {
-    // Clean up any previously registered SW so the editor preview isn't poisoned.
+    // Clean up any previously registered SW so previews aren't poisoned.
     navigator.serviceWorker.getRegistrations().then((regs) => {
       regs.forEach((r) => r.unregister());
     });
