@@ -1,7 +1,7 @@
 import type { LessonSector, LessonTrack } from '@/data/learnDb';
 
 export const TRACK_LABEL: Record<LessonTrack, { pt: string; en: string; descPt: string; descEn: string }> = {
-  fundamentos: { pt: 'Fundamentos', en: 'Fundamentals', descPt: 'O essencial para escrever prompts que dão resultados. Grátis.', descEn: 'The essentials for prompts that get results. Free.' },
+  fundamentos: { pt: 'Fundamentos', en: 'Fundamentals', descPt: 'O essencial para escrever prompts que dão resultados. As 4 primeiras lições são grátis.', descEn: 'The essentials for prompts that get results. The first 4 lessons are free.' },
   setor: { pt: 'Por setor', en: 'By industry', descPt: 'Casos práticos para o teu tipo de negócio.', descEn: 'Practical cases for your kind of business.' },
   avancado: { pt: 'Avançado', en: 'Advanced', descPt: 'Técnicas para ir mais longe: exemplos, templates e imagens.', descEn: 'Techniques to go further: examples, templates and images.' },
 };

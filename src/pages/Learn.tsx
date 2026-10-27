@@ -155,8 +155,8 @@ export default function Learn() {
               </p>
               <p className="text-sm text-muted-foreground">
                 {isEnglish
-                  ? 'Industry cases and advanced techniques, plus unlimited optimisations. 2 euros for 7 days.'
-                  : 'Casos por setor e técnicas avançadas, com otimizações ilimitadas. 2 € durante 7 dias.'}
+                  ? 'More Fundamentals, industry cases and advanced techniques, plus unlimited optimisations. 2 euros for 7 days.'
+                  : 'Mais Fundamentos, casos por setor e técnicas avançadas, com otimizações ilimitadas. 2 € durante 7 dias.'}
               </p>
             </div>
             <Button asChild className="w-full sm:w-auto"><Link to="/pricing">{isEnglish ? 'Try Pro' : 'Experimentar o Pro'}</Link></Button>

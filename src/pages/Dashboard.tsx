@@ -13,6 +13,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { usePromptStore } from '@/stores/promptStore';
 import ExamplePromptShowcase from '@/components/dashboard/ExamplePromptShowcase';
+import OnboardingChecklist from '@/components/dashboard/OnboardingChecklist';
 
 
 export default function Dashboard() {
@@ -75,6 +76,9 @@ export default function Dashboard() {
           {t('dashboard.subtitle')}
         </p>
       </header>
+
+      {/* First steps checklist (dismissible, progress saved per user) */}
+      <OnboardingChecklist />
 
       {/* Primary Action Cards Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">

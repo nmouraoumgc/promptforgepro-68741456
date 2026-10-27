@@ -2,7 +2,8 @@ import { TrendingUp, Wand2, BookOpen, AlertTriangle, CheckCircle2, Lock } from '
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useLearnEntitled, useLessons } from '@/data/learnDb';
 import { usePlanStore } from '@/stores/planStore';
 import { ProBadge } from '@/components/gating/FeatureGate';
 import { useIsEnglish } from '@/i18n/lang';
@@ -106,7 +107,21 @@ export default function ActionableScore({ score, onAutoFix }: ActionableScorePro
   const { label, color } = getScoreLabel(score.overall, isEnglish);
   const suggestions = getImprovementSuggestions(score, isEnglish);
   const needsImprovement = score.overall < 80;
-  const { canAccess, setPlan } = usePlanStore();
+  const { canAccess } = usePlanStore();
+  const navigate = useNavigate();
+  const entitled = useLearnEntitled();
+  const { lessons } = useLessons(isEnglish);
+  const lessonSlug = lessonForScore(score);
+  const lessonLocked = !entitled && lessons.some((l) => l.slug === lessonSlug && !l.isFree);
+  const learnLink = (className: string) => (
+    <Link to={`/learn/${lessonSlug}`} data-testid="learn-improve" data-locked={lessonLocked ? '1' : '0'} className={className}>
+      <Button variant="outline" className="w-full gap-2">
+        <BookOpen className="h-4 w-4" />
+        {isEnglish ? 'Learn how to improve' : 'Aprender a melhorar'}
+        {lessonLocked && <span className="inline-flex items-center gap-0.5 rounded border border-primary/40 px-1 text-[10px] font-semibold text-primary"><Lock className="h-2.5 w-2.5" />Pro</span>}
+      </Button>
+    </Link>
+  );
   const canSeeDetails = canAccess('canSeeDetailedScore');
 
   return (
@@ -183,12 +198,7 @@ export default function ActionableScore({ score, onAutoFix }: ActionableScorePro
                   {isEnglish ? 'Auto-fix' : 'Corrigir automaticamente'}
                 </Button>
               )}
-              <Link to={`/learn/${lessonForScore(score)}`} data-testid="learn-improve" className={needsImprovement ? '' : 'col-span-2'}>
-                <Button variant="outline" className="w-full gap-2">
-                  <BookOpen className="h-4 w-4" />
-                  {isEnglish ? 'Learn how to improve' : 'Aprender a melhorar'}
-                </Button>
-              </Link>
+              {learnLink(needsImprovement && onAutoFix ? '' : 'col-span-2')}
             </div>
           </>
         ) : (
@@ -223,11 +233,12 @@ export default function ActionableScore({ score, onAutoFix }: ActionableScorePro
                 size="sm" 
                 variant="outline" 
                 className="text-xs h-7"
-                onClick={() => setPlan('pro')}
+                onClick={() => navigate('/pricing')}
               >
                 {isEnglish ? 'Unlock' : 'Desbloquear'}
               </Button>
             </div>
+            {learnLink('block')}
           </div>
         )}
       </CardContent>

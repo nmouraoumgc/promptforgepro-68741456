@@ -4,6 +4,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthStore } from '@/stores/authStore';
+import { markOnboardingStep } from '@/data/onboarding';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Row = Record<string, any>;
@@ -86,11 +87,7 @@ const readLocal = (): string[] => { try { return JSON.parse(localStorage.getItem
 /** First Fundamentos lesson; completing it ticks the dashboard onboarding step. */
 export const FIRST_LESSON_SLUG = 'anatomia-prompt';
 function tickOnboarding(slug: string) {
-  if (slug !== FIRST_LESSON_SLUG) return;
-  try {
-    const cur: string[] = JSON.parse(localStorage.getItem('onboarding-completed') || '[]');
-    if (!cur.includes('learn')) localStorage.setItem('onboarding-completed', JSON.stringify([...cur, 'learn']));
-  } catch { /* ignore */ }
+  if (slug === FIRST_LESSON_SLUG) markOnboardingStep('learn');
 }
 
 /** Completed lesson ids (DB for signed-in users, localStorage for visitors) + toggle. */

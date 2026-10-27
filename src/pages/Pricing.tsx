@@ -54,8 +54,8 @@ export default function Pricing() {
       price: '0€',
       priceDetail: isEnglish ? 'forever' : 'para sempre',
       features: isEnglish
-        ? ['3 optimizations per prompt', 'Prompt library', 'Basic guided builder', 'Pack previews']
-        : ['3 otimizações por prompt', 'Biblioteca de prompts', 'Guided Builder básico', 'Pré-visualização de packs'],
+        ? ['3 optimizations per prompt', 'Prompt library', 'Basic guided builder', 'Pack previews', '4 free Learn lessons']
+        : ['3 otimizações por prompt', 'Biblioteca de prompts', 'Guided Builder básico', 'Pré-visualização de packs', '4 lições grátis do Aprender'],
       cta: isEnglish ? 'Start free' : 'Começar grátis',
     },
     {

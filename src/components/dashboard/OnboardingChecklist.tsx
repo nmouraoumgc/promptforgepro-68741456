@@ -1,162 +1,95 @@
-import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { CheckCircle2, Circle, Wand2, Sparkles, GitCompare, GraduationCap, X } from 'lucide-react';
+import { CheckCircle2, Wand2, Sparkles, GitCompare, GraduationCap, Star, X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { usePromptStore } from '@/stores/promptStore';
+import { usePlanStore } from '@/stores/planStore';
 import { useIsEnglish } from '@/i18n/lang';
+import { FIRST_LESSON_SLUG, useLessonProgress, useLessons } from '@/data/learnDb';
+import { OnboardingStep, useOnboarding } from '@/data/onboarding';
 
-const onboardingStepsEn = [
-  { id: 'learn', title: 'Take lesson 1', description: 'Anatomy of a good prompt: 5 minutes, free', icon: GraduationCap, link: '/learn/anatomia-prompt', action: 'Start' },
-  { id: 'create', title: 'Create your first prompt', description: 'Use the guided builder to create a structured prompt', icon: Wand2, link: '/builder', action: 'Create Prompt' },
-  { id: 'optimize', title: 'Optimize a prompt', description: 'See how to automatically improve your prompts', icon: Sparkles, link: '/optimizer', action: 'Optimize' },
-  { id: 'compare', title: 'Compare and save', description: 'Test different versions and save the best ones', icon: GitCompare, link: '/tester', action: 'Compare' },
-];
+type StepDef = { id: OnboardingStep; pt: [string, string, string]; en: [string, string, string]; icon: typeof Wand2; link: string };
 
-const onboardingStepsPt = [
-  {
-    id: 'learn',
-    title: 'Faz a lição 1',
-    description: 'Anatomia de um bom prompt: 5 minutos, grátis',
-    icon: GraduationCap,
-    link: '/learn/anatomia-prompt',
-    action: 'Começar',
-  },
-  {
-    id: 'create',
-    title: 'Cria o teu primeiro prompt',
-    description: 'Usa o construtor guiado para criar um prompt estruturado',
-    icon: Wand2,
-    link: '/builder',
-    action: 'Criar Prompt',
-  },
-  {
-    id: 'optimize',
-    title: 'Otimiza um prompt',
-    description: 'Descobre como melhorar automaticamente os teus prompts',
-    icon: Sparkles,
-    link: '/optimizer',
-    action: 'Otimizar',
-  },
-  {
-    id: 'compare',
-    title: 'Compara e guarda',
-    description: 'Testa diferentes versões e guarda as melhores',
-    icon: GitCompare,
-    link: '/tester',
-    action: 'Comparar',
-  },
-];
+const STEPS: Record<OnboardingStep, StepDef> = {
+  learn: { id: 'learn', icon: GraduationCap, link: `/learn/${FIRST_LESSON_SLUG}`,
+    pt: ['Faz a lição 1', 'Anatomia de um bom prompt: 5 minutos, grátis', 'Começar'],
+    en: ['Take lesson 1', 'Anatomy of a good prompt: 5 minutes, free', 'Start'] },
+  create: { id: 'create', icon: Wand2, link: '/builder',
+    pt: ['Cria o teu primeiro prompt', 'Usa o construtor guiado para criar um prompt estruturado', 'Criar Prompt'],
+    en: ['Create your first prompt', 'Use the guided builder to create a structured prompt', 'Create Prompt'] },
+  optimize: { id: 'optimize', icon: Sparkles, link: '/optimizer',
+    pt: ['Otimiza um prompt', 'Descobre como melhorar automaticamente os teus prompts', 'Otimizar'],
+    en: ['Optimize a prompt', 'See how to improve your prompts automatically', 'Optimize'] },
+  compare: { id: 'compare', icon: GitCompare, link: '/tester',
+    pt: ['Compara e guarda', 'Testa duas versões lado a lado e guarda a melhor', 'Comparar'],
+    en: ['Compare and save', 'Test two versions side by side and keep the best one', 'Compare'] },
+  favorite: { id: 'favorite', icon: Star, link: '/library',
+    pt: ['Guarda um favorito', 'Marca com estrela o prompt que mais vais usar', 'Biblioteca'],
+    en: ['Save a favourite', 'Star the prompt you will use the most', 'Library'] },
+};
 
 export default function OnboardingChecklist() {
   const isEnglish = useIsEnglish();
-  const onboardingSteps = isEnglish ? onboardingStepsEn : onboardingStepsPt;
   const { prompts } = usePromptStore();
-  const [dismissed, setDismissed] = useState(false);
-  const [completedSteps, setCompletedSteps] = useState<string[]>([]);
+  const canCompare = usePlanStore((s) => s.canAccess('canAccessABTesting'));
+  const { lessons } = useLessons(isEnglish);
+  const { done: lessonsDone } = useLessonProgress(lessons);
+  const first = lessons.find((l) => l.slug === FIRST_LESSON_SLUG);
 
-  useEffect(() => {
-    // Check localStorage for dismissed state
-    const isDismissed = localStorage.getItem('onboarding-dismissed');
-    if (isDismissed === 'true') {
-      setDismissed(true);
-    }
+  const derived: OnboardingStep[] = [];
+  if (first && lessonsDone.has(first.id)) derived.push('learn');
+  if (prompts.length > 0) derived.push('create');
+  if (prompts.some((p) => p.isFavorite)) derived.push('favorite');
+  const { done, dismissed, dismiss, ready } = useOnboarding(derived);
 
-    // Check completed steps
-    const completed = localStorage.getItem('onboarding-completed');
-    if (completed) {
-      setCompletedSteps(JSON.parse(completed));
-    }
-
-    // Auto-complete 'create' if user has prompts
-    if (prompts.length > 0 && !completedSteps.includes('create')) {
-      markStepComplete('create');
-    }
-  }, [prompts.length]);
-
-  const markStepComplete = (stepId: string) => {
-    const newCompleted = [...completedSteps, stepId];
-    setCompletedSteps(newCompleted);
-    localStorage.setItem('onboarding-completed', JSON.stringify(newCompleted));
-  };
-
-  const handleDismiss = () => {
-    setDismissed(true);
-    localStorage.setItem('onboarding-dismissed', 'true');
-  };
-
-  const progress = (completedSteps.length / onboardingSteps.length) * 100;
-  const allComplete = completedSteps.length === onboardingSteps.length;
-
-  // Component is now conditionally rendered by parent, but keep these checks
-  if (dismissed || allComplete) return null;
+  const steps = (['learn', 'create', 'optimize', canCompare ? 'compare' : 'favorite'] as OnboardingStep[]).map((id) => STEPS[id]);
+  const completedCount = steps.filter((s) => done.includes(s.id)).length;
+  if (!ready || dismissed || completedCount === steps.length) return null;
 
   return (
-    <Card className="border-info/30 bg-gradient-to-br from-info/5 to-transparent">
+    <Card className="max-w-3xl mx-auto w-full border-info/30 bg-gradient-to-br from-info/5 to-transparent" data-testid="onboarding-checklist">
       <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           <CardTitle className="text-base flex items-center gap-2">
-            {isEnglish ? `🚀 Get started in ${onboardingSteps.length} simple steps` : `🚀 Começa em ${onboardingSteps.length} passos simples`}
+            {isEnglish ? `🚀 Get started in ${steps.length} simple steps` : `🚀 Começa em ${steps.length} passos simples`}
           </CardTitle>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleDismiss}>
+          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={dismiss} data-testid="onboarding-dismiss"
+            aria-label={isEnglish ? 'Hide first steps' : 'Esconder primeiros passos'} title={isEnglish ? 'Hide' : 'Esconder'}>
             <X className="h-4 w-4" />
           </Button>
         </div>
         <div className="space-y-1">
           <div className="flex justify-between text-xs text-muted-foreground">
             <span>{isEnglish ? 'Progress' : 'Progresso'}</span>
-            <span>{completedSteps.length}/{onboardingSteps.length} {isEnglish ? 'completed' : 'completos'}</span>
+            <span data-testid="onboarding-count">{completedCount}/{steps.length} {isEnglish ? 'completed' : 'concluídos'}</span>
           </div>
-          <Progress value={progress} className="h-2" />
+          <Progress value={(completedCount / steps.length) * 100} className="h-2" />
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        {onboardingSteps.map((step, index) => {
-          const isComplete = completedSteps.includes(step.id);
+        {steps.map((step, index) => {
+          const isComplete = done.includes(step.id);
           const Icon = step.icon;
-          
+          const [title, description, action] = isEnglish ? step.en : step.pt;
           return (
-            <div 
-              key={step.id}
-              className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${
-                isComplete 
-                  ? 'bg-success/10 border border-success/20' 
-                  : 'bg-muted/50 hover:bg-muted/70'
-              }`}
-            >
-              <div className={`flex h-8 w-8 items-center justify-center rounded-full ${
-                isComplete ? 'bg-success text-success-foreground' : 'bg-muted'
-              }`}>
-                {isComplete ? (
-                  <CheckCircle2 className="h-4 w-4" />
-                ) : (
-                  <span className="text-sm font-medium">{index + 1}</span>
-                )}
+            <div key={step.id} data-testid={`onboarding-step-${step.id}`} data-done={isComplete ? '1' : '0'}
+              className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${isComplete ? 'bg-success/10 border border-success/20' : 'bg-muted/50 hover:bg-muted/70'}`}>
+              <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${isComplete ? 'bg-success text-success-foreground' : 'bg-muted'}`}>
+                {isComplete ? <CheckCircle2 className="h-4 w-4" /> : <span className="text-sm font-medium">{index + 1}</span>}
               </div>
-              
-              <div className="flex-1">
-                <p className={`text-sm font-medium ${isComplete ? 'line-through text-muted-foreground' : ''}`}>
-                  {step.title}
-                </p>
-                <p className="text-xs text-muted-foreground">{step.description}</p>
+              <div className="flex-1 min-w-0">
+                <p className={`text-sm font-medium ${isComplete ? 'line-through text-muted-foreground' : ''}`}>{title}</p>
+                <p className="text-xs text-muted-foreground">{description}</p>
               </div>
-              
               {!isComplete && (
-                <Link to={step.link}>
-                  <Button size="sm" variant="outline" className="gap-1">
-                    <Icon className="h-3 w-3" />
-                    {step.action}
-                  </Button>
-                </Link>
+                <Button asChild size="sm" variant="outline" className="gap-1 shrink-0">
+                  <Link to={step.link}><Icon className="h-3 w-3" /><span className="hidden sm:inline">{action}</span></Link>
+                </Button>
               )}
             </div>
           );
         })}
-        
-        <p className="text-xs text-muted-foreground text-center pt-2">
-          {isEnglish ? 'Complete these steps in under 30 seconds' : 'Completa estes passos em menos de 30 segundos'}
-        </p>
       </CardContent>
     </Card>
   );

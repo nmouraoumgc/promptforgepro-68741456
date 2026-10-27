@@ -1,3 +1,4 @@
+import { markOnboardingStep } from '@/data/onboarding';
 import { useState } from 'react';
 import { toPlainText } from '@/lib/plainText';
 import { useTranslation } from 'react-i18next';
@@ -66,11 +67,7 @@ export default function PromptTester() {
       setResponseA(toPlainText(data.responseA));
       setResponseB(toPlainText(data.responseB));
 
-      const completed = localStorage.getItem('onboarding-completed');
-      const steps = completed ? JSON.parse(completed) : [];
-      if (!steps.includes('compare')) {
-        localStorage.setItem('onboarding-completed', JSON.stringify([...steps, 'compare']));
-      }
+      markOnboardingStep('compare');
     } catch (error) {
       console.error('Error testing prompts:', error);
       toast({ title: t('tester.errorTitle'), description: t('tester.errorDesc'), variant: 'destructive' });

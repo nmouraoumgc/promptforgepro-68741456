@@ -1,3 +1,4 @@
+import { markOnboardingStep } from '@/data/onboarding';
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { toPlainText } from '@/lib/plainText';
@@ -121,12 +122,7 @@ export default function PromptOptimizer() {
         setSelectedOptimization(data.optimizations.find((o: OptimizationVariant) => o.type === 'detailed') || data.optimizations[0]);
       }
 
-      // Mark onboarding step as complete
-      const completed = localStorage.getItem('onboarding-completed');
-      const steps = completed ? JSON.parse(completed) : [];
-      if (!steps.includes('optimize')) {
-        localStorage.setItem('onboarding-completed', JSON.stringify([...steps, 'optimize']));
-      }
+      markOnboardingStep('optimize');
     } catch (error) {
       console.error('Error optimizing prompt:', error);
       toast({ title: isEnglish ? 'Error' : 'Erro', description: isEnglish ? 'Could not optimize the prompt. Try again.' : 'Não foi possível otimizar o prompt. Tenta novamente.', variant: 'destructive' });

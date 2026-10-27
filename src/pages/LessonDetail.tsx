@@ -26,6 +26,8 @@ export default function LessonDetail() {
   const [checked, setChecked] = useState<Record<number, boolean>>({});
   usePageMeta(lesson ? { title: lesson.title, description: lesson.summary } : null, isEnglish);
 
+  const freeLessons = useMemo(() => lessons.filter((l) => l.isFree), [lessons]);
+
   const next = useMemo(() => {
     if (!lesson) return null;
     const i = lessons.findIndex((l) => l.id === lesson.id);
@@ -78,7 +80,7 @@ export default function LessonDetail() {
           <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" />{lesson.durationMin} min</span>
           <span>·</span>
           <span>{isEnglish ? lv.en : lv.pt}</span>
-          {lesson.isFree ? <Badge variant="secondary">{isEnglish ? 'Free' : 'Grátis'}</Badge> : <Badge variant="outline" className="border-primary/40 text-primary">Pro</Badge>}
+          {lesson.isFree ? <Badge variant="secondary">{isEnglish ? 'Free' : 'Grátis'}</Badge> : <Badge variant="outline" className="gap-1 border-primary/40 text-primary">{!entitled && <Lock className="h-3 w-3" />}Pro</Badge>}
         </div>
         <h1 className="text-2xl sm:text-3xl font-bold text-foreground leading-tight">{lesson.title}</h1>
         <p className="text-muted-foreground">{lesson.summary}</p>
@@ -100,11 +102,19 @@ export default function LessonDetail() {
               <Button asChild data-testid="lesson-upsell"><Link to="/pricing"><Sparkles className="h-4 w-4 mr-2" />{isEnglish ? 'Try Pro for 2 euros / 7 days' : 'Experimentar o Pro por 2 € / 7 dias'}</Link></Button>
               {!user && <Button asChild variant="outline"><Link to="/login">{isEnglish ? 'I already have Pro: sign in' : 'Já tenho Pro: iniciar sessão'}</Link></Button>}
             </div>
-            {!entitled && (
-              <p className="text-xs text-muted-foreground">
-                {isEnglish ? 'Meanwhile, the Fundamentals and the first lesson of each industry are free.' : 'Entretanto, os Fundamentos e a primeira lição de cada setor são grátis.'}{' '}
-                <Link to="/learn" className="text-primary underline-offset-2 hover:underline">{isEnglish ? 'See free lessons' : 'Ver lições grátis'}</Link>
-              </p>
+            {!entitled && freeLessons.length > 0 && (
+              <div className="space-y-2 pt-2 border-t border-primary/20" data-testid="lesson-free-alternatives">
+                <p className="text-xs text-muted-foreground">
+                  {isEnglish ? `Meanwhile, the first ${freeLessons.length} Fundamentals lessons are free:` : `Entretanto, as ${freeLessons.length} primeiras lições dos Fundamentos são grátis:`}
+                </p>
+                <div className="flex flex-wrap justify-center gap-2">
+                  {freeLessons.map((l) => (
+                    <Link key={l.id} to={`/learn/${l.slug}`} className="rounded-full border border-border bg-background px-3 py-1 text-xs text-foreground hover:border-primary/50 hover:text-primary">
+                      {l.title}
+                    </Link>
+                  ))}
+                </div>
+              </div>
             )}
           </CardContent>
         </Card>
