@@ -65,7 +65,7 @@
     "plansPricing": "Planos e preços"
   },
   "header": {
-    "myAccount": "Minha Conta",
+    "myAccount": "A minha conta",
     "settings": "Definições",
     "adminBackoffice": "Backoffice Admin",
     "signOut": "Terminar Sessão",
@@ -258,20 +258,5 @@
     "noBillingDesc": "Ainda não existe nenhum método de pagamento ou fatura associado à tua conta. A faturação aparece aqui após o primeiro pagamento.",
     "actions": "Ações",
     "signOut": "Terminar sessão"
-  },
-  "proTrial": {
-    "badge": "Oferta limitada",
-    "title": "Experimenta o Pro por apenas 2€",
-    "subtitle": "Desbloqueia tudo durante 7 dias. Depois 9€/mês — cancela quando quiseres.",
-    "firstMonth": "por 7 dias",
-    "thenPrice": "Depois 9€/mês — cancela quando quiseres.",
-    "features": {
-      "unlimited": "Otimizações ilimitadas",
-      "abTesting": "Testes A/B avançados",
-      "history": "Histórico de versões completo",
-      "export": "Exportação de prompts"
-    },
-    "cta": "Começar por 2€",
-    "dismiss": "Talvez mais tarde"
   }
 }

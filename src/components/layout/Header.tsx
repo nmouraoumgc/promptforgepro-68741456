@@ -73,7 +73,7 @@ export function Header() {
                   {t('header.adminBackoffice')}
                 </DropdownMenuItem>
               )}
-              <DropdownMenuItem onClick={() => navigate('/account')}>
+              <DropdownMenuItem onClick={() => navigate('/account')} data-testid="menu-account">
                 <User className="mr-2 h-4 w-4" />
                 {t('header.myAccount')}
               </DropdownMenuItem>

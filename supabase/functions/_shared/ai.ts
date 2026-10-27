@@ -27,11 +27,11 @@ async function callOpenAiCompatible(url: string, key: string, body: Record<strin
   } finally { clearTimeout(timer); }
 }
 
-export async function chat(messages: ChatMessage[], opts: { temperature?: number; maxTokens?: number } = {}): Promise<ChatResult> {
+export async function chat(messages: ChatMessage[], opts: { temperature?: number; maxTokens?: number; skipGroq?: boolean } = {}): Promise<ChatResult> {
   const groqKey = Deno.env.get('GROQ_API_KEY');
   const orKey = Deno.env.get('OPENROUTER_API_KEY');
   let lastErr: AiError | null = null;
-  if (groqKey) {
+  if (groqKey && !opts.skipGroq) {
     try {
       const content = await callOpenAiCompatible('https://api.groq.com/openai/v1/chat/completions', groqKey, {
         model: Deno.env.get('AI_MODEL') ?? 'openai/gpt-oss-120b',

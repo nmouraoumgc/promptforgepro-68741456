@@ -6,6 +6,7 @@ import { usePromptStore } from '@/stores/promptStore';
 import { PaymentTestModeBanner } from '@/components/PaymentTestModeBanner';
 import { PastDueBanner } from '@/components/PastDueBanner';
 import { useIsEnglish } from '@/i18n/lang';
+import { LibrarySync } from '@/components/library/LibrarySync';
 
 export function AppLayout() {
   const { darkMode } = usePromptStore();
@@ -22,6 +23,7 @@ export function AppLayout() {
 
   return (
     <div className="flex h-screen flex-col bg-background">
+      <LibrarySync />
       <PaymentTestModeBanner />
       <PastDueBanner />
       <div className="flex flex-1 overflow-hidden">

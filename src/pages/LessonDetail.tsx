@@ -99,7 +99,7 @@ export default function LessonDetail() {
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 justify-center">
-              <Button asChild data-testid="lesson-upsell"><Link to="/pricing"><Sparkles className="h-4 w-4 mr-2" />{isEnglish ? 'Try Pro for 2 euros / 7 days' : 'Experimentar o Pro por 2 € / 7 dias'}</Link></Button>
+              <Button asChild data-testid="lesson-upsell"><Link to="/pricing"><Sparkles className="h-4 w-4 mr-2" />{isEnglish ? 'Unlock with Pro — 9€/month' : 'Desbloquear com o Pro — 9€/mês'}</Link></Button>
               {!user && <Button asChild variant="outline"><Link to="/login">{isEnglish ? 'I already have Pro: sign in' : 'Já tenho Pro: iniciar sessão'}</Link></Button>}
             </div>
             {!entitled && freeLessons.length > 0 && (

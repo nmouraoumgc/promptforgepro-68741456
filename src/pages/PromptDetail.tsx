@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { useIsEnglish } from '@/i18n/lang';
 import { useToast } from '@/hooks/use-toast';
+import { useLibraryLoading } from '@/components/library/useLibraryLoading';
 import { usePromptStore } from '@/stores/promptStore';
 import { usePageMeta } from '@/lib/pageMeta';
 import { toPlainText } from '@/lib/plainText';
@@ -28,6 +29,7 @@ export default function PromptDetail() {
   const [params, setParams] = useSearchParams();
   const prompt = usePromptStore((s) => s.prompts.find((p) => p.id === id));
   const { toggleFavorite, deletePrompt, addVersion, setActivePrompt } = usePromptStore();
+  const libraryLoading = useLibraryLoading();
   const raw = params.get('tab');
   const tab: DetailTab = TABS.includes(raw as DetailTab) ? (raw as DetailTab) : 'run';
   const [optKey, setOptKey] = useState(0);
@@ -42,10 +44,19 @@ export default function PromptDetail() {
     return others.length ? others[others.length - 1].content : '';
   }, [prompt]);
 
+  if (!prompt && libraryLoading) {
+    return (
+      <div className="p-6 max-w-3xl mx-auto space-y-4" data-testid="library-loading">
+        <div className="h-8 w-1/2 rounded bg-muted animate-pulse" />
+        <div className="h-40 rounded bg-muted animate-pulse" />
+      </div>
+    );
+  }
+
   if (!prompt) {
     return (
       <div className="p-6 max-w-3xl mx-auto text-center space-y-4">
-        <p className="text-muted-foreground">{isEnglish ? 'This prompt is not in your library on this device.' : 'Este prompt não está na tua biblioteca neste dispositivo.'}</p>
+        <p className="text-muted-foreground">{isEnglish ? 'This prompt is not in your library.' : 'Este prompt não está na tua biblioteca.'}</p>
         <Button asChild variant="outline"><Link to="/library">{isEnglish ? 'Back to library' : 'Voltar à biblioteca'}</Link></Button>
       </div>
     );

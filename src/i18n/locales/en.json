@@ -258,20 +258,5 @@
     "noBillingDesc": "There is no payment method or invoice linked to your account yet. Billing will appear here after your first payment.",
     "actions": "Actions",
     "signOut": "Sign out"
-  },
-  "proTrial": {
-    "badge": "Limited offer",
-    "title": "Try Pro for just 2€",
-    "subtitle": "Unlock everything for 7 days. Then 9€/month — cancel anytime.",
-    "firstMonth": "for 7 days",
-    "thenPrice": "Then 9€/month — cancel anytime.",
-    "features": {
-      "unlimited": "Unlimited optimizations",
-      "abTesting": "Advanced A/B testing",
-      "history": "Full version history",
-      "export": "Prompt export"
-    },
-    "cta": "Start for 2€",
-    "dismiss": "Maybe later"
   }
 }

@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Check, Sparkles, Zap, Lightbulb, Loader2, Ticket, X } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -45,6 +45,24 @@ export default function Pricing() {
   const [proPromoInput, setProPromoInput] = useState('');
   const [proPromoError, setProPromoError] = useState('');
   const [proAppliedPromo, setProAppliedPromo] = useState<ProPromo | null>(null);
+  // Campaign links: /pricing?code=EARLY-A1. Kept in sessionStorage so it survives the login redirect.
+  const [searchParams] = useSearchParams();
+  const [urlCode, setUrlCode] = useState<string>(() => {
+    const c = (searchParams.get('code') || sessionStorage.getItem('pf_checkout_code') || '').trim().toUpperCase();
+    return /^[A-Z0-9-]{3,32}$/.test(c) ? c : '';
+  });
+  useEffect(() => {
+    const c = (searchParams.get('code') || '').trim().toUpperCase();
+    if (/^[A-Z0-9-]{3,32}$/.test(c)) { sessionStorage.setItem('pf_checkout_code', c); setUrlCode(c); }
+  }, [searchParams]);
+
+  const [autoOpened, setAutoOpened] = useState(false);
+  useEffect(() => {
+    if (!urlCode || autoOpened || authLoading || !user || currentPlan === 'pro') return;
+    setAutoOpened(true);
+    setProPromoInput(urlCode);
+    setShowProPromoDialog(true);
+  }, [urlCode, autoOpened, authLoading, user, currentPlan]);
 
   const mainPlans: PricingPlan[] = [
     {
@@ -64,12 +82,12 @@ export default function Pricing() {
       description: isEnglish
         ? 'For users who rely on PromptForge every day at work'
         : 'Para quem usa o PromptForge como ferramenta diária de trabalho',
-      price: '2€',
-      priceDetail: isEnglish ? 'for 7 days' : 'por 7 dias',
+      price: '9€',
+      priceDetail: isEnglish ? '/month' : '/mês',
       features: isEnglish
-        ? ['2€ for 7 days, then 9€/month', 'Unlimited optimizations', 'Version history', 'A/B prompt testing', 'Detailed scoring', 'Prompt export', 'All Learn lessons']
-        : ['2€ por 7 dias, depois 9€/mês', 'Otimizações ilimitadas', 'Histórico de versões', 'Testes A/B de prompts', 'Pontuação detalhada', 'Exportação de prompts', 'Todas as lições do Aprender'],
-      cta: isEnglish ? 'Try Pro for 2€ / 7 days' : 'Experimentar Pro por 2€ / 7 dias',
+        ? ['9€/month, cancel anytime', 'Unlimited optimizations', 'Version history', 'A/B prompt testing', 'Detailed scoring', 'Prompt export', 'All Learn lessons']
+        : ['9€/mês, cancela quando quiseres', 'Otimizações ilimitadas', 'Histórico de versões', 'Testes A/B de prompts', 'Pontuação detalhada', 'Exportação de prompts', 'Todas as lições do Aprender'],
+      cta: isEnglish ? 'Get Pro' : 'Subscrever o Pro',
       highlight: true,
     },
   ];
@@ -103,9 +121,9 @@ export default function Pricing() {
         return;
       }
       if (authLoading) return;
-      // Show confirmation dialog. No auto-promo: the 2€/7-day trial is now
-      // built into the Paddle prices, not a discount code.
+      // Show confirmation dialog (optional promo code; ?code= from a campaign link is prefilled).
       setProAppliedPromo(null);
+      if (urlCode) setProPromoInput(urlCode);
       setShowProPromoDialog(true);
       return;
     }
@@ -139,6 +157,11 @@ export default function Pricing() {
         PROMO_LIMIT_REACHED: isEnglish ? 'Code usage limit reached.' : 'Código atingiu o limite de utilizações.',
         PROMO_NOT_APPLICABLE: isEnglish ? 'Code not valid for this plan.' : 'Código não aplicável a este plano.',
       };
+      if (msg.includes('PROMO_NOT_FOUND')) {
+        // Not an in-app promo: may be a Paddle discount code (e.g. campaign codes). Paddle validates it at checkout.
+        setProPromoError(isEnglish ? 'This code will be checked and applied at checkout.' : 'Este código será verificado e aplicado no checkout.');
+        return;
+      }
       const key = Object.keys(map).find((k) => msg.includes(k));
       setProPromoError(key ? map[key] : (isEnglish ? 'Could not verify the code.' : 'Não foi possível verificar o código.'));
       return;
@@ -170,7 +193,7 @@ export default function Pricing() {
       }
 
       // Pre-checkout anti-fraud / trial-redemption check.
-      const intent = proAppliedPromo?.code ? 'pro_normal' : 'pro_trial';
+      const intent = 'pro_normal';
       try {
         const { data: check } = await supabase.functions.invoke('pre-checkout-check', {
           body: { intent },
@@ -180,9 +203,6 @@ export default function Pricing() {
             disposable_email: isEnglish
               ? 'Disposable email addresses are not allowed. Please use a permanent email.'
               : 'Emails temporários não são permitidos. Usa um email permanente.',
-            trial_already_used: isEnglish
-              ? 'You have already used your trial. Subscribe directly for 9€/month.'
-              : 'Já utilizaste o teu trial. Subscreve diretamente por 9€/mês.',
             too_many_attempts: isEnglish
               ? 'Too many failed attempts. Please try again later.'
               : 'Demasiadas tentativas falhadas. Tenta novamente mais tarde.',
@@ -222,17 +242,13 @@ export default function Pricing() {
           },
         });
       } else {
-        // Default flow: paid 7-day trial — €2 one-time + subscription with 7-day trial.
-        // Same checkout, same card. Paddle charges €2 now, then €9/month after 7 days.
-        const [trialAccessId, subscriptionId] = await Promise.all([
-          getPaddlePriceId('pro_trial_access_7d'),
-          getPaddlePriceId('pro_monthly_trial_7d'),
-        ]);
+        // Default flow: Pro monthly (9€/month). A Paddle discount code typed in the dialog or
+        // passed as /pricing?code=XXX (campaign links) is handed to Paddle, which validates it.
+        const subscriptionId = await getPaddlePriceId('pro_monthly');
+        const code = (proPromoInput.trim() || urlCode || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); // Paddle codes are alphanumeric (EARLY-A1 -> EARLYA1)
         window.Paddle.Checkout.open({
-          items: [
-            { priceId: trialAccessId, quantity: 1 },
-            { priceId: subscriptionId, quantity: 1 },
-          ],
+          items: [{ priceId: subscriptionId, quantity: 1 }],
+          ...(code ? { discountCode: code } : {}),
           customer: { email: user.email! },
           customData: { userId: user.id },
           settings: {
@@ -446,11 +462,11 @@ export default function Pricing() {
       <Dialog open={showProPromoDialog} onOpenChange={setShowProPromoDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{isEnglish ? 'Try Pro for 2€' : 'Experimentar Pro por 2€'}</DialogTitle>
+            <DialogTitle>{isEnglish ? 'Subscribe to Pro' : 'Subscrever o Pro'}</DialogTitle>
             <DialogDescription>
               {isEnglish
-                ? '2€ today. From the second month, 9€/month — cancel anytime in your account.'
-                : '2€ hoje. A partir do segundo mês, 9€/mês — cancela quando quiseres na tua conta.'}
+                ? '9€/month — cancel anytime in your account.'
+                : '9€/mês — cancela quando quiseres na tua conta.'}
             </DialogDescription>
           </DialogHeader>
 
@@ -540,7 +556,12 @@ export default function Pricing() {
                 </div>
               )}
 
-              {proPromoError && <p className="text-xs text-destructive">{proPromoError}</p>}
+              {proPromoError && <p className={`text-xs ${/checkout/.test(proPromoError) ? 'text-primary' : 'text-destructive'}`} data-testid="promo-msg">{proPromoError}</p>}
+              {!proAppliedPromo && !proPromoError && proPromoInput.trim() && proPromoInput.trim().toUpperCase() === urlCode && (
+                <p className="text-xs text-primary" data-testid="promo-url-code">
+                  {isEnglish ? `Code ${urlCode} will be applied at checkout.` : `O código ${urlCode} será aplicado no checkout.`}
+                </p>
+              )}
             </div>
 
             <Button className="w-full" onClick={handleConfirmProSubscription} disabled={isLoadingPro}>

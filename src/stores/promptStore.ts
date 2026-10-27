@@ -10,11 +10,16 @@ import {
   ToneStyle
 } from '@/types/prompt';
 import { isEnglishNow } from '@/i18n/lang';
+import { remote, newId } from '@/data/libraryDb';
 
 interface PromptStore {
   // Prompts
   prompts: Prompt[];
   activePromptId: string | null;
+  /** Signed-in user whose library is synced to the DB; null = local-only (signed out). */
+  syncUserId: string | null;
+  libraryStatus: 'local' | 'loading' | 'ready' | 'error';
+  setLibrary: (prompts: Prompt[], syncUserId: string | null, status: PromptStore['libraryStatus']) => void;
   
   // Guided Builder
   builderState: GuidedBuilderState;
@@ -67,13 +72,17 @@ const initialBuilderState: GuidedBuilderState = {
   additionalContext: '',
 };
 
-const generateId = () => Math.random().toString(36).substring(2, 15);
+const generateId = () => newId();
+const synced = (get: () => PromptStore) => !!get().syncUserId;
 
 export const usePromptStore = create<PromptStore>()(
   persist(
     (set, get) => ({
       prompts: [],
       activePromptId: null,
+      syncUserId: null,
+      libraryStatus: 'local',
+      setLibrary: (prompts, syncUserId, libraryStatus) => set({ prompts, syncUserId, libraryStatus }),
       builderState: initialBuilderState,
       userProfile: 'beginner',
       darkMode: true,
@@ -96,6 +105,7 @@ export const usePromptStore = create<PromptStore>()(
           }],
         };
         set((state) => ({ prompts: [...state.prompts, newPrompt] }));
+        if (synced(get)) { remote.upsertPrompt(newPrompt); remote.insertVersions(newPrompt.versions); }
         return id;
       },
 
@@ -107,6 +117,8 @@ export const usePromptStore = create<PromptStore>()(
               : p
           ),
         }));
+        const up = get().prompts.find((p) => p.id === id);
+        if (up && synced(get)) remote.upsertPrompt(up);
       },
 
       deletePrompt: (id) => {
@@ -114,6 +126,7 @@ export const usePromptStore = create<PromptStore>()(
           prompts: state.prompts.filter((p) => p.id !== id),
           activePromptId: state.activePromptId === id ? null : state.activePromptId,
         }));
+        if (synced(get)) remote.deletePrompt(id);
       },
 
       duplicatePrompt: (id) => {
@@ -137,6 +150,7 @@ export const usePromptStore = create<PromptStore>()(
           }],
         };
         set((state) => ({ prompts: [...state.prompts, duplicated] }));
+        if (synced(get)) { remote.upsertPrompt(duplicated); remote.insertVersions(duplicated.versions); }
         return newId;
       },
 
@@ -146,6 +160,8 @@ export const usePromptStore = create<PromptStore>()(
             p.id === id ? { ...p, isFavorite: !p.isFavorite } : p
           ),
         }));
+        const fp = get().prompts.find((p) => p.id === id);
+        if (fp && synced(get)) remote.upsertPrompt(fp);
       },
 
       setActivePrompt: (id) => {
@@ -174,6 +190,8 @@ export const usePromptStore = create<PromptStore>()(
               : p
           ),
         }));
+        const vp = get().prompts.find((p) => p.id === promptId);
+        if (vp && synced(get)) { remote.insertVersions([version]); remote.upsertPrompt(vp); }
       },
 
       revertToVersion: (promptId, versionId) => {
@@ -193,6 +211,8 @@ export const usePromptStore = create<PromptStore>()(
               : p
           ),
         }));
+        const rp = get().prompts.find((p) => p.id === promptId);
+        if (rp && synced(get)) remote.upsertPrompt(rp);
       },
 
       // Builder actions
@@ -264,8 +284,9 @@ export const usePromptStore = create<PromptStore>()(
     }),
     {
       name: 'promptforge-storage',
+      // Signed-in libraries live in the DB; only signed-out (local) prompts are kept in localStorage.
       partialize: (state) => ({
-        prompts: state.prompts,
+        ...(state.syncUserId ? {} : { prompts: state.prompts }),
         userProfile: state.userProfile,
         darkMode: state.darkMode,
       }),

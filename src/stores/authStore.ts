@@ -7,6 +7,7 @@ interface Profile {
   id: string;
   email: string;
   current_plan: PlanType;
+  display_name?: string | null;
 }
 
 interface AuthStore {

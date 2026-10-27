@@ -57,8 +57,8 @@ const META: Record<string, { pt: Meta; en: Meta }> = {
     en: { title: 'Settings', description: 'Language, preferences and account settings.' },
   },
   '/pricing': {
-    pt: { title: 'Preços', description: 'Planos Free, Pro e Premium do PromptForge Pro. Experimenta o Pro por 2 € durante 7 dias.' },
-    en: { title: 'Pricing', description: 'PromptForge Pro Free, Pro and Premium plans. Try Pro for 2 euros for 7 days.' },
+    pt: { title: 'Preços', description: 'Planos Free, Pro e Premium do PromptForge Pro. Pro por 9€/mês, Premium com pagamento único.' },
+    en: { title: 'Pricing', description: 'PromptForge Pro Free, Pro and Premium plans. Pro for 9€/month, Premium as a one-time payment.' },
   },
   '/planos': {
     pt: { title: 'Planos', description: 'Compara os planos e gere a tua subscrição.' },

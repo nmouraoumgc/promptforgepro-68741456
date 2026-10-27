@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils';
 
 type Quota = { used: number; limit: number } | null;
 
-async function invokeRun(body: Record<string, unknown>) {
+export async function invokeRun(body: Record<string, unknown>) {
   const { data, error } = await supabase.functions.invoke('run-prompt', { body });
   if (error) {
     // Non-2xx: read the JSON body the function returned (limit reached, AI busy...).
