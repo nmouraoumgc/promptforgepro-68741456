@@ -11,9 +11,10 @@ import { usePlanStore } from '@/stores/planStore';
 import { PlanType, PLAN_LIMITS, PLAN_INFO } from '@/types/plans';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { localizeApiError } from '@/i18n/lang';
 
 export default function Plans() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { profile, user } = useAuthStore();
   const { currentPlan: localPlan } = usePlanStore();
@@ -70,7 +71,7 @@ export default function Plans() {
       const { data, error } = await supabase.functions.invoke("customer-portal");
       if (error) throw new Error(error.message);
       if (data?.error) {
-        toast({ title: t('common.error'), description: data.error, variant: "destructive" });
+        toast({ title: t('common.error'), description: localizeApiError(data.error, (i18n.resolvedLanguage || i18n.language || 'pt').startsWith('en')), variant: "destructive" });
         return;
       }
       if (data?.url) window.location.href = data.url;

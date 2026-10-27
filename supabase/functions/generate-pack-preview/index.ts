@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { authenticateRequest, corsHeaders } from "../_shared/auth.ts";
-import { PT_PT_RULES } from '../_shared/ptpt.ts';
+import { outputLanguageRules, isEnglishLang } from '../_shared/ptpt.ts';
 
 // Pack-specific prompts for different content types
 const getPackPrompt = (packSlug: string, tema: string, isPremium: boolean) => {
@@ -103,20 +103,21 @@ serve(async (req) => {
     if (auth instanceof Response) return auth;
     const isPremium = auth.isPremium;
 
-    const { tema, packSlug } = await req.json();
+    const { tema, packSlug, language } = await req.json();
+    const en = isEnglishLang(language);
 
     console.log(`Generating preview for pack: ${packSlug}, tema: ${tema}, isPremium: ${isPremium}`);
 
     if (!tema || tema.trim().length === 0) {
       return new Response(
-        JSON.stringify({ error: "O tema é obrigatório" }),
+        JSON.stringify({ error: en ? "The topic is required" : "O tema é obrigatório" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     if (!packSlug) {
       return new Response(
-        JSON.stringify({ error: "O pack é obrigatório" }),
+        JSON.stringify({ error: en ? "The pack is required" : "O pack é obrigatório" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -127,7 +128,14 @@ serve(async (req) => {
       throw new Error("GROQ_API_KEY is not configured");
     }
 
-    const { system, user } = getPackPrompt(packSlug, tema.trim(), isPremium);
+    const { system: baseSystem, user } = getPackPrompt(packSlug, tema.trim(), isPremium);
+    // In English mode drop the "write in pt-PT" lines so they don't conflict with the English output rule.
+    const system = en
+      ? baseSystem
+          .replace(/\n?Escreves em português de Portugal\./g, '')
+          .replace(/,? e em português de Portugal\./g, '.')
+          .replace(/ em português de Portugal\./g, '.')
+      : baseSystem;
 
     console.log("Calling Groq API...");
 
@@ -141,7 +149,7 @@ serve(async (req) => {
         model: Deno.env.get('AI_MODEL') ?? 'openai/gpt-oss-120b',
         ...(Deno.env.get('AI_REASONING_EFFORT') ? { reasoning_effort: Deno.env.get('AI_REASONING_EFFORT') } : {}),
         messages: [
-          { role: "system", content: system + PT_PT_RULES },
+          { role: "system", content: system + outputLanguageRules(language) },
           { role: "user", content: user },
         ],
       }),
@@ -153,19 +161,19 @@ serve(async (req) => {
       
       if (response.status === 429) {
         return new Response(
-          JSON.stringify({ error: "Limite de pedidos excedido. Tenta novamente em alguns segundos." }),
+          JSON.stringify({ error: en ? "Rate limit exceeded. Please try again in a few seconds." : "Limite de pedidos excedido. Tenta novamente em alguns segundos." }),
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
       if (response.status === 402) {
         return new Response(
-          JSON.stringify({ error: "Créditos insuficientes. Adiciona créditos à tua conta." }),
+          JSON.stringify({ error: en ? "Insufficient credits." : "Créditos insuficientes. Adiciona créditos à tua conta." }),
           { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
       
       return new Response(
-        JSON.stringify({ error: "Erro ao gerar conteúdo. Tenta novamente." }),
+        JSON.stringify({ error: en ? "Error generating content. Please try again." : "Erro ao gerar conteúdo. Tenta novamente." }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }

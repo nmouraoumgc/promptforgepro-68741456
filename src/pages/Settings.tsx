@@ -53,7 +53,7 @@ export default function Settings() {
                 <p className={`font-semibold ${PLAN_INFO[currentPlan].color}`}>
                   {PLAN_INFO[currentPlan].name}
                 </p>
-                <p className="text-sm text-muted-foreground">{PLAN_INFO[currentPlan].tagline}</p>
+                <p className="text-sm text-muted-foreground">{(i18n.resolvedLanguage || i18n.language || 'pt').startsWith('en') ? PLAN_INFO[currentPlan].taglineEn : PLAN_INFO[currentPlan].tagline}</p>
               </div>
             </div>
             <Link to="/pricing">

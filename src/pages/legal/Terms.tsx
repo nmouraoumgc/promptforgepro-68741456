@@ -1,9 +1,10 @@
 import { Link } from "react-router-dom";
+import { useIsEnglish } from "@/i18n/lang";
 
 const SELLER = "Prompt Forge Pro";
 const SUPPORT_EMAIL = "support@promptforgepro.me";
 
-export default function Terms() {
+function TermsPt() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="max-w-3xl mx-auto px-6 py-12">
@@ -175,4 +176,137 @@ export default function Terms() {
       </div>
     </div>
   );
+}
+
+function TermsEn() {
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <div className="max-w-3xl mx-auto px-6 py-12">
+        <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">
+          ← Back
+        </Link>
+        <h1 className="text-3xl md:text-4xl font-bold mt-4 mb-2">Terms & Conditions</h1>
+        <p className="text-sm text-muted-foreground mb-8">Last updated: April 30, 2026</p>
+        <div className="prose prose-invert max-w-none space-y-6 text-foreground/90 leading-relaxed">
+          <section>
+            <h2 className="text-xl font-semibold mb-2">1. Who we are</h2>
+            <p>
+              These Terms & Conditions govern the use of the {SELLER} service ("we", "our", the "Service"), available at promptforgepro.me. By using the Service, you are entering into an agreement with {SELLER}.
+            </p>
+          </section>
+          <section>
+            <h2 className="text-xl font-semibold mb-2">2. Acceptance of the terms</h2>
+            <p>
+              By accessing or continuing to use the Service, you confirm that you have read, understood and accepted these Terms. If you do not agree, you must not use the Service. If you are accepting on behalf of an organization, you represent that you have the authority to bind it.
+            </p>
+          </section>
+          <section>
+            <h2 className="text-xl font-semibold mb-2">3. Description of the Service</h2>
+            <p>
+              {SELLER} provides tools and templates ("Prompt Packs") for creating, optimizing and testing prompts for generative AI models, including AI-assisted generation, version history and a prompt library.
+            </p>
+          </section>
+          <section>
+            <h2 className="text-xl font-semibold mb-2">4. Account and credentials</h2>
+            <p>
+              You are responsible for keeping your account credentials confidential and for all activity that occurs under your account. You must provide accurate information and keep it up to date.
+            </p>
+          </section>
+          <section>
+            <h2 className="text-xl font-semibold mb-2">5. Acceptable use</h2>
+            <p>You may not use the Service to:</p>
+            <ul className="list-disc pl-6 space-y-1">
+              <li>Carry out illegal, fraudulent or abusive activities (including spam);</li>
+              <li>Infringe third parties' intellectual property or privacy rights;</li>
+              <li>Interfere with the security of the Service (malware, probing, unauthorized scraping);</li>
+              <li>Generate unlawful content, non-consensual deepfakes, hate speech or material that
+                  promotes harm, child exploitation or violence;</li>
+              <li>Attempt to bypass technical limitations, reverse engineer, resell or
+                  redistribute the Service.</li>
+            </ul>
+          </section>
+          <section>
+            <h2 className="text-xl font-semibold mb-2">6. AI-generated content</h2>
+            <p>
+              You are responsible for the prompts you submit, for how you use the results ("outputs") and for holding the rights to any input content. Outputs may be inaccurate, incomplete or out of date — they must not be treated as regulated professional advice (legal, medical, financial) without qualified human review. We reserve the right to filter, refuse or remove prompts and outputs that breach these Terms, and to suspend accounts for repeated violations.
+            </p>
+          </section>
+          <section>
+            <h2 className="text-xl font-semibold mb-2">7. Intellectual property</h2>
+            <p>
+              {SELLER} retains ownership of the Service, software, documentation and brand. We grant you a limited, non-exclusive, non-transferable licence to use the Service within your subscribed plan. You keep the rights to your inputs and outputs, subject to a limited licence allowing us to host and process your content solely to provide the Service to you.
+            </p>
+          </section>
+          <section>
+            <h2 className="text-xl font-semibold mb-2">8. Payments and subscriptions</h2>
+            <p>
+              Our order process is conducted by our online reseller Paddle.com. Paddle.com is the
+              Merchant of Record for all our orders. Paddle provides all customer service inquiries
+              related to payments and handles returns.
+            </p>
+            <p>
+              Payment, billing, taxes, automatic renewal, cancellation and refund terms are governed by the{" "}
+              <a
+                href="https://www.paddle.com/legal/checkout-buyer-terms"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary underline"
+              >
+                Paddle Buyer Terms
+              </a>
+              . Please also see our{" "}
+              <Link to="/refunds" className="text-primary underline">Refund Policy</Link>.
+            </p>
+          </section>
+          <section>
+            <h2 className="text-xl font-semibold mb-2">9. Service availability</h2>
+            <p>
+              We strive to keep the Service available, but we do not guarantee uninterrupted or error-free operation. We may carry out maintenance, updates or feature changes at any time.
+            </p>
+          </section>
+          <section>
+            <h2 className="text-xl font-semibold mb-2">10. Suspension and termination</h2>
+            <p>
+              We may suspend or terminate your access for: material breach of these Terms, non-payment, security or fraud risk, or repeated/serious policy violations. After termination, you may be given a reasonable period to export your data, after which it will be deleted.
+            </p>
+          </section>
+          <section>
+            <h2 className="text-xl font-semibold mb-2">11. Warranties and limitation of liability</h2>
+            <p>
+              To the maximum extent permitted by law, the Service is provided "as is" and we disclaim all implied warranties (merchantability, fitness for a particular purpose). Our aggregate liability is limited to the amount you paid in the 12 months before the event giving rise to the claim. We are not liable for indirect, incidental or consequential damages (loss of profits, data or reputation). Nothing in these Terms excludes liability for wilful misconduct, death or personal injury where required by law.
+            </p>
+          </section>
+          <section>
+            <h2 className="text-xl font-semibold mb-2">12. Indemnification</h2>
+            <p>
+              You agree to indemnify us against third-party claims arising from your content, unlawful use of the Service or breach of these Terms.
+            </p>
+          </section>
+          <section>
+            <h2 className="text-xl font-semibold mb-2">13. Governing law and jurisdiction</h2>
+            <p>
+              These Terms are governed by Portuguese law. Any dispute will be submitted to the competent courts of Portugal, without prejudice to the mandatory consumer rights of your country of residence.
+            </p>
+          </section>
+          <section>
+            <h2 className="text-xl font-semibold mb-2">14. Changes</h2>
+            <p>
+              We may update these Terms. Material changes will be notified with reasonable advance notice. Continued use of the Service after they take effect constitutes acceptance.
+            </p>
+          </section>
+          <section>
+            <h2 className="text-xl font-semibold mb-2">15. Contact</h2>
+            <p>
+              For questions about these Terms: <a className="text-primary underline" href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>.
+            </p>
+          </section>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function Terms() {
+  const isEnglish = useIsEnglish();
+  return isEnglish ? <TermsEn /> : <TermsPt />;
 }

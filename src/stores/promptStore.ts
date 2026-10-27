@@ -9,6 +9,7 @@ import {
   AIModel,
   ToneStyle
 } from '@/types/prompt';
+import { isEnglishNow } from '@/i18n/lang';
 
 interface PromptStore {
   // Prompts
@@ -91,7 +92,7 @@ export const usePromptStore = create<PromptStore>()(
             promptId: id,
             content: promptData.content,
             createdAt: now,
-            label: 'Versão inicial',
+            label: isEnglishNow() ? 'Initial version' : 'Versão inicial',
           }],
         };
         set((state) => ({ prompts: [...state.prompts, newPrompt] }));
@@ -124,7 +125,7 @@ export const usePromptStore = create<PromptStore>()(
         const duplicated: Prompt = {
           ...prompt,
           id: newId,
-          title: `${prompt.title} (cópia)`,
+          title: `${prompt.title} ${isEnglishNow() ? '(copy)' : '(cópia)'}`,
           createdAt: now,
           updatedAt: now,
           versions: [{
@@ -132,7 +133,7 @@ export const usePromptStore = create<PromptStore>()(
             promptId: newId,
             content: prompt.content,
             createdAt: now,
-            label: 'Versão inicial (duplicada)',
+            label: isEnglishNow() ? 'Initial version (duplicated)' : 'Versão inicial (duplicada)',
           }],
         };
         set((state) => ({ prompts: [...state.prompts, duplicated] }));

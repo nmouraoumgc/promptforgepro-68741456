@@ -10,6 +10,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { ProContextualUpsell, AuthGate } from '@/components/gating/FeatureGate';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { localizeApiError } from '@/i18n/lang';
 
 export default function PromptTester() {
   const { t, i18n } = useTranslation();
@@ -56,7 +57,7 @@ export default function PromptTester() {
       if (error) throw error;
 
       if (data.error) {
-        toast({ title: t('tester.errorTitle'), description: data.error, variant: 'destructive' });
+        toast({ title: t('tester.errorTitle'), description: localizeApiError(data.error, (i18n.resolvedLanguage || i18n.language || 'pt').startsWith('en')), variant: 'destructive' });
         setIsTesting(false);
         return;
       }

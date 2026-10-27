@@ -41,6 +41,7 @@ import {
 import { cn } from '@/lib/utils';
 import LivePromptPreview from '@/components/builder/LivePromptPreview';
 import { supabase } from '@/integrations/supabase/client';
+import { localizeApiError } from '@/i18n/lang';
 
 const stepIcons = {
   Target, Layers, Cpu, Palette, Users, Lock, Sparkles, CheckCircle
@@ -175,7 +176,7 @@ export default function GuidedBuilder() {
       if (error) throw error;
 
       if (data.error) {
-        toast({ title: isEnglish ? 'Error' : 'Erro', description: data.error, variant: 'destructive' });
+        toast({ title: isEnglish ? 'Error' : 'Erro', description: localizeApiError(data.error, isEnglish), variant: 'destructive' });
         setIsGenerating(false);
         return;
       }
@@ -491,7 +492,7 @@ export default function GuidedBuilder() {
                   </div>
                   <div>
                     <span className="text-muted-foreground">{isEnglish ? 'Tone:' : 'Tom:'}</span>
-                    <p className="font-medium">{TONE_STYLES.find(t => t.value === builderState.tone)?.label}</p>
+                    <p className="font-medium">{toneLabel(TONE_STYLES.find(t => t.value === builderState.tone)?.label || '')}</p>
                   </div>
                   <div>
                     <span className="text-muted-foreground">{isEnglish ? 'Creativity:' : 'Criatividade:'}</span>

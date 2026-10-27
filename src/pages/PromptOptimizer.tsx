@@ -14,6 +14,7 @@ import ActionableScore from '@/components/optimizer/ActionableScore';
 import ImprovementsList from '@/components/optimizer/ImprovementsList';
 import BeforeAfterShowcase from '@/components/optimizer/BeforeAfterShowcase';
 import { supabase } from '@/integrations/supabase/client';
+import { localizeApiError } from '@/i18n/lang';
 
 const mockOptimizations: OptimizationVariant[] = [
   { type: 'shorter', content: '', explanation: 'Versão condensada mantendo a essência', changes: ['Contexto redundante removido', 'Instruções simplificadas'] },
@@ -54,6 +55,8 @@ export default function PromptOptimizer() {
   const { user } = useAuthStore();
   const { currentPlan, canOptimize, incrementOptimizationCount, getOptimizationCount } = usePlanStore();
 
+  const [improvements, setImprovements] = useState<string[]>([]);
+
   // Require authentication to use the optimizer
   if (!user) {
     return (
@@ -65,7 +68,6 @@ export default function PromptOptimizer() {
     );
   }
 
-  const [improvements, setImprovements] = useState<string[]>([]);
 
   const optimizePrompt = async () => {
     if (!inputPrompt.trim()) {
@@ -94,7 +96,7 @@ export default function PromptOptimizer() {
       if (error) throw error;
 
       if (data.error) {
-        toast({ title: isEnglish ? 'Error' : 'Erro', description: data.error, variant: 'destructive' });
+        toast({ title: isEnglish ? 'Error' : 'Erro', description: localizeApiError(data.error, isEnglish), variant: 'destructive' });
         setIsOptimizing(false);
         return;
       }

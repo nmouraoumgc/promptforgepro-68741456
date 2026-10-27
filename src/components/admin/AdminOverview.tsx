@@ -26,6 +26,7 @@ import {
   CartesianGrid,
   Legend,
 } from 'recharts';
+import { useIsEnglish, isEnglishNow } from '@/i18n/lang';
 
 interface UserProfile {
   id: string;
@@ -61,7 +62,7 @@ interface Props {
 }
 
 const fmtEur = (cents: number) =>
-  new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(cents / 100);
+  new Intl.NumberFormat(isEnglishNow() ? 'en-GB' : 'pt-PT', { style: 'currency', currency: 'EUR' }).format(cents / 100);
 
 const monthKey = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -69,10 +70,11 @@ const monthKey = (d: Date) =>
 const monthLabel = (key: string) => {
   const [y, m] = key.split('-');
   const date = new Date(Number(y), Number(m) - 1, 1);
-  return date.toLocaleDateString('pt-PT', { month: 'short', year: '2-digit' });
+  return date.toLocaleDateString(isEnglishNow() ? 'en-GB' : 'pt-PT', { month: 'short', year: '2-digit' });
 };
 
 export function AdminOverview({ users, purchases, subscriptions }: Props) {
+  const isEnglish = useIsEnglish();
   const stats = useMemo(() => {
     const completed = purchases.filter((p) => p.status === 'completed');
     const totalRevenueCents = completed.reduce((s, p) => s + p.amount_cents, 0);
@@ -197,30 +199,30 @@ export function AdminOverview({ users, purchases, subscriptions }: Props) {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard
           icon={Euro}
-          label="Receita Total"
+          label={isEnglish ? 'Total revenue' : 'Receita Total'}
           value={fmtEur(stats.totalRevenueCents)}
-          sub={`${stats.totalCompleted} compras concluídas`}
+          sub={isEnglish ? `${stats.totalCompleted} completed purchases` : `${stats.totalCompleted} compras concluídas`}
           accent="success"
         />
         <KpiCard
           icon={TrendingUp}
           label="MRR (Pro)"
           value={fmtEur(stats.mrrCents)}
-          sub={`${stats.activeProSubs} subscrições ativas`}
+          sub={isEnglish ? `${stats.activeProSubs} active subscriptions` : `${stats.activeProSubs} subscrições ativas`}
           accent="primary"
         />
         <KpiCard
           icon={Repeat}
-          label="Receita este mês"
+          label={isEnglish ? 'Revenue this month' : 'Receita este mês'}
           value={fmtEur(stats.monthRevenueCents)}
-          sub={`${stats.newPurchases30d} compras nos últimos 30d`}
+          sub={isEnglish ? `${stats.newPurchases30d} purchases in the last 30d` : `${stats.newPurchases30d} compras nos últimos 30d`}
           accent="info"
         />
         <KpiCard
           icon={Users}
-          label="Utilizadores"
+          label={isEnglish ? 'Users' : 'Utilizadores'}
           value={String(users.length)}
-          sub={`+${stats.newUsers30d} nos últimos 30d`}
+          sub={isEnglish ? `+${stats.newUsers30d} in the last 30d` : `+${stats.newUsers30d} nos últimos 30d`}
           accent="amber"
         />
       </div>
@@ -231,11 +233,11 @@ export function AdminOverview({ users, purchases, subscriptions }: Props) {
         <SmallStat icon={Sparkles} label="Pro" value={stats.proUsers} />
         <SmallStat
           icon={UserPlus}
-          label="Conversão"
+          label={isEnglish ? 'Conversion' : 'Conversão'}
           value={`${stats.conversionRate.toFixed(1)}%`}
         />
         <SmallStat icon={ShoppingCart} label="ARPU" value={fmtEur(stats.arpu)} />
-        <SmallStat icon={Sparkles} label="Em trial" value={stats.trialingSubs} />
+        <SmallStat icon={Sparkles} label={isEnglish ? 'On trial' : 'Em trial'} value={stats.trialingSubs} />
         <SmallStat icon={TrendingUp} label="Past Due" value={stats.pastDueSubs} />
       </div>
 
@@ -243,8 +245,8 @@ export function AdminOverview({ users, purchases, subscriptions }: Props) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card>
           <CardHeader>
-            <CardTitle>Receita (últimos 6 meses)</CardTitle>
-            <CardDescription>Soma de compras concluídas por mês (€)</CardDescription>
+            <CardTitle>{isEnglish ? 'Revenue (last 6 months)' : 'Receita (últimos 6 meses)'}</CardTitle>
+            <CardDescription>{isEnglish ? 'Sum of completed purchases per month (€)' : 'Soma de compras concluídas por mês (€)'}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-72">
@@ -266,7 +268,7 @@ export function AdminOverview({ users, purchases, subscriptions }: Props) {
                       borderRadius: 8,
                       color: 'hsl(var(--popover-foreground))',
                     }}
-                    formatter={(v: number) => [`${v.toFixed(2)}€`, 'Receita']}
+                    formatter={(v: number) => [`${v.toFixed(2)}€`, isEnglish ? 'Revenue' : 'Receita']}
                   />
                   <Area
                     type="monotone"
@@ -283,8 +285,8 @@ export function AdminOverview({ users, purchases, subscriptions }: Props) {
 
         <Card>
           <CardHeader>
-            <CardTitle>Novos utilizadores (últimos 6 meses)</CardTitle>
-            <CardDescription>Registos por mês</CardDescription>
+            <CardTitle>{isEnglish ? 'New users (last 6 months)' : 'Novos utilizadores (últimos 6 meses)'}</CardTitle>
+            <CardDescription>{isEnglish ? 'Sign-ups per month' : 'Registos por mês'}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-72">
@@ -312,7 +314,7 @@ export function AdminOverview({ users, purchases, subscriptions }: Props) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card>
           <CardHeader>
-            <CardTitle>Distribuição de planos</CardTitle>
+            <CardTitle>{isEnglish ? 'Plan distribution' : 'Distribuição de planos'}</CardTitle>
             <CardDescription>Free vs Pro vs Premium</CardDescription>
           </CardHeader>
           <CardContent>
@@ -350,13 +352,13 @@ export function AdminOverview({ users, purchases, subscriptions }: Props) {
 
         <Card>
           <CardHeader>
-            <CardTitle>Compras recentes</CardTitle>
-            <CardDescription>Últimas 5 transações concluídas</CardDescription>
+            <CardTitle>{isEnglish ? 'Recent purchases' : 'Compras recentes'}</CardTitle>
+            <CardDescription>{isEnglish ? 'Last 5 completed transactions' : 'Últimas 5 transações concluídas'}</CardDescription>
           </CardHeader>
           <CardContent>
             {recentPurchases.length === 0 ? (
               <p className="text-sm text-muted-foreground py-8 text-center">
-                Ainda sem compras.
+                {isEnglish ? 'No purchases yet.' : 'Ainda sem compras.'}
               </p>
             ) : (
               <ul className="divide-y divide-border">
@@ -374,7 +376,7 @@ export function AdminOverview({ users, purchases, subscriptions }: Props) {
                         <div className="flex items-center gap-2">
                           <Badge variant="outline" className="capitalize">{p.plan}</Badge>
                           <span className="text-xs text-muted-foreground">
-                            {new Date(p.created_at).toLocaleDateString('pt-PT', {
+                            {new Date(p.created_at).toLocaleDateString(isEnglish ? 'en-GB' : 'pt-PT', {
                               day: '2-digit',
                               month: 'short',
                               hour: '2-digit',

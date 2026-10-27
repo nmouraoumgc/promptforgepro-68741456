@@ -50,7 +50,7 @@ export default function PromptPacks() {
         <p className="text-lg text-muted-foreground">
           {isEnglish
             ? 'Sell outcomes, not prompts. Pick packs built for your profession and the real result you want.'
-            : 'Venda resultados, não prompts. Escolha packs criados para a sua profissão e para o resultado real que você quer.'}
+            : 'Vende resultados, não prompts. Escolhe packs criados para a tua profissão e para o resultado real que queres.'}
         </p>
       </motion.div>
 

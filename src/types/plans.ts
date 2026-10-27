@@ -42,8 +42,8 @@ export const PLAN_LIMITS: Record<PlanType, PlanLimits> = {
   },
 };
 
-export const PLAN_INFO: Record<PlanType, { name: string; tagline: string; color: string }> = {
-  free: { name: 'Free', tagline: 'Descoberta', color: 'text-muted-foreground' },
-  pro: { name: 'Pro', tagline: 'Profissional', color: 'text-info' },
-  premium: { name: 'Premium', tagline: 'Acelerado', color: 'text-primary' },
+export const PLAN_INFO: Record<PlanType, { name: string; tagline: string; taglineEn: string; color: string }> = {
+  free: { name: 'Free', tagline: 'Descoberta', taglineEn: 'Discovery', color: 'text-muted-foreground' },
+  pro: { name: 'Pro', tagline: 'Profissional', taglineEn: 'Professional', color: 'text-info' },
+  premium: { name: 'Premium', tagline: 'Acelerado', taglineEn: 'Accelerated', color: 'text-primary' },
 };

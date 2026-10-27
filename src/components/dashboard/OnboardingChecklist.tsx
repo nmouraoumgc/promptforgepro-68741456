@@ -5,8 +5,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { usePromptStore } from '@/stores/promptStore';
+import { useIsEnglish } from '@/i18n/lang';
 
-const onboardingSteps = [
+const onboardingStepsEn = [
+  { id: 'create', title: 'Create your first prompt', description: 'Use the guided builder to create a structured prompt', icon: Wand2, link: '/builder', action: 'Create Prompt' },
+  { id: 'optimize', title: 'Optimize a prompt', description: 'See how to automatically improve your prompts', icon: Sparkles, link: '/optimizer', action: 'Optimize' },
+  { id: 'compare', title: 'Compare and save', description: 'Test different versions and save the best ones', icon: GitCompare, link: '/tester', action: 'Compare' },
+];
+
+const onboardingStepsPt = [
   {
     id: 'create',
     title: 'Cria o teu primeiro prompt',
@@ -34,6 +41,8 @@ const onboardingSteps = [
 ];
 
 export default function OnboardingChecklist() {
+  const isEnglish = useIsEnglish();
+  const onboardingSteps = isEnglish ? onboardingStepsEn : onboardingStepsPt;
   const { prompts } = usePromptStore();
   const [dismissed, setDismissed] = useState(false);
   const [completedSteps, setCompletedSteps] = useState<string[]>([]);
@@ -79,7 +88,7 @@ export default function OnboardingChecklist() {
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">
-            🚀 Começa em 3 Passos Simples
+            {isEnglish ? '🚀 Get started in 3 simple steps' : '🚀 Começa em 3 Passos Simples'}
           </CardTitle>
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleDismiss}>
             <X className="h-4 w-4" />
@@ -87,8 +96,8 @@ export default function OnboardingChecklist() {
         </div>
         <div className="space-y-1">
           <div className="flex justify-between text-xs text-muted-foreground">
-            <span>Progresso</span>
-            <span>{completedSteps.length}/{onboardingSteps.length} completos</span>
+            <span>{isEnglish ? 'Progress' : 'Progresso'}</span>
+            <span>{completedSteps.length}/{onboardingSteps.length} {isEnglish ? 'completed' : 'completos'}</span>
           </div>
           <Progress value={progress} className="h-2" />
         </div>
@@ -137,7 +146,7 @@ export default function OnboardingChecklist() {
         })}
         
         <p className="text-xs text-muted-foreground text-center pt-2">
-          Completa estes passos em menos de 30 segundos
+          {isEnglish ? 'Complete these steps in under 30 seconds' : 'Completa estes passos em menos de 30 segundos'}
         </p>
       </CardContent>
     </Card>

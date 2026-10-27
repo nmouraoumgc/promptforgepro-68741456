@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Eye, FileText } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { GuidedBuilderState, TONE_STYLES, OUTPUT_TYPES } from '@/types/prompt';
+import { GuidedBuilderState, TONE_STYLES, OUTPUT_TYPES, OUTPUT_TYPE_LABEL_EN, TONE_LABEL_EN } from '@/types/prompt';
 import { useTranslation } from 'react-i18next';
 
 interface LivePromptPreviewProps {
@@ -26,8 +26,8 @@ export default function LivePromptPreview({ builderState }: LivePromptPreviewPro
     }
     
     // Instructions section
-    const outputLabel = OUTPUT_TYPES.find(t => t.value === outputType)?.label || (isEnglish ? 'content' : 'conteúdo');
-    const toneLabel = TONE_STYLES.find(t => t.value === tone)?.label?.toLowerCase();
+    const outputLabel = (isEnglish && outputType ? OUTPUT_TYPE_LABEL_EN[outputType] : OUTPUT_TYPES.find(t => t.value === outputType)?.label) || (isEnglish ? 'content' : 'conteúdo');
+    const toneLabel = (isEnglish && tone ? TONE_LABEL_EN[tone] : TONE_STYLES.find(t => t.value === tone)?.label)?.toLowerCase();
     
     let instructionContent = `${isEnglish ? 'Generate' : 'Gera'} ${outputLabel.toLowerCase()} ${isEnglish ? 'that:' : 'que:'}\n`;
     instructionContent += `${isEnglish ? '- Meets the defined objective' : '- Cumpra o objetivo definido'}\n`;

@@ -1,9 +1,10 @@
 import { Link } from "react-router-dom";
+import { useIsEnglish } from "@/i18n/lang";
 
 const SELLER = "Prompt Forge Pro";
 const SUPPORT_EMAIL = "support@promptforgepro.me";
 
-export default function Refunds() {
+function RefundsPt() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="max-w-3xl mx-auto px-6 py-12">
@@ -79,4 +80,66 @@ export default function Refunds() {
       </div>
     </div>
   );
+}
+
+function RefundsEn() {
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <div className="max-w-3xl mx-auto px-6 py-12">
+        <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">
+          ← Back
+        </Link>
+        <h1 className="text-3xl md:text-4xl font-bold mt-4 mb-2">Refund Policy</h1>
+        <p className="text-sm text-muted-foreground mb-8">Last updated: April 30, 2026</p>
+        <div className="space-y-6 text-foreground/90 leading-relaxed">
+          <section>
+            <h2 className="text-xl font-semibold mb-2">30-day guarantee</h2>
+            <p>
+              {SELLER} offers a <strong>30-day</strong> money-back guarantee. If you are not satisfied with your purchase, you can request a full refund within 30 days of the order date.
+            </p>
+          </section>
+          <section>
+            <h2 className="text-xl font-semibold mb-2">How to request a refund</h2>
+            <p>
+              Refunds are processed by our payment partner, <strong>Paddle</strong>, which is the Merchant of Record for our sales. To request a refund:
+            </p>
+            <ol className="list-decimal pl-6 space-y-1 mt-2">
+              <li>
+                Go to{" "}
+                <a href="https://paddle.net" target="_blank" rel="noopener noreferrer" className="text-primary underline">paddle.net</a>{" "}
+                and enter the email used for the purchase to manage your order; or
+              </li>
+              <li>
+                Email us at{" "}<a className="text-primary underline" href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>{" "}
+                with your order number and we will tell you the next steps.
+              </li>
+            </ol>
+          </section>
+          <section>
+            <h2 className="text-xl font-semibold mb-2">Subscriptions</h2>
+            <p>
+              You can cancel your subscription at any time through the customer portal. Cancellation takes effect at the end of the current billing period and you keep access until then. We do not issue partial refunds for periods already billed, except under the 30-day guarantee above.
+            </p>
+          </section>
+          <section>
+            <h2 className="text-xl font-semibold mb-2">Processing</h2>
+            <p>
+              Once approved, the refund is credited to the original payment method. Processing time depends on Paddle and your financial institution (typically 5–10 business days).
+            </p>
+          </section>
+          <section>
+            <h2 className="text-xl font-semibold mb-2">Contact</h2>
+            <p>
+              Questions about refunds:{" "}<a className="text-primary underline" href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>.
+            </p>
+          </section>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function Refunds() {
+  const isEnglish = useIsEnglish();
+  return isEnglish ? <RefundsEn /> : <RefundsPt />;
 }

@@ -9,6 +9,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { AuthGate } from '@/components/gating/FeatureGate';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
+import { localizeApiError } from '@/i18n/lang';
 
 export default function QuickPrompt() {
   const { user } = useAuthStore();
@@ -83,7 +84,7 @@ export default function QuickPrompt() {
       });
       if (error) throw error;
       if (data.error) {
-        toast({ title: t('common.error'), description: data.error, variant: 'destructive' });
+        toast({ title: t('common.error'), description: localizeApiError(data.error, (i18n.resolvedLanguage || i18n.language || 'pt').startsWith('en')), variant: 'destructive' });
         return;
       }
       if (data.text) {
@@ -115,7 +116,7 @@ export default function QuickPrompt() {
       });
       if (error) throw error;
       if (data.error) {
-        toast({ title: t('common.error'), description: data.error, variant: 'destructive' });
+        toast({ title: t('common.error'), description: localizeApiError(data.error, (i18n.resolvedLanguage || i18n.language || 'pt').startsWith('en')), variant: 'destructive' });
         return;
       }
       setGeneratedPrompt(data.prompt);

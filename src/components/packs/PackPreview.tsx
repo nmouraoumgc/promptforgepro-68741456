@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useTranslation } from 'react-i18next';
+import { localizeApiError } from '@/i18n/lang';
 interface PackPreviewProps {
   pack: Pack;
   onUnlock?: () => void;
@@ -232,7 +233,8 @@ export function PackPreview({ pack, onUnlock }: PackPreviewProps) {
         body: { 
           tema: tema.trim(), 
           packSlug: pack.slug,
-          isPremium: hasAccess 
+          isPremium: hasAccess,
+          language: isEnglish ? 'en' : 'pt',
         }
       });
 
@@ -250,7 +252,7 @@ export function PackPreview({ pack, onUnlock }: PackPreviewProps) {
       if (data.error) {
         toast({
           title: isEnglish ? 'Error' : 'Erro',
-          description: data.error,
+          description: localizeApiError(data.error, isEnglish),
           variant: 'destructive',
         });
         setIsGenerating(false);

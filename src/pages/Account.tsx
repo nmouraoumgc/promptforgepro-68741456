@@ -11,9 +11,11 @@ import { useAuthStore } from '@/stores/authStore';
 import { PLAN_INFO } from '@/types/plans';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useIsEnglish, localizeApiError } from '@/i18n/lang';
 
 export default function Account() {
   const { t } = useTranslation();
+  const isEnglish = useIsEnglish();
   const navigate = useNavigate();
   const { user, profile, signOut, isLoading } = useAuthStore();
   const { toast } = useToast();
@@ -73,7 +75,7 @@ export default function Account() {
       });
 
       if (error) throw new Error(error.message);
-      if (data?.error) throw new Error(data.error);
+      if (data?.error) throw new Error(localizeApiError(data.error, isEnglish));
 
       if (data?.url) {
         window.location.href = data.url;
@@ -143,7 +145,7 @@ export default function Account() {
                       <div className="flex items-center gap-2">
                         <p className="font-semibold text-lg">{planInfo.name}</p>
                         <Badge variant={currentPlan === 'free' ? 'secondary' : 'default'}>
-                          {planInfo.tagline}
+                          {isEnglish ? planInfo.taglineEn : planInfo.tagline}
                         </Badge>
                       </div>
                       <p className="text-sm text-muted-foreground">

@@ -204,3 +204,13 @@ export const AI_MODELS: { value: AIModel; label: string; type: OutputType[] }[] 
   { value: 'sora', label: 'Sora', type: ['video'] },
   { value: 'runway', label: 'Runway', type: ['video'] },
 ];
+
+/** English labels keyed by value (the arrays above hold the Portuguese labels). */
+export const OUTPUT_TYPE_LABEL_EN: Record<OutputType, string> = {
+  text: 'Text', image: 'Image', code: 'Code', video: 'Video', audio: 'Audio',
+};
+export const TONE_LABEL_EN: Record<ToneStyle, string> = {
+  professional: 'Professional', casual: 'Casual', friendly: 'Friendly', formal: 'Formal',
+  creative: 'Creative', technical: 'Technical', humorous: 'Humorous', persuasive: 'Persuasive',
+  informative: 'Informative', narrative: 'Narrative',
+};
