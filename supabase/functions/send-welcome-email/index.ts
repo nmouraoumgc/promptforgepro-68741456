@@ -130,6 +130,7 @@ const handler = async (req: Request): Promise<Response> => {
       },
       body: JSON.stringify({
         from: Deno.env.get("RESEND_FROM") ?? "PromptForge <onboarding@resend.dev>",
+        reply_to: Deno.env.get("RESEND_REPLY_TO") ?? "geral@promptforgepro.me",
         to: [email],
         subject: "O teu acesso está desbloqueado 🚀",
         html: emailHtml,

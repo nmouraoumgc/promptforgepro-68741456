@@ -98,6 +98,7 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         from: Deno.env.get('RESEND_FROM') ?? 'PromptForge <onboarding@resend.dev>',
+        reply_to: Deno.env.get('RESEND_REPLY_TO') ?? 'geral@promptforgepro.me',
         to: [profile.email],
         subject,
         html,
