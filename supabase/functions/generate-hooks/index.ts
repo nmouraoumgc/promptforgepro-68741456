@@ -20,9 +20,9 @@ serve(async (req) => {
       );
     }
 
-    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-    if (!GEMINI_API_KEY) {
-      throw new Error("GEMINI_API_KEY is not configured");
+    const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");
+    if (!GROQ_API_KEY) {
+      throw new Error("GROQ_API_KEY is not configured");
     }
 
     // Hook de choque controlado prompt
@@ -44,19 +44,20 @@ Regras:
 Formato:
 Responde APENAS com os hooks numerados, um por linha. Sem introdução nem explicação.`;
 
-    const response = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${GEMINI_API_KEY}`,
+        Authorization: `Bearer ${GROQ_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: Deno.env.get('GEMINI_MODEL') ?? 'gemini-2.5-flash',
+        model: Deno.env.get('AI_MODEL') ?? 'openai/gpt-oss-120b',
+        ...(Deno.env.get('AI_REASONING_EFFORT') ? { reasoning_effort: Deno.env.get('AI_REASONING_EFFORT') } : {}),
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
-        max_tokens: 500,
+        max_tokens: 1500, // was 500; raised because reasoning models (gpt-oss) count reasoning tokens here
         temperature: 0.8,
       }),
     });
