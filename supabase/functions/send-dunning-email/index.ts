@@ -97,7 +97,7 @@ Deno.serve(async (req) => {
         'Authorization': `Bearer ${resendKey}`,
       },
       body: JSON.stringify({
-        from: 'PromptForge <onboarding@resend.dev>',
+        from: Deno.env.get('RESEND_FROM') ?? 'PromptForge <onboarding@resend.dev>',
         to: [profile.email],
         subject,
         html,
