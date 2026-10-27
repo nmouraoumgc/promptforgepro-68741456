@@ -38,3 +38,9 @@ verify_jwt = false
 
 [functions.delete-account]
 verify_jwt = false
+
+[functions.unsubscribe]
+verify_jwt = false
+
+[functions.campaign-admin]
+verify_jwt = false

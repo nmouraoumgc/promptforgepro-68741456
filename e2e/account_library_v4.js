@@ -157,6 +157,36 @@ const txt = (p, sel) => p.evaluate(s => document.querySelector(s)?.innerText ?? 
     ok('[del] deleted account can no longer sign in', !tok.access_token, tok.error_code || tok.msg);
     await ctx.close();
   }
+
+  // ---------- 4. 2€ trial gone everywhere (PT/EN) + ?code= prefill
+  if (ONLY.includes('pricing')) {
+    const BAD = /2 ?€|€ ?2(?![0-9])|2 euros|7 dias|7 days|7-day|Experimenta o Pro por|Try Pro for/i;
+    for (const lang of ['pt', 'en']) {
+      const { ctx, p } = await newPage(b, lang);
+      await p.evaluateOnNewDocument(() => localStorage.removeItem('pf_pro_trial_dialog_dismissed_v1'));
+      for (const u of ['/', '/pricing', '/packs', '/learn', '/learn/estrutura-de-um-bom-prompt', '/terms', '/refunds', '/create']) {
+        await go(p, u); await sleep(u === '/' ? 4000 : 800);
+        const t = await p.evaluate(() => document.body.innerText + ' ' + document.title + ' ' + (document.querySelector('meta[name=description]')?.content || ''));
+        const m = t.match(BAD);
+        ok(`[${lang}] no 2€ trial on ${u}`, !m, m ? t.slice(Math.max(0, m.index - 50), m.index + 50) : '');
+        if (u === '/') ok(`[${lang}] no promo pop-up on dashboard`, !(await p.$('[role=dialog]')));
+      }
+      await go(p, '/pricing'); await p.screenshot({ path: `${OUT}/pricing_${lang}.png`, fullPage: true });
+      await ctx.close();
+    }
+    const { ctx, p } = await newPage(b, 'en');
+    await go(p, '/pricing?code=EARLY-A1');
+    await login(p, 'free');
+    await go(p, '/pricing'); await sleep(2500);
+    const d = await p.evaluate(() => ({ dlg: !!document.querySelector('[role=dialog]'), val: document.querySelector('[role=dialog] input')?.value, hint: document.querySelector('[data-testid=promo-url-code]')?.innerText }));
+    ok('[free/en] /pricing?code=EARLY-A1 survives login, opens Pro dialog with code prefilled', d.dlg && d.val === 'EARLY-A1' && /EARLY-A1/.test(d.hint || ''), JSON.stringify(d));
+    await p.screenshot({ path: `${OUT}/pricing_code_prefill_en.png` });
+    await p.evaluate(() => localStorage.setItem('pf_lang', 'pt')); await go(p, '/pricing?code=EARLY-A1'); await sleep(2500);
+    const d2 = await p.evaluate(() => document.querySelector('[data-testid=promo-url-code]')?.innerText);
+    ok('[free/pt] code prefill PT', /O código EARLY-A1 será aplicado no checkout/.test(d2 || ''), d2);
+    await p.screenshot({ path: `${OUT}/pricing_code_prefill_pt.png` });
+    await ctx.close();
+  }
   // logged-out /account -> login
   { const { ctx, p } = await newPage(b); await go(p, '/account'); await sleep(1500); ok('[anon] /account requires login', (await p.evaluate(() => location.pathname)) === '/login'); await ctx.close(); }
   await b.close();

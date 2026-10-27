@@ -30,6 +30,7 @@ import Terms from "@/pages/legal/Terms";
 import Refunds from "@/pages/legal/Refunds";
 import Privacy from "@/pages/legal/Privacy";
 import NotFound from "./pages/NotFound";
+import Unsubscribe from '@/pages/Unsubscribe';
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -50,6 +51,7 @@ const App = () => (
           <Route path="/terms" element={<Terms />} />
           <Route path="/refunds" element={<Refunds />} />
           <Route path="/privacy" element={<Privacy />} />
+          <Route path="/unsubscribe" element={<Unsubscribe />} />
           
           {/* App routes */}
           <Route element={<AppLayout />}>
