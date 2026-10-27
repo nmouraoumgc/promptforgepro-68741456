@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { toPlainText } from '@/lib/plainText';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -181,7 +182,7 @@ export default function GuidedBuilder() {
         return;
       }
 
-      setGeneratedPrompt(data.prompt);
+      setGeneratedPrompt(toPlainText(data.prompt));
     } catch (error) {
       console.error('Error generating prompt:', error);
       toast({ title: isEnglish ? 'Error' : 'Erro', description: isEnglish ? 'Could not generate the prompt. Try again.' : 'Não foi possível gerar o prompt. Tenta novamente.', variant: 'destructive' });
@@ -226,7 +227,7 @@ export default function GuidedBuilder() {
   };
 
   const copyToClipboard = () => {
-    navigator.clipboard.writeText(generatedPrompt);
+    navigator.clipboard.writeText(toPlainText(generatedPrompt));
     toast({ title: isEnglish ? 'Copied!' : 'Copiado!', description: isEnglish ? 'Prompt copied to clipboard' : 'Prompt copiado para a área de transferência' });
   };
 

@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { authenticateRequest, corsHeaders } from "../_shared/auth.ts";
 import { outputLanguageRules, isEnglishLang } from '../_shared/ptpt.ts';
+import { plainTextRules, toPlainText } from '../_shared/plaintext.ts';
 
 // Pack-specific prompts for different content types
 const getPackPrompt = (packSlug: string, tema: string, isPremium: boolean) => {
@@ -149,7 +150,7 @@ serve(async (req) => {
         model: Deno.env.get('AI_MODEL') ?? 'openai/gpt-oss-120b',
         ...(Deno.env.get('AI_REASONING_EFFORT') ? { reasoning_effort: Deno.env.get('AI_REASONING_EFFORT') } : {}),
         messages: [
-          { role: "system", content: system + outputLanguageRules(language) },
+          { role: "system", content: system + outputLanguageRules(language) + plainTextRules(language) },
           { role: "user", content: user },
         ],
       }),
@@ -184,13 +185,13 @@ serve(async (req) => {
     console.log("AI response received:", content.substring(0, 100));
 
     // Parse the numbered list into an array
-    const lines = content
+    const lines = toPlainText(content)
       .split('\n')
       .map((line: string) => line.trim())
       .filter((line: string) => line.length > 0)
       .map((line: string) => {
         // Remove numbering (e.g., "1.", "1)", "1-", etc.)
-        return line.replace(/^\d+[\.\)\-\:]\s*/, '').trim();
+        return line.replace(/^\d+[\.\)\-\:]\s*/, '').replace(/^[-•]\s+/, '').replace(/^"(.*)"$/, '$1').trim();
       })
       .filter((line: string) => line.length > 0);
 

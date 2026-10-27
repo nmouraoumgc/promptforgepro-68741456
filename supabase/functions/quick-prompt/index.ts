@@ -2,6 +2,7 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { authenticateRequest, corsHeaders } from "../_shared/auth.ts";
 import { PT_PT_RULES } from '../_shared/ptpt.ts';
+import { plainTextRules, toPlainText } from '../_shared/plaintext.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -42,9 +43,9 @@ serve(async (req) => {
 
 Given a user's request, generate a professional, well-structured prompt that:
 - Is clear and specific
-- Has well-defined sections (context, instructions, expected output)
+- Has well-defined sections (context, instructions, expected output), with section titles as plain lines in CAPITALS
 - Is optimized for getting the best results from AI models
-- Is formatted in a readable way
+- Is plain text that can be copy-pasted anywhere (no Markdown)
 
 CRITICAL LANGUAGE RULE:
 - The ENTIRE generated prompt MUST be written in ${outputLanguage}.
@@ -66,7 +67,7 @@ CRITICAL LANGUAGE RULE:
         model: Deno.env.get('AI_MODEL') ?? 'openai/gpt-oss-120b',
         ...(Deno.env.get('AI_REASONING_EFFORT') ? { reasoning_effort: Deno.env.get('AI_REASONING_EFFORT') } : {}),
         messages: [
-          { role: 'system', content: isEnglish ? systemPrompt : systemPrompt + PT_PT_RULES },
+          { role: 'system', content: (isEnglish ? systemPrompt : systemPrompt + PT_PT_RULES) + plainTextRules(isEnglish ? 'en' : 'pt') },
           { role: 'user', content: userRequest }
         ],
       }),
@@ -108,7 +109,7 @@ CRITICAL LANGUAGE RULE:
 
     return new Response(
       JSON.stringify({ 
-        prompt: generatedPrompt.trim(),
+        prompt: toPlainText(generatedPrompt),
         language: isEnglish ? 'en' : 'pt'
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

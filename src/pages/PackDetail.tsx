@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { toPlainText } from '@/lib/plainText';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -62,7 +63,7 @@ export default function PackDetail() {
   }
 
   const copyPrompt = (id: string, content: string) => {
-    navigator.clipboard.writeText(content);
+    navigator.clipboard.writeText(toPlainText(content));
     setCopiedId(id);
     toast({
       title: isEnglish ? 'Copied!' : 'Copiado!',

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { toPlainText } from '@/lib/plainText';
 import { useTranslation } from 'react-i18next';
 import { FlaskConical, ArrowLeftRight, Trophy, ThumbsUp } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -62,8 +63,8 @@ export default function PromptTester() {
         return;
       }
 
-      setResponseA(data.responseA);
-      setResponseB(data.responseB);
+      setResponseA(toPlainText(data.responseA));
+      setResponseB(toPlainText(data.responseB));
 
       const completed = localStorage.getItem('onboarding-completed');
       const steps = completed ? JSON.parse(completed) : [];
@@ -100,7 +101,7 @@ export default function PromptTester() {
                 <Card className="bg-muted/50">
                   <CardContent className="p-4">
                     <p className="text-sm font-medium mb-2">{t('tester.response')}</p>
-                    <p className="text-sm text-muted-foreground">{responseA}</p>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{responseA}</p>
                   </CardContent>
                 </Card>
               )}
@@ -122,7 +123,7 @@ export default function PromptTester() {
                 <Card className="bg-muted/50">
                   <CardContent className="p-4">
                     <p className="text-sm font-medium mb-2">{t('tester.response')}</p>
-                    <p className="text-sm text-muted-foreground">{responseB}</p>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{responseB}</p>
                   </CardContent>
                 </Card>
               )}

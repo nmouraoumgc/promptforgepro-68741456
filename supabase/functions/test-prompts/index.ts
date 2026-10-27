@@ -2,6 +2,7 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { authenticateRequest, corsHeaders } from "../_shared/auth.ts";
 import { outputLanguageRules, isEnglishLang } from '../_shared/ptpt.ts';
+import { plainTextRules, toPlainText } from '../_shared/plaintext.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -16,7 +17,7 @@ serve(async (req) => {
     const en = isEnglishLang(language);
     const systemPrompt = (en
       ? 'You are a helpful assistant. Answer clearly and concisely in English.'
-      : 'És um assistente prestável. Responde de forma clara e concisa em português de Portugal.') + outputLanguageRules(language);
+      : 'És um assistente prestável. Responde de forma clara e concisa em português de Portugal.') + outputLanguageRules(language) + plainTextRules(language);
 
     if (!promptA || !promptB) {
       return new Response(
@@ -98,8 +99,8 @@ serve(async (req) => {
       responseB.json()
     ]);
 
-    const contentA = dataA.choices?.[0]?.message?.content || (en ? 'No response' : 'Sem resposta');
-    const contentB = dataB.choices?.[0]?.message?.content || (en ? 'No response' : 'Sem resposta');
+    const contentA = toPlainText(dataA.choices?.[0]?.message?.content) || (en ? 'No response' : 'Sem resposta');
+    const contentB = toPlainText(dataB.choices?.[0]?.message?.content) || (en ? 'No response' : 'Sem resposta');
 
     console.log('Successfully tested both prompts');
 

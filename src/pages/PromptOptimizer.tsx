@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { toPlainText } from '@/lib/plainText';
 import { useTranslation } from 'react-i18next';
 import { Sparkles, Zap, FileText, Copy, Info } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -100,6 +101,9 @@ export default function PromptOptimizer() {
         setIsOptimizing(false);
         return;
       }
+      if (Array.isArray(data.optimizations)) {
+        data.optimizations = data.optimizations.map((o: OptimizationVariant) => ({ ...o, content: toPlainText(o.content) }));
+      }
 
       setOptimizations(data.optimizations || []);
       setScore(data.score || null);
@@ -143,7 +147,7 @@ export default function PromptOptimizer() {
   };
 
   const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
+    navigator.clipboard.writeText(toPlainText(text));
     toast({ title: isEnglish ? 'Copied!' : 'Copiado!', description: isEnglish ? 'Prompt copied to clipboard' : 'Prompt copiado para a área de transferência' });
   };
 

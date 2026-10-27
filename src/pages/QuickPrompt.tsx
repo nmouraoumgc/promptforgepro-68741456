@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { toPlainText } from '@/lib/plainText';
 import { useTranslation } from 'react-i18next';
 import { Zap, Mic, MicOff, Copy, Sparkles, Loader2, RotateCcw } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -119,7 +120,7 @@ export default function QuickPrompt() {
         toast({ title: t('common.error'), description: localizeApiError(data.error, (i18n.resolvedLanguage || i18n.language || 'pt').startsWith('en')), variant: 'destructive' });
         return;
       }
-      setGeneratedPrompt(data.prompt);
+      setGeneratedPrompt(toPlainText(data.prompt));
       toast({ title: t('quickPrompt.generated'), description: t('quickPrompt.generatedDesc') });
     } catch (error) {
       console.error('Error generating prompt:', error);
@@ -130,7 +131,7 @@ export default function QuickPrompt() {
   };
 
   const copyToClipboard = () => {
-    navigator.clipboard.writeText(generatedPrompt);
+    navigator.clipboard.writeText(toPlainText(generatedPrompt));
     toast({ title: t('common.copied'), description: t('quickPrompt.copiedDesc') });
   };
 

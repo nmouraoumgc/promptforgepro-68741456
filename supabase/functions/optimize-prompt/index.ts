@@ -2,6 +2,7 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { authenticateRequest, corsHeaders } from "../_shared/auth.ts";
 import { PT_PT_RULES } from '../_shared/ptpt.ts';
+import { plainTextRules, toPlainText } from '../_shared/plaintext.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -147,7 +148,9 @@ Formato da resposta:
         model: Deno.env.get('AI_MODEL') ?? 'openai/gpt-oss-120b',
         ...(Deno.env.get('AI_REASONING_EFFORT') ? { reasoning_effort: Deno.env.get('AI_REASONING_EFFORT') } : {}),
         messages: [
-          { role: 'system', content: isEnglish ? systemPrompt : systemPrompt + PT_PT_RULES },
+          { role: 'system', content: (isEnglish ? systemPrompt : systemPrompt + PT_PT_RULES) + (isEnglish
+            ? '\n\nThe "content" of each variation is a plain-text prompt (use \\n for line breaks inside the JSON string).'
+            : '\n\nO "content" de cada variação é um prompt em texto simples (usa \\n para quebras de linha dentro da string JSON).') + plainTextRules(isEnglish ? 'en' : 'pt') },
           { role: 'user', content: isEnglish ? `Analyze and optimize this prompt:\n\n"${prompt}"` : `Analisa e otimiza este prompt:\n\n"${prompt}"` }
         ],
       }),
@@ -208,6 +211,17 @@ Formato da resposta:
       genericResponseRisk: Number(rawScore.genericResponseRisk ?? (100 - Number(rawScore.creativity ?? 50))),
       overall: Number(rawScore.overall ?? 0),
     };
+
+    // Strip any Markdown the model still produced in textual fields.
+    if (Array.isArray(result.optimizations)) {
+      result.optimizations = result.optimizations.map((o: Record<string, unknown>) => ({
+        ...o,
+        content: toPlainText(o?.content),
+        explanation: toPlainText(o?.explanation),
+        changes: Array.isArray(o?.changes) ? (o.changes as unknown[]).map(toPlainText) : o?.changes,
+      }));
+    }
+    if (Array.isArray(result.improvements)) result.improvements = result.improvements.map(toPlainText);
 
     console.log('Successfully optimized prompt');
 
