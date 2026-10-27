@@ -87,15 +87,14 @@ Deno.serve(async (req) => {
     </body></html>`;
 
     const resendKey = Deno.env.get('RESEND_API_KEY');
-    const lovableKey = Deno.env.get('LOVABLE_API_KEY');
-    if (!resendKey || !lovableKey) return json({ error: 'missing_config' }, 500);
+    if (!resendKey) return json({ error: 'missing_config' }, 500);
 
-    const res = await fetch('https://connector-gateway.lovable.dev/resend/emails', {
+    // Direct Resend API (previously via Lovable connector gateway)
+    const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${lovableKey}`,
-        'X-Connection-Api-Key': resendKey,
+        'Authorization': `Bearer ${resendKey}`,
       },
       body: JSON.stringify({
         from: 'PromptForge <onboarding@resend.dev>',
