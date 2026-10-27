@@ -7,7 +7,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.send-welcome-email]
-verify_jwt = false
+verify_jwt = true
 
 [functions.customer-portal]
 verify_jwt = false

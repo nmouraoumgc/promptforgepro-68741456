@@ -1,6 +1,6 @@
 // "Criar": one screen for Quick (Rápido), Detailed (Detalhado, the guided builder) and
 // "Otimizar prompt existente". Mode lives in ?mode= so old routes can redirect here.
-import { useSearchParams } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import { Sparkles, Wand2, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsEnglish } from '@/i18n/lang';
@@ -14,6 +14,8 @@ const MODES: CreateMode[] = ['quick', 'guided', 'optimize'];
 export default function Create() {
   const isEnglish = useIsEnglish();
   const [params, setParams] = useSearchParams();
+  const location = useLocation();
+  const prefillRequest = typeof (location.state as { prefillRequest?: unknown } | null)?.prefillRequest === 'string' ? (location.state as { prefillRequest: string }).prefillRequest : '';
   const raw = params.get('mode');
   const mode: CreateMode = MODES.includes(raw as CreateMode) ? (raw as CreateMode) : 'quick';
   const label = {
@@ -44,7 +46,7 @@ export default function Create() {
         })}
       </div>
       <div role="tabpanel" data-testid={`panel-${mode}`}>
-        {mode === 'quick' && <QuickPrompt embedded />}
+        {mode === 'quick' && <QuickPrompt embedded initialRequest={prefillRequest} />}
         {mode === 'guided' && <GuidedBuilder embedded />}
         {mode === 'optimize' && <PromptOptimizer embedded />}
       </div>

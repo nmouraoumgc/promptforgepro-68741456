@@ -81,12 +81,8 @@
     "actions": {
       "create": "Criar Prompt",
       "createDesc": "Do zero à excelência",
-      "quick": "Quick Prompt",
-      "quickDesc": "Rápido e direto ao ponto",
       "optimize": "Otimizar",
-      "optimizeDesc": "Versões mais fortes",
-      "test": "Testar A/B",
-      "testDesc": "Descobre o melhor"
+      "optimizeDesc": "Versões mais fortes"
     },
     "stats": {
       "prompts": "{{count}} prompts",
@@ -137,7 +133,7 @@
   },
   "showcase": {
     "cardTitle": "Exemplo de Prompt de Alta Qualidade",
-    "viewDetails": "Ver detalhes",
+    "viewDetails": "Porque funciona",
     "modalTitle": "Anatomia de um Prompt Eficaz",
     "modalDesc": "Compreende a estrutura que garante resultados consistentes",
     "objectiveTitle": "1. Objetivo Claro",

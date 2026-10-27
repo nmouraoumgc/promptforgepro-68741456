@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Sparkles, Target, FileText, Lightbulb, ArrowRight } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -11,6 +12,8 @@ const SCORE = 92;
 export default function ExamplePromptShowcase() {
   const [showModal, setShowModal] = useState(false);
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const openInCreate = () => navigate('/create?mode=quick', { state: { prefillRequest: t('showcase.objective') } });
 
   const improvements = t('showcase.improvements', { returnObjects: true }) as string[];
 
@@ -18,7 +21,8 @@ export default function ExamplePromptShowcase() {
     <>
       <Card 
         className="border-border/50 hover:border-primary/40 transition-all cursor-pointer group"
-        onClick={() => setShowModal(true)}
+        onClick={openInCreate}
+        data-testid="example-card"
       >
         <CardContent className="p-5 md:p-6">
           <div className="flex items-center justify-between gap-4">
@@ -39,7 +43,8 @@ export default function ExamplePromptShowcase() {
               </div>
             </div>
             <div className="flex items-center gap-2 text-muted-foreground group-hover:text-foreground transition-colors shrink-0">
-              <span className="text-xs hidden sm:inline">{t('showcase.viewDetails')}</span>
+              <button type="button" className="text-xs underline-offset-2 hover:underline" data-testid="example-why"
+                onClick={(e) => { e.stopPropagation(); setShowModal(true); }}>{t('showcase.viewDetails')}</button>
               <ArrowRight className="h-4 w-4" />
             </div>
           </div>

@@ -16,7 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { localizeApiError } from '@/i18n/lang';
 
-export default function QuickPrompt({ embedded = false }: { embedded?: boolean } = {}) {
+export default function QuickPrompt({ embedded = false, initialRequest = '' }: { embedded?: boolean; initialRequest?: string } = {}) {
   const { user } = useAuthStore();
   const navigate = useNavigate();
   const addPrompt = usePromptStore((s) => s.addPrompt);
@@ -25,7 +25,7 @@ export default function QuickPrompt({ embedded = false }: { embedded?: boolean }
   const language = (i18n.resolvedLanguage || i18n.language || 'pt').slice(0, 2);
   const isEn = language === 'en';
 
-  const [request, setRequest] = useState('');
+  const [request, setRequest] = useState(initialRequest);
   const [generatedPrompt, setGeneratedPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isRecording, setIsRecording] = useState(false);

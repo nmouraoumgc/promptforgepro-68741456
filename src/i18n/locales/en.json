@@ -81,12 +81,8 @@
     "actions": {
       "create": "Create Prompt",
       "createDesc": "From scratch to excellence",
-      "quick": "Quick Prompt",
-      "quickDesc": "Fast and to the point",
       "optimize": "Optimize",
-      "optimizeDesc": "Stronger versions",
-      "test": "A/B Test",
-      "testDesc": "Find the best one"
+      "optimizeDesc": "Stronger versions"
     },
     "stats": {
       "prompts": "{{count}} prompts",
@@ -137,7 +133,7 @@
   },
   "showcase": {
     "cardTitle": "High-Quality Prompt Example",
-    "viewDetails": "View details",
+    "viewDetails": "Why it works",
     "modalTitle": "Anatomy of an Effective Prompt",
     "modalDesc": "Understand the structure that ensures consistent results",
     "objectiveTitle": "1. Clear Objective",
