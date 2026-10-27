@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Lock, ChevronRight, Play, PenTool, Youtube, Home, Scale, Users, ShoppingBag } from 'lucide-react';
+import { Lock, ChevronRight, Play, PenTool, Youtube, Home, Scale, Users, ShoppingBag, ShoppingCart, Instagram, Linkedin, UtensilsCrossed, Mail, MessageCircle, Briefcase, Zap } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -17,7 +17,14 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Scale,
   Users,
   ShoppingBag,
-  Instagram: Play, // Fallback
+  ShoppingCart,
+  Instagram,
+  Linkedin,
+  UtensilsCrossed,
+  Mail,
+  MessageCircle,
+  Briefcase,
+  Zap,
 };
 
 interface PackCardProps {

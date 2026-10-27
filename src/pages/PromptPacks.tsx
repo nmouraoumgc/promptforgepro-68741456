@@ -3,7 +3,8 @@ import { Video, TrendingUp, Zap, Lightbulb, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { PackCard } from '@/components/packs';
-import { PACKS, getLocalizedPacksByCategory } from '@/data/packs';
+import { usePacks } from '@/data/packsDb';
+import type { Pack } from '@/types/packs';
 import { OUTCOME_CATEGORIES, OutcomeCategory } from '@/types/packs';
 import { usePlanStore } from '@/stores/planStore';
 import { useNavigate } from 'react-router-dom';
@@ -25,13 +26,14 @@ export default function PromptPacks() {
 
   // Group packs by outcome category
   const categories = Object.keys(OUTCOME_CATEGORIES) as OutcomeCategory[];
+  const { packs: allPacks } = usePacks(isEnglish);
   const packsByCategory = categories.reduce((acc, cat) => {
-    const packs = getLocalizedPacksByCategory(cat, isEnglish);
+    const packs = allPacks.filter((p) => p.outcomeCategory === cat);
     if (packs.length > 0) {
       acc[cat] = packs;
     }
     return acc;
-  }, {} as Record<OutcomeCategory, typeof PACKS>);
+  }, {} as Record<OutcomeCategory, Pack[]>);
 
   return (
     <div className="p-6 space-y-10 animate-fade-in">

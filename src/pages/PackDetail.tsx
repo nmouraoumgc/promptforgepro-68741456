@@ -20,7 +20,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { usePlanStore } from '@/stores/planStore';
-import { getLocalizedPackBySlug } from '@/data/packs';
+import { usePacks } from '@/data/packsDb';
 import { PackPreview } from '@/components/packs';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
@@ -41,13 +41,19 @@ export default function PackDetail() {
   const isEnglish = (i18n.resolvedLanguage || i18n.language || 'pt').startsWith('en');
   const hasAccess = canAccess('canAccessPromptPacks');
   
-  const pack = getLocalizedPackBySlug(slug || '', isEnglish);
+  const { packs, isLoading: packsLoading } = usePacks(isEnglish);
+  const pack = packs.find((p) => p.slug === (slug || ''));
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>('');
 
   // Initialize active category when pack loads
-  if (pack && !activeCategory && pack.categories.length > 0) {
+  // (Re)select the first category when none is set or the loaded catalogue has different category ids.
+  if (pack && pack.categories.length > 0 && !pack.categories.some((c) => c.id === activeCategory)) {
     setActiveCategory(pack.categories[0].id);
+  }
+
+  if (!pack && packsLoading) {
+    return <div className="p-6 text-center text-muted-foreground">{isEnglish ? 'Loading…' : 'A carregar…'}</div>;
   }
 
   if (!pack) {
