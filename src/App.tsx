@@ -7,12 +7,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppLayout } from "@/components/layout";
 import Dashboard from "@/pages/Dashboard";
-import GuidedBuilder from "@/pages/GuidedBuilder";
 import PromptLibrary from "@/pages/PromptLibrary";
-import PromptOptimizer from "@/pages/PromptOptimizer";
-import VersionHistory from "@/pages/VersionHistory";
-import PromptTester from "@/pages/PromptTester";
-import QuickPrompt from "@/pages/QuickPrompt";
+import PromptDetail from "@/pages/PromptDetail";
+import Create from "@/pages/Create";
+import BrandKit from "@/pages/BrandKit";
+import { RedirectToCreate, RedirectToPromptTab } from "@/components/layout/LegacyRedirects";
 import Learn from "@/pages/Learn";
 import LessonDetail from "@/pages/LessonDetail";
 import { RouteMeta } from '@/lib/pageMeta';
@@ -56,12 +55,16 @@ const App = () => (
           {/* App routes */}
           <Route element={<><ProTrialDialog /><AppLayout /></>}>
             <Route path="/" element={<Dashboard />} />
-            <Route path="/builder" element={<GuidedBuilder />} />
-            <Route path="/quick" element={<QuickPrompt />} />
+            <Route path="/create" element={<Create />} />
             <Route path="/library" element={<PromptLibrary />} />
-            <Route path="/optimizer" element={<PromptOptimizer />} />
-            <Route path="/versions" element={<VersionHistory />} />
-            <Route path="/tester" element={<PromptTester />} />
+            <Route path="/library/:id" element={<PromptDetail />} />
+            <Route path="/brand" element={<BrandKit />} />
+            {/* Legacy routes (old 9-item menu) -> new screens */}
+            <Route path="/builder" element={<RedirectToCreate mode="guided" />} />
+            <Route path="/quick" element={<RedirectToCreate mode="quick" />} />
+            <Route path="/optimizer" element={<RedirectToCreate mode="optimize" />} />
+            <Route path="/versions" element={<RedirectToPromptTab tab="versions" />} />
+            <Route path="/tester" element={<RedirectToPromptTab tab="test" />} />
             <Route path="/learn" element={<Learn />} />
             <Route path="/learn/:slug" element={<LessonDetail />} />
             <Route path="/packs" element={<PromptPacks />} />

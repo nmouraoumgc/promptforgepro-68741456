@@ -57,7 +57,12 @@
     "main": "Main",
     "more": "More",
     "newPrompt": "New Prompt",
-    "searchPrompts": "Search prompts..."
+    "searchPrompts": "Search prompts...",
+    "create": "Create",
+    "createDesc": "Quick, detailed or optimise",
+    "brand": "Brand Kit",
+    "brandDesc": "Your brand",
+    "plansPricing": "Plans and pricing"
   },
   "header": {
     "myAccount": "My Account",
@@ -66,7 +71,9 @@
     "signOut": "Sign Out",
     "login": "Login",
     "signup": "Sign Up",
-    "plan": "{{plan}} plan"
+    "plan": "{{plan}} plan",
+    "plans": "Plans",
+    "brand": "Brand Kit"
   },
   "dashboard": {
     "greeting": "Hi, Prompt Master!",

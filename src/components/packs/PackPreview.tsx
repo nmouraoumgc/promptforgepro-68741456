@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { BrandSelector } from '@/components/brand/BrandSelector';
 import { motion } from 'framer-motion';
 import { Zap, CheckCircle, Lock } from 'lucide-react';
 import { TemplateFiller } from '@/components/templates/TemplateFiller';
+import { RunPromptDialogButton } from '@/components/run/RunPrompt';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -309,7 +311,7 @@ export function PackPreview({ pack, onUnlock }: PackPreviewProps) {
                 <p className="font-medium text-foreground">{p.title}</p>
                 {p.description && <p className="text-xs text-muted-foreground">{p.description}</p>}
               </div>
-              <TemplateFiller template={p.content} isEnglish={isEnglish} idPrefix={`free-${p.id}`} />
+              <TemplateFiller template={p.content} isEnglish={isEnglish} idPrefix={`free-${p.id}`} extraActions={(text, missing) => <RunPromptDialogButton prompt={text} disabled={missing > 0} />} />
             </div>
           ))}
           {lockedCount > 0 && (
@@ -346,6 +348,7 @@ export function PackPreview({ pack, onUnlock }: PackPreviewProps) {
                 onChange={(e) => setTema(e.target.value)}
                 disabled={hasGenerated}
               />
+              <BrandSelector className="pt-2" />
             </div>
 
             {/* Generate Button or Results */}

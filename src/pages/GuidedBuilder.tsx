@@ -41,6 +41,8 @@ import {
 } from '@/types/prompt';
 import { cn } from '@/lib/utils';
 import LivePromptPreview from '@/components/builder/LivePromptPreview';
+import { BrandSelector } from '@/components/brand/BrandSelector';
+import { RunPrompt } from '@/components/run/RunPrompt';
 import { supabase } from '@/integrations/supabase/client';
 import { localizeApiError } from '@/i18n/lang';
 
@@ -48,7 +50,7 @@ const stepIcons = {
   Target, Layers, Cpu, Palette, Users, Lock, Sparkles, CheckCircle
 };
 
-export default function GuidedBuilder() {
+export default function GuidedBuilder({ embedded = false }: { embedded?: boolean } = {}) {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuthStore();
@@ -213,7 +215,7 @@ export default function GuidedBuilder() {
 
     toast({ title: isEnglish ? 'Success!' : 'Sucesso!', description: isEnglish ? 'Prompt saved to library' : 'Prompt guardado na biblioteca' });
     resetBuilderState();
-    navigate('/library');
+    navigate(`/library/${promptId}`);
   };
 
   const mapOutputToCategory = (output: OutputType | null): Category => {
@@ -504,6 +506,8 @@ export default function GuidedBuilder() {
               </CardContent>
             </Card>
 
+            <BrandSelector />
+
             {/* Generate Button */}
             {!generatedPrompt && (
               <Button onClick={generatePrompt} size="lg" className="w-full gap-2" disabled={isGenerating}>
@@ -535,9 +539,10 @@ export default function GuidedBuilder() {
                   </Button>
                 </CardHeader>
                 <CardContent>
-                  <pre className="whitespace-pre-wrap font-mono text-sm bg-muted p-4 rounded-lg">
+                  <pre className="whitespace-pre-wrap font-mono text-sm bg-muted p-4 rounded-lg" data-testid="generated-prompt">
                     {generatedPrompt}
                   </pre>
+                  <RunPrompt prompt={generatedPrompt} className="pt-4" />
                 </CardContent>
               </Card>
             )}
@@ -569,7 +574,7 @@ export default function GuidedBuilder() {
   }
 
   return (
-    <div className="p-6 animate-fade-in">
+    <div className={embedded ? '' : 'p-6 animate-fade-in'}>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Builder */}
         <div className="lg:col-span-2 space-y-6">

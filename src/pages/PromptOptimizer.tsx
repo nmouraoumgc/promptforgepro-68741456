@@ -3,7 +3,10 @@ import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { toPlainText } from '@/lib/plainText';
 import { useTranslation } from 'react-i18next';
-import { Sparkles, Zap, FileText, Copy, Info } from 'lucide-react';
+import { Sparkles, Zap, FileText, Copy, Info, BookmarkPlus, GitBranch, Play } from 'lucide-react';
+import { BrandSelector } from '@/components/brand/BrandSelector';
+import { RunPrompt } from '@/components/run/RunPrompt';
+import { usePromptStore } from '@/stores/promptStore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -35,14 +38,17 @@ const improvementExamples = [
   'Público-alvo identificado',
 ];
 
-export default function PromptOptimizer() {
+interface PromptOptimizerProps { embedded?: boolean; initialPrompt?: string; onSaveVersion?: (content: string, label: string) => void }
+
+export default function PromptOptimizer({ embedded = false, initialPrompt, onSaveVersion }: PromptOptimizerProps = {}) {
   const location = useLocation();
   const navigate = useNavigate();
+  const addPrompt = usePromptStore((s) => s.addPrompt);
   const prefill = (location.state as { prefill?: string } | null)?.prefill;
-  const [inputPrompt, setInputPrompt] = useState(prefill ?? '');
+  const [inputPrompt, setInputPrompt] = useState(initialPrompt ?? prefill ?? '');
   // Prefill from a Learn lesson ("Experimenta já"), then clear the history state so a reload starts clean.
   useEffect(() => {
-    if (prefill) navigate(location.pathname, { replace: true, state: null });
+    if (prefill) navigate({ pathname: location.pathname, search: location.search }, { replace: true, state: null });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const [optimizations, setOptimizations] = useState<OptimizationVariant[]>([]);
@@ -172,7 +178,7 @@ export default function PromptOptimizer() {
 
 
   return (
-    <div className="p-6 space-y-6 animate-fade-in">
+    <div className={embedded ? 'space-y-6' : 'p-6 space-y-6 animate-fade-in'}>
       {/* Optimization limit notice for free users */}
       <OptimizationLimitNotice promptId={currentPromptId} />
 
@@ -202,6 +208,7 @@ export default function PromptOptimizer() {
               {isEnglish ? 'Original Prompt' : 'Prompt Original'}
             </CardTitle>
             <CardDescription>{isEnglish ? 'Paste or write the prompt you want to optimize' : 'Cola ou define o prompt que queres otimizar'}</CardDescription>
+            <BrandSelector className="pt-2" />
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -332,6 +339,31 @@ export default function PromptOptimizer() {
               </Card>
             ))}
           </div>
+          {selectedOptimization && (
+            <Card className="border-primary/40" data-testid="optimizer-selected-actions">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2"><Play className="h-4 w-4 text-primary" />{isEnglish ? `Use the "${typeLabels[selectedOptimization.type]?.label}" version` : `Usar a versão "${typeLabels[selectedOptimization.type]?.label}"`}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex flex-wrap gap-2">
+                  {onSaveVersion ? (
+                    <Button variant="outline" className="gap-2" data-testid="optimizer-save-version" onClick={() => {
+                      onSaveVersion(selectedOptimization.content, typeLabels[selectedOptimization.type]?.label || selectedOptimization.type);
+                      toast({ title: isEnglish ? 'New version saved' : 'Nova versão guardada', description: isEnglish ? 'It is now the current version of this prompt.' : 'Passou a ser a versão atual deste prompt.' });
+                    }}><GitBranch className="h-4 w-4" />{isEnglish ? 'Save as new version' : 'Guardar como nova versão'}</Button>
+                  ) : (
+                    <Button variant="outline" className="gap-2" data-testid="optimizer-save-library" onClick={() => {
+                      const base = inputPrompt.trim().split('\n')[0].slice(0, 50);
+                      const id = addPrompt({ title: base || (isEnglish ? 'Optimized prompt' : 'Prompt otimizado'), content: selectedOptimization.content, description: inputPrompt.trim(), category: 'other', tags: ['optimized'], outputType: 'text', targetModel: 'generic', variables: [], isFavorite: false });
+                      toast({ title: isEnglish ? 'Saved!' : 'Guardado!', description: isEnglish ? 'Prompt saved to your library' : 'Prompt guardado na biblioteca' });
+                      navigate(`/library/${id}`);
+                    }}><BookmarkPlus className="h-4 w-4" />{isEnglish ? 'Save to library' : 'Guardar na biblioteca'}</Button>
+                  )}
+                </div>
+                <RunPrompt key={selectedOptimization.type} prompt={selectedOptimization.content} />
+              </CardContent>
+            </Card>
+          )}
         </div>
       )}
     </div>

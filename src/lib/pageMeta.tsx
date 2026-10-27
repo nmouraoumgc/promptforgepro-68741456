@@ -20,6 +20,14 @@ const META: Record<string, { pt: Meta; en: Meta }> = {
     pt: { title: 'Criar Prompt', description: 'Constrói um prompt passo a passo: objetivo, público, tom, restrições e formato.' },
     en: { title: 'Create Prompt', description: 'Build a prompt step by step: goal, audience, tone, constraints and format.' },
   },
+  '/create': {
+    pt: { title: 'Criar', description: 'Cria um prompt em modo rápido ou detalhado, ou otimiza um prompt que já tens.' },
+    en: { title: 'Create', description: 'Create a prompt in quick or detailed mode, or optimise one you already have.' },
+  },
+  '/brand': {
+    pt: { title: 'Cofre de marca', description: 'Guarda o tom de voz, o público e as palavras da tua marca para a IA escrever como tu.' },
+    en: { title: 'Brand Kit', description: 'Save your brand tone, audience and words so the AI writes like you.' },
+  },
   '/library': {
     pt: { title: 'Biblioteca', description: 'Os teus prompts guardados, organizados por categoria e favoritos.' },
     en: { title: 'Library', description: 'Your saved prompts, organised by category and favourites.' },
@@ -102,7 +110,7 @@ const NOT_FOUND = {
   pt: { title: 'Página não encontrada', description: 'A página que procuras não existe.' },
   en: { title: 'Page not found', description: 'The page you are looking for does not exist.' },
 };
-const DYNAMIC: Record<string, { pt: Meta; en: Meta }> = { '/learn/': META['/learn'], '/packs/': META['/packs'] };
+const DYNAMIC: Record<string, { pt: Meta; en: Meta }> = { '/learn/': META['/learn'], '/packs/': META['/packs'], '/library/': META['/library'] };
 
 function setMetaTag(selector: string, attr: 'name' | 'property', key: string, value: string) {
   let el = document.head.querySelector<HTMLMetaElement>(selector);

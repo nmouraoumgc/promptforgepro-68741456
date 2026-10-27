@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { authenticateRequest, corsHeaders } from "../_shared/auth.ts";
+import { loadActiveBrand, brandInstructions } from "../_shared/brand.ts";
 import { outputLanguageRules, isEnglishLang } from '../_shared/ptpt.ts';
 import { plainTextRules, toPlainText } from '../_shared/plaintext.ts';
 
@@ -96,7 +97,9 @@ serve(async (req) => {
     if (auth instanceof Response) return auth;
     const isPremium = auth.isPremium;
 
-    const { tema, packSlug, language } = await req.json();
+    const { tema, packSlug, language: reqLanguage, useBrand } = await req.json();
+    const brand = useBrand === false ? null : await loadActiveBrand(auth.userId);
+    const language = brand?.language ?? reqLanguage;
     const en = isEnglishLang(language);
 
     console.log(`Generating preview for pack: ${packSlug}, tema: ${tema}, isPremium: ${isPremium}`);
@@ -135,7 +138,7 @@ serve(async (req) => {
         model: Deno.env.get('AI_MODEL') ?? 'openai/gpt-oss-120b',
         ...(Deno.env.get('AI_REASONING_EFFORT') ? { reasoning_effort: Deno.env.get('AI_REASONING_EFFORT') } : {}),
         messages: [
-          { role: "system", content: system + outputLanguageRules(language) + plainTextRules(language) },
+          { role: "system", content: system + brandInstructions(brand, en, false) + outputLanguageRules(language) + plainTextRules(language) },
           { role: "user", content: user },
         ],
       }),
@@ -190,7 +193,8 @@ serve(async (req) => {
         results,
         limited: !isPremium,
         totalGenerated: results.length,
-        maxAvailable: 5
+        maxAvailable: 5,
+        brand: brand ? { id: brand.id, name: brand.name } : null,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

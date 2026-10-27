@@ -1,7 +1,11 @@
 import { useState, useRef } from 'react';
 import { toPlainText } from '@/lib/plainText';
 import { useTranslation } from 'react-i18next';
-import { Zap, Mic, MicOff, Copy, Sparkles, Loader2, RotateCcw } from 'lucide-react';
+import { Zap, Mic, MicOff, Copy, Sparkles, Loader2, RotateCcw, BookmarkPlus } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { usePromptStore } from '@/stores/promptStore';
+import { BrandSelector } from '@/components/brand/BrandSelector';
+import { RunPrompt } from '@/components/run/RunPrompt';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -12,11 +16,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { localizeApiError } from '@/i18n/lang';
 
-export default function QuickPrompt() {
+export default function QuickPrompt({ embedded = false }: { embedded?: boolean } = {}) {
   const { user } = useAuthStore();
+  const navigate = useNavigate();
+  const addPrompt = usePromptStore((s) => s.addPrompt);
   const { toast } = useToast();
   const { t, i18n } = useTranslation();
   const language = (i18n.resolvedLanguage || i18n.language || 'pt').slice(0, 2);
+  const isEn = language === 'en';
 
   const [request, setRequest] = useState('');
   const [generatedPrompt, setGeneratedPrompt] = useState('');
@@ -135,15 +142,22 @@ export default function QuickPrompt() {
     toast({ title: t('common.copied'), description: t('quickPrompt.copiedDesc') });
   };
 
+  const saveToLibrary = () => {
+    const title = request.trim().slice(0, 50) + (request.trim().length > 50 ? '...' : '');
+    const id = addPrompt({ title: title || (isEn ? 'Quick prompt' : 'Prompt rápido'), content: generatedPrompt, description: request.trim(), category: 'other', tags: ['quick'], outputType: 'text', targetModel: 'generic', variables: [], isFavorite: false });
+    toast({ title: isEn ? 'Saved!' : 'Guardado!', description: isEn ? 'Prompt saved to your library' : 'Prompt guardado na biblioteca' });
+    navigate(`/library/${id}`);
+  };
+
   const reset = () => {
     setRequest('');
     setGeneratedPrompt('');
   };
 
   return (
-    <div className="p-6 space-y-6 animate-fade-in max-w-4xl mx-auto">
+    <div className={cn(embedded ? 'space-y-6 max-w-4xl mx-auto' : 'p-6 space-y-6 animate-fade-in max-w-4xl mx-auto')}>
       {/* Header */}
-      <div className="text-center space-y-2">
+      <div className={cn('text-center space-y-2', embedded && 'hidden')}>
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary">
           <Zap className="h-5 w-5" />
           <span className="font-semibold">{t('quickPrompt.badge')}</span>
@@ -160,6 +174,7 @@ export default function QuickPrompt() {
             {t('quickPrompt.inputTitle')}
           </CardTitle>
           <CardDescription>{t('quickPrompt.inputDescription')}</CardDescription>
+          <BrandSelector className="pt-2" />
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="relative">
@@ -243,9 +258,15 @@ export default function QuickPrompt() {
             </Button>
           </CardHeader>
           <CardContent>
-            <pre className="whitespace-pre-wrap font-mono text-sm bg-background p-4 rounded-lg border">
+            <pre className="whitespace-pre-wrap font-mono text-sm bg-background p-4 rounded-lg border" data-testid="generated-prompt">
               {generatedPrompt}
             </pre>
+            <div className="flex flex-wrap items-start gap-3 pt-4">
+              <Button variant="outline" onClick={saveToLibrary} className="gap-2" data-testid="save-library">
+                <BookmarkPlus className="h-4 w-4" />{isEn ? 'Save to library' : 'Guardar na biblioteca'}
+              </Button>
+              <RunPrompt prompt={generatedPrompt} className="flex-1 min-w-[240px]" />
+            </div>
           </CardContent>
         </Card>
       )}

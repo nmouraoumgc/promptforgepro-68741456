@@ -104,7 +104,7 @@ const SubscriptionSuccess = () => {
             >
               <Button
                 className="w-full h-12 font-semibold text-base"
-                onClick={() => navigate("/optimizer")}
+                onClick={() => navigate("/create?mode=optimize")}
               >
                 <Zap className="h-4 w-4 mr-2" />
                 {isEnglish ? "Start optimizing prompts" : "Começar a otimizar prompts"}

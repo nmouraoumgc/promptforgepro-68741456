@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Search, User, LogOut, Settings, ShieldCheck } from 'lucide-react';
+import { Search, User, LogOut, Settings, ShieldCheck, Palette, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -53,7 +53,7 @@ export function Header() {
         {user ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-9 w-9">
+              <Button variant="ghost" size="icon" className="h-9 w-9" data-testid="user-menu">
                 <User className="h-5 w-5" />
               </Button>
             </DropdownMenuTrigger>
@@ -76,6 +76,14 @@ export function Header() {
               <DropdownMenuItem onClick={() => navigate('/account')}>
                 <User className="mr-2 h-4 w-4" />
                 {t('header.myAccount')}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/brand')} data-testid="menu-brand">
+                <Palette className="mr-2 h-4 w-4" />
+                {t('header.brand')}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/planos')} data-testid="menu-plans">
+                <CreditCard className="mr-2 h-4 w-4" />
+                {t('header.plans')}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => navigate('/settings')}>
                 <Settings className="mr-2 h-4 w-4" />

@@ -1,6 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { authenticateRequest, corsHeaders } from "../_shared/auth.ts";
+import { loadActiveBrand, brandInstructions } from "../_shared/brand.ts";
 import { PT_PT_RULES } from '../_shared/ptpt.ts';
 import { plainTextRules, toPlainText } from '../_shared/plaintext.ts';
 
@@ -22,8 +23,11 @@ serve(async (req) => {
       constraints, 
       creativityLevel,
       format,
-      language 
+      language: reqLanguage,
+      useBrand,
     } = await req.json();
+    const brand = useBrand === false ? null : await loadActiveBrand(auth.userId);
+    const language = brand?.language ?? reqLanguage;
 
     if (!objective) {
       return new Response(
@@ -151,7 +155,7 @@ ${labels.outputType}: ${isEnglish ? (outputType || 'text') : (outputTypeLabels[o
         model: Deno.env.get('AI_MODEL') ?? 'openai/gpt-oss-120b',
         ...(Deno.env.get('AI_REASONING_EFFORT') ? { reasoning_effort: Deno.env.get('AI_REASONING_EFFORT') } : {}),
         messages: [
-          { role: 'system', content: (isEnglish ? systemPrompt : systemPrompt + PT_PT_RULES) + plainTextRules(isEnglish ? 'en' : 'pt') },
+          { role: 'system', content: (isEnglish ? systemPrompt : systemPrompt + PT_PT_RULES) + brandInstructions(brand, isEnglish) + plainTextRules(isEnglish ? 'en' : 'pt') },
           { role: 'user', content: userRequest }
         ],
       }),
@@ -192,7 +196,7 @@ ${labels.outputType}: ${isEnglish ? (outputType || 'text') : (outputTypeLabels[o
     console.log('Successfully generated prompt');
 
     return new Response(
-      JSON.stringify({ prompt: toPlainText(generatedPrompt) }),
+      JSON.stringify({ prompt: toPlainText(generatedPrompt), brand: brand ? { id: brand.id, name: brand.name } : null }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 

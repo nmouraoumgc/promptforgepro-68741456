@@ -32,7 +32,7 @@ export default function Dashboard() {
 
   const actions = [
     { 
-      to: '/builder', 
+      to: '/create?mode=guided', 
       icon: Wand2, 
       label: t('dashboard.actions.create'), 
       description: t('dashboard.actions.createDesc'),
@@ -40,7 +40,7 @@ export default function Dashboard() {
       iconBg: 'bg-primary',
     },
     { 
-      to: '/quick', 
+      to: '/create?mode=quick', 
       icon: Zap, 
       label: t('dashboard.actions.quick'), 
       description: t('dashboard.actions.quickDesc'),
@@ -48,7 +48,7 @@ export default function Dashboard() {
       iconBg: 'bg-warning',
     },
     { 
-      to: '/optimizer', 
+      to: '/create?mode=optimize', 
       icon: Sparkles, 
       label: t('dashboard.actions.optimize'), 
       description: t('dashboard.actions.optimizeDesc'),

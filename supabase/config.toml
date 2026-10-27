@@ -32,3 +32,6 @@ verify_jwt = false
 
 [functions.quick-prompt]
 verify_jwt = false
+
+[functions.run-prompt]
+verify_jwt = false

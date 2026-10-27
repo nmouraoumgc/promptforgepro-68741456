@@ -30,7 +30,7 @@
     "switchTo": "Mudar para {{lang}}"
   },
   "nav": {
-    "dashboard": "Dashboard",
+    "dashboard": "Painel",
     "dashboardDesc": "Visão geral",
     "quickPrompt": "Quick Prompt",
     "quickPromptDesc": "Rápido com voz",
@@ -57,7 +57,12 @@
     "main": "Principal",
     "more": "Mais",
     "newPrompt": "Novo Prompt",
-    "searchPrompts": "Pesquisar prompts..."
+    "searchPrompts": "Pesquisar prompts...",
+    "create": "Criar",
+    "createDesc": "Rápido, detalhado ou otimizar",
+    "brand": "Cofre de marca",
+    "brandDesc": "A tua marca",
+    "plansPricing": "Planos e preços"
   },
   "header": {
     "myAccount": "Minha Conta",
@@ -66,7 +71,9 @@
     "signOut": "Terminar Sessão",
     "login": "Login",
     "signup": "Sign Up",
-    "plan": "Plano {{plan}}"
+    "plan": "Plano {{plan}}",
+    "plans": "Planos",
+    "brand": "Cofre de marca"
   },
   "dashboard": {
     "greeting": "Olá, Prompt Master!",

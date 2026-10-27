@@ -130,7 +130,7 @@ export default function ExamplePromptShowcase() {
             <div className="rounded-lg bg-primary/5 border border-primary/20 p-4 text-center">
               <p className="text-sm font-medium mb-2">{t('showcase.ctaTitle')}</p>
               <Button onClick={() => setShowModal(false)} asChild>
-                <a href="/builder">{t('showcase.ctaButton')}</a>
+                <a href="/create?mode=guided">{t('showcase.ctaButton')}</a>
               </Button>
             </div>
           </div>

@@ -20,6 +20,7 @@ import { usePlanStore } from '@/stores/planStore';
 import { usePacks } from '@/data/packsDb';
 import { PackPreview } from '@/components/packs';
 import { TemplateFiller } from '@/components/templates/TemplateFiller';
+import { RunPromptDialogButton } from '@/components/run/RunPrompt';
 import { cn } from '@/lib/utils';
 import { usePageMeta } from '@/lib/pageMeta';
 import { useTranslation } from 'react-i18next';
@@ -180,7 +181,7 @@ export default function PackDetail() {
                           </div>
                           {prompt.description && <p className="text-sm text-muted-foreground">{prompt.description}</p>}
                         </div>
-                        <TemplateFiller template={prompt.content} isEnglish={isEnglish} idPrefix={prompt.id} />
+                        <TemplateFiller template={prompt.content} isEnglish={isEnglish} idPrefix={prompt.id} extraActions={(text, missing) => <RunPromptDialogButton prompt={text} disabled={missing > 0} />} />
                       </div>
                     </Card>
                   </motion.div>

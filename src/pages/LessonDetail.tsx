@@ -43,9 +43,9 @@ export default function LessonDetail() {
         language: isEnglish ? 'en' : 'pt',
         ...(slug === 'prompts-imagens' ? { outputType: 'image' as const } : {}),
       });
-      navigate('/builder');
+      navigate('/create?mode=guided');
     } else {
-      navigate('/optimizer', { state: { prefill: text } });
+      navigate('/create?mode=optimize', { state: { prefill: text } });
     }
   };
 

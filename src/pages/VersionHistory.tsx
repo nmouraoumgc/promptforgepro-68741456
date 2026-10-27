@@ -12,7 +12,7 @@ import { ProContextualUpsell, AuthGate } from '@/components/gating/FeatureGate';
 import { format } from 'date-fns';
 import { pt, enUS } from 'date-fns/locale';
 
-export default function VersionHistory() {
+export default function VersionHistory({ promptId, embedded = false }: { promptId?: string; embedded?: boolean } = {}) {
   const isEnglishUi = useIsEnglish();
   const { t, i18n } = useTranslation();
   const isEnglish = (i18n.resolvedLanguage || i18n.language || 'pt').startsWith('en');
@@ -20,11 +20,11 @@ export default function VersionHistory() {
   const { prompts, revertToVersion } = usePromptStore();
   const { canAccess } = usePlanStore();
   const { user } = useAuthStore();
-  const promptsWithVersions = prompts.filter(p => p.versions.length > 1);
+  const promptsWithVersions = promptId ? prompts.filter(p => p.id === promptId) : prompts.filter(p => p.versions.length > 1);
 
   if (!user) {
     return (
-      <div className="p-6 animate-fade-in">
+      <div className={embedded ? '' : 'p-6 animate-fade-in'}>
         <Card>
           <AuthGate message={t('versionHistory.authRequired')} />
         </Card>
@@ -34,7 +34,7 @@ export default function VersionHistory() {
 
   if (!canAccess('canAccessVersionHistory')) {
     return (
-      <div className="p-6 animate-fade-in">
+      <div className={embedded ? '' : 'p-6 animate-fade-in'}>
         <Card>
           <ProContextualUpsell context="version-history" />
         </Card>
@@ -45,7 +45,7 @@ export default function VersionHistory() {
   const dateFormat = isEnglish ? "MMM d, yyyy 'at' HH:mm" : "d MMM yyyy 'às' HH:mm";
 
   return (
-    <div className="p-6 space-y-6 animate-fade-in">
+    <div className={embedded ? 'space-y-6' : 'p-6 space-y-6 animate-fade-in'}>
       {promptsWithVersions.length === 0 ? (
         <Card className="py-12">
           <CardContent className="text-center">
