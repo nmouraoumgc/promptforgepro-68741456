@@ -26,7 +26,7 @@ export default function PromptPacks() {
 
   // Group packs by outcome category
   const categories = Object.keys(OUTCOME_CATEGORIES) as OutcomeCategory[];
-  const { packs: allPacks } = usePacks(isEnglish);
+  const { packs: allPacks, isLoading } = usePacks(isEnglish);
   const packsByCategory = categories.reduce((acc, cat) => {
     const packs = allPacks.filter((p) => p.outcomeCategory === cat);
     if (packs.length > 0) {
@@ -84,6 +84,9 @@ export default function PromptPacks() {
       </motion.div>
 
       {/* Packs by Category */}
+      {isLoading && (
+        <p className="text-center text-muted-foreground">{isEnglish ? 'Loading packs…' : 'A carregar packs…'}</p>
+      )}
       {Object.entries(packsByCategory).map(([category, packs], categoryIndex) => {
         const cat = category as OutcomeCategory;
         const catInfo = OUTCOME_CATEGORIES[cat];

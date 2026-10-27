@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Zap, CheckCircle } from 'lucide-react';
+import { Zap, CheckCircle, Copy, Lock } from 'lucide-react';
+import { toPlainText } from '@/lib/plainText';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -222,6 +223,12 @@ export function PackPreview({ pack, onUnlock }: PackPreviewProps) {
   const [hasGenerated, setHasGenerated] = useState(false);
 
   const copy = getPackCopy(pack.slug, isEnglish);
+  const freePrompts = Object.values(pack.prompts).flat().filter((p) => p.isFreePreview);
+  const lockedCount = Math.max(0, pack.totalPrompts - freePrompts.length);
+  const copyTemplate = (content: string) => {
+    navigator.clipboard.writeText(toPlainText(content));
+    toast({ title: isEnglish ? 'Copied!' : 'Copiado!', description: isEnglish ? 'Template copied to clipboard.' : 'Template copiado para a área de transferência.' });
+  };
 
   const handleGenerate = async () => {
     if (!tema.trim()) return;
@@ -293,6 +300,35 @@ export function PackPreview({ pack, onUnlock }: PackPreviewProps) {
           {pack.description}
         </p>
       </div>
+
+      {/* Free templates (public previews served by the DB; premium ones are never sent to this user) */}
+      {!hasAccess && freePrompts.length > 0 && (
+        <Card className="p-5 space-y-3" data-testid="free-templates">
+          <h3 className="font-semibold text-lg text-foreground">
+            {isEnglish ? 'Free templates from this pack' : 'Templates grátis deste pack'}
+          </h3>
+          {freePrompts.map((p) => (
+            <div key={p.id} className="p-3 rounded-lg border border-border bg-background space-y-2">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="font-medium text-foreground">{p.title}</p>
+                  {p.description && <p className="text-xs text-muted-foreground">{p.description}</p>}
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => copyTemplate(p.content)} aria-label={isEnglish ? 'Copy' : 'Copiar'}>
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+              <p className="text-sm text-muted-foreground whitespace-pre-wrap">{p.content}</p>
+            </div>
+          ))}
+          {lockedCount > 0 && (
+            <div className="flex items-center gap-2 p-3 rounded-lg border border-border/50 bg-muted/30 text-sm text-muted-foreground" data-testid="locked-templates">
+              <Lock className="h-4 w-4" />
+              {isEnglish ? `${lockedCount} more premium templates unlock with the full pack` : `Mais ${lockedCount} templates premium com o pack completo`}
+            </div>
+          )}
+        </Card>
+      )}
 
       {/* Interactive Preview Block */}
       {!hasAccess && (

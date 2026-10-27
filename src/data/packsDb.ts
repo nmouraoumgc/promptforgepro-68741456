@@ -1,10 +1,10 @@
-// DB-backed, bilingual packs (pt-PT + EN). Requires supabase/proposals/20261027_packs_i18n_catalogue.sql.
-// Until that migration is applied (or if the query fails) the static catalogue in ./packs is used,
-// so this is safe to ship before the data change.
+// DB-backed, bilingual packs (pt-PT + EN), seeded by supabase/proposals/20261027_packs_i18n_catalogue.sql.
+// Templates are NOT bundled: RLS on pack_prompts returns free previews to everyone and the full
+// pack only to entitled users (premium plan or admin).
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Pack, PackPrompt, OutcomeCategory } from '@/types/packs';
-import { PACKS, getLocalizedPackBySlug } from './packs';
+import { useAuthStore } from '@/stores/authStore';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Row = Record<string, any>;
@@ -49,31 +49,30 @@ function mapPack(p: Row, prompts: Row[], en: boolean): Pack {
   };
 }
 
-async function fetchDbPacks(en: boolean): Promise<Pack[] | null> {
+async function fetchDbPacks(en: boolean): Promise<Pack[]> {
   const { data: packs, error } = await supabase
     .from('prompt_packs')
     .select('*')
     .eq('is_active', true)
     .order('sort_order');
-  // Pre-migration rows have no name_en/outcome_category: fall back to the static catalogue.
-  if (error || !packs?.length || !packs.some((p: Row) => 'name_en' in p && p.name_en)) return null;
+  if (error) throw error;
+  if (!packs?.length) return [];
   const { data: prompts, error: e2 } = await supabase
     .from('pack_prompts')
     .select('*')
     .in('pack_id', packs.map((p: Row) => p.id));
-  if (e2) return null;
+  if (e2) throw e2;
   return packs.map((p: Row) => mapPack(p, (prompts || []).filter((r: Row) => r.pack_id === p.id), en));
 }
 
-const staticPacks = (en: boolean) =>
-  PACKS.map((p) => getLocalizedPackBySlug(p.slug, en) || p);
-
-/** All active packs in the current site language (DB first, static fallback). */
+/** All active packs in the current site language. Re-fetched when the user (and so RLS) changes. */
 export function usePacks(isEnglish: boolean) {
+  const userId = useAuthStore((s) => s.user?.id ?? 'anon');
+  const plan = useAuthStore((s) => s.profile?.current_plan ?? 'free');
   const q = useQuery({
-    queryKey: ['packs', isEnglish ? 'en' : 'pt'],
+    queryKey: ['packs', isEnglish ? 'en' : 'pt', userId, plan],
     queryFn: () => fetchDbPacks(isEnglish),
     staleTime: 5 * 60_000,
   });
-  return { packs: q.data ?? staticPacks(isEnglish), isLoading: q.isLoading };
+  return { packs: q.data ?? [], isLoading: q.isLoading };
 }
