@@ -56,6 +56,10 @@ export default function Pricing() {
     if (/^[A-Z0-9-]{3,32}$/.test(c)) { sessionStorage.setItem('pf_checkout_code', c); setUrlCode(c); }
   }, [searchParams]);
 
+  // Campaign/channel that brought the user here (set by trackCampaignLanding), passed to Paddle for attribution.
+  const campaignAttribution = (): Record<string, string> => {
+    try { const v = JSON.parse(sessionStorage.getItem('pf_campaign') || 'null'); return v?.c ? { campaign: String(v.c).slice(0, 40), ...(v.r ? { campaignSend: String(v.r) } : {}) } : {}; } catch { return {}; }
+  };
   const [autoOpened, setAutoOpened] = useState(false);
   useEffect(() => {
     if (!urlCode || autoOpened || authLoading || !user || currentPlan === 'pro') return;
@@ -250,7 +254,7 @@ export default function Pricing() {
           items: [{ priceId: subscriptionId, quantity: 1 }],
           ...(code ? { discountCode: code } : {}),
           customer: { email: user.email! },
-          customData: { userId: user.id },
+          customData: { userId: user.id, ...campaignAttribution() },
           settings: {
             displayMode: 'overlay',
             successUrl: `${window.location.origin}/subscription-success`,
