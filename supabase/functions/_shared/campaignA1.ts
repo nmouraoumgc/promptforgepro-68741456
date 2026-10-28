@@ -1,5 +1,7 @@
-// Early-access email (batch A1). Pure function: shared by the campaign-admin edge function and the local preview renderer.
-export interface A1Vars { firstName?: string | null; expiresLisbon: string; claimUrl: string; unsubscribeUrl: string }
+// Early-access email (batch A1, reused for later batches with their own code). Pure function: shared by the campaign-admin edge function and the local preview renderer.
+export interface A1Vars { firstName?: string | null; expiresLisbon: string; claimUrl: string; unsubscribeUrl: string; code?: string }
+// Discount code per batch (Paddle codes are alphanumeric only).
+export const BATCH_CODES: Record<string, string> = { A1: 'EARLYA1', B: 'EARLYB2' };
 
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 
@@ -9,6 +11,7 @@ export const A1_CODE = 'EARLYA1';
 
 export function renderA1(v: A1Vars): { subject: string; html: string; text: string } {
   const name = esc((v.firstName || '').trim() || 'there');
+  const code = v.code || A1_CODE;
   const features: [string, string][] = [
     ['Brand Kit', 'save your tone, audience and product once, and every prompt uses them automatically.'],
     ['Run it', 'generate the final text right inside the app, ready to copy and use.'],
@@ -40,7 +43,7 @@ export function renderA1(v: A1Vars): { subject: string; html: string; text: stri
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;">
   <tr><td style="padding:22px 24px;text-align:center;">
     <p style="margin:0 0 6px;font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#c2410c;">Your early-access gift</p>
-    <p style="margin:0 0 14px;font-size:16px;line-height:1.55;">Use code <strong style="font-family:Menlo,Consolas,monospace;font-size:17px;background:#ffffff;border:1px dashed #f97316;border-radius:6px;padding:2px 8px;">${A1_CODE}</strong> for <strong>50% off your first month of Pro</strong> in the next 24 hours.</p>
+    <p style="margin:0 0 14px;font-size:16px;line-height:1.55;">Use code <strong style="font-family:Menlo,Consolas,monospace;font-size:17px;background:#ffffff;border:1px dashed #f97316;border-radius:6px;padding:2px 8px;">${code}</strong> for <strong>50% off your first month of Pro</strong> in the next 24 hours.</p>
     <a href="${esc(v.claimUrl)}" style="display:inline-block;background:#f97316;color:#ffffff;text-decoration:none;font-weight:700;font-size:16px;padding:13px 26px;border-radius:10px;">Claim my discount &rarr;</a>
     <p style="margin:14px 0 0;font-size:13px;line-height:1.5;color:#6b6b76;">The code is personal to this invitation and expires on ${esc(v.expiresLisbon)}.</p>
   </td></tr></table>
@@ -61,7 +64,7 @@ PromptForge Pro has been rebuilt from the ground up, and you're one of the first
 What's new:
 ${features.map(([t, d]) => `- ${t}: ${d}`).join('\n')}
 
-Your early-access gift: use code ${A1_CODE} for 50% off your first month of Pro in the next 24 hours.
+Your early-access gift: use code ${code} for 50% off your first month of Pro in the next 24 hours.
 
 Claim my discount: ${v.claimUrl}
 

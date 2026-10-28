@@ -7,7 +7,7 @@
 // List-Unsubscribe headers, and stops on quota/rate errors. Never logs addresses or keys.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { gatewayFetch } from '../_shared/paddle.ts';
-import { renderA1 } from '../_shared/campaignA1.ts';
+import { renderA1, BATCH_CODES } from '../_shared/campaignA1.ts';
 
 const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type' };
 const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { ...cors, 'Content-Type': 'application/json' } });
@@ -45,6 +45,8 @@ Deno.serve(async (req) => {
 
     if (b.action === 'preview' || b.action === 'send') {
       if (isNaN(Date.parse(b.expires_at))) return json({ error: 'expires_at required' }, 400);
+      const code = BATCH_CODES[batch];
+      if (!code) return json({ error: `no discount code configured for batch ${batch}` }, 400);
       const expiresLisbon = lisbon(b.expires_at);
       const max = Math.min(Number(b.max ?? 100), 100);
       const { data: rows, error } = await admin.from('campaign_sends')
@@ -56,10 +58,10 @@ Deno.serve(async (req) => {
       const pref = new Map((prefs ?? []).map((p) => [p.user_id, p]));
       const build = (r: { id: string; user_id: string; first_name: string | null }) => {
         const t = pref.get(r.user_id)!.unsubscribe_token;
-        return { ...renderA1({ firstName: r.first_name, expiresLisbon, claimUrl: `${SITE}/pricing?code=EARLYA1&c=${encodeURIComponent(batch)}&r=${r.id}`, unsubscribeUrl: `${SITE}/unsubscribe?t=${t}` }),
+        return { ...renderA1({ firstName: r.first_name, expiresLisbon, code, claimUrl: `${SITE}/pricing?code=${code}&c=${encodeURIComponent(batch)}&r=${r.id}`, unsubscribeUrl: `${SITE}/unsubscribe?t=${t}` }),
           oneClick: `${Deno.env.get('SUPABASE_URL')}/functions/v1/unsubscribe?t=${t}` };
       };
-      if (b.action === 'preview') return json({ pending: rows?.length ?? 0, expiresLisbon, sample: rows?.[0] ? build(rows[0]).html : null });
+      if (b.action === 'preview') return json({ pending: rows?.length ?? 0, expiresLisbon, code, sample: rows?.[0] ? build(rows[0]).html : null });
 
       const dry = b.dry_run !== false;
       const key = Deno.env.get('RESEND_API_KEY');
