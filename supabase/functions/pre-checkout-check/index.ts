@@ -72,15 +72,23 @@ Deno.serve(async (req) => {
       return json({ allowed: false, reason: 'too_many_attempts' });
     }
 
-    // Log attempt
-    await admin.from('checkout_attempts').insert({
+    // Close out this user's stale open attempts (no Paddle completion/failure within 6h).
+    await admin.from('checkout_attempts')
+      .update({ status: 'abandoned', updated_at: new Date().toISOString() })
+      .eq('user_id', userId)
+      .eq('status', 'initiated')
+      .lt('created_at', new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString());
+
+    // Log attempt. The id is passed to Paddle as customData.attemptId so the
+    // webhook can close the loop (completed / failed) by transaction id.
+    const { data: attempt } = await admin.from('checkout_attempts').insert({
       user_id: userId,
       email,
       status: 'initiated',
       price_id: intent,
-    });
+    }).select('id').maybeSingle();
 
-    return json({ allowed: true });
+    return json({ allowed: true, attemptId: attempt?.id ?? null });
   } catch (e) {
     console.error('pre-checkout-check error', e);
     return json({ allowed: false, reason: 'internal_error' }, 500);

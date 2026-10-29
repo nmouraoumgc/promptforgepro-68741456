@@ -13,6 +13,62 @@ export function getPaddleEnvironment(): "sandbox" | "live" {
 }
 
 let paddleInitialized = false;
+
+// ---------- Checkout event telemetry ----------
+// Records Paddle.js checkout lifecycle events (no PII: only event name, Paddle
+// transaction id, country, payment method type and error code) via the
+// `log_checkout_event` RPC, which links them to the caller's checkout_attempts row.
+const TRACKED_EVENTS = new Set([
+  "checkout.loaded",
+  "checkout.customer.created",
+  "checkout.payment.selected",
+  "checkout.payment.initiated",
+  "checkout.payment.failed",
+  "checkout.payment.error",
+  "checkout.error",
+  "checkout.warning",
+  "checkout.closed",
+  "checkout.completed",
+]);
+
+let currentAttemptId: string | null = null;
+
+/** Set the checkout_attempts id returned by pre-checkout-check for the checkout about to open. */
+export function setCheckoutAttemptId(id: string | null | undefined) {
+  currentAttemptId = typeof id === "string" && id ? id : null;
+}
+
+function str(v: unknown, max = 300): string | null {
+  return typeof v === "string" && v.trim() ? v.trim().slice(0, max) : null;
+}
+
+export function handlePaddleEvent(event: any) {
+  try {
+    const name: string | undefined = event?.name ?? event?.type;
+    if (!name || !TRACKED_EVENTS.has(name)) return;
+    const d = event?.data ?? {};
+    const attemptId = str(d?.custom_data?.attemptId, 64) ?? currentAttemptId;
+    const errParts = [event?.type && event.type !== name ? event.type : null, event?.code, event?.detail, event?.error?.code, event?.error?.detail]
+      .filter((x) => typeof x === "string" && x);
+    void supabase
+      .rpc("log_checkout_event" as any, {
+        _event: name,
+        _attempt_id: attemptId,
+        _transaction_id: str(d?.transaction_id, 64),
+        _country: str(d?.customer?.address?.country_code, 2),
+        _payment_method: str(d?.payment?.method_details?.type, 32),
+        _error: errParts.length ? errParts.join(" | ").slice(0, 300) : null,
+      } as any)
+      .then(({ error }) => {
+        if (error) console.warn("checkout event log failed", error.message);
+      });
+    // Next checkout gets a fresh attempt id from pre-checkout-check.
+    if (name === "checkout.closed") currentAttemptId = null;
+  } catch {
+    // Telemetry must never break checkout.
+  }
+}
+
 let initPromise: Promise<void> | null = null;
 
 export async function initializePaddle(): Promise<void> {
@@ -29,7 +85,7 @@ export async function initializePaddle(): Promise<void> {
       try {
         const env = getPaddleEnvironment() === "sandbox" ? "sandbox" : "production";
         window.Paddle.Environment.set(env);
-        window.Paddle.Initialize({ token: clientToken });
+        window.Paddle.Initialize({ token: clientToken, eventCallback: handlePaddleEvent });
         paddleInitialized = true;
         resolve();
       } catch (e) {

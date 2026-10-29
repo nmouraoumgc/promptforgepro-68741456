@@ -65,6 +65,77 @@ async function triggerInitialDunning(userId: string, subscriptionId: string) {
   }
 }
 
+// ---------- checkout_attempts loop closing ----------
+// Paddle creates a transaction as soon as the overlay opens; the attempt row is created
+// by pre-checkout-check just before and its id travels as customData.attemptId.
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+async function findAttemptId(data: any): Promise<string | null> {
+  const txnId: string | undefined = data?.id;
+  const customData = data?.customData ?? {};
+  const sb = getSupabase();
+  if (txnId) {
+    const { data: byTxn } = await sb.from('checkout_attempts')
+      .select('id').eq('paddle_transaction_id', txnId)
+      .order('created_at', { ascending: false }).limit(1).maybeSingle();
+    if (byTxn?.id) return byTxn.id as string;
+  }
+  const attemptId = typeof customData.attemptId === 'string' && UUID_RE.test(customData.attemptId)
+    ? customData.attemptId : null;
+  if (attemptId) {
+    const q = sb.from('checkout_attempts').select('id').eq('id', attemptId);
+    const { data: byId } = customData.userId ? await q.eq('user_id', customData.userId).maybeSingle() : await q.maybeSingle();
+    if (byId?.id) return byId.id as string;
+  }
+  // Fallback for checkouts opened without attemptId: latest open attempt of this user
+  // created up to 2h before the transaction.
+  const userId = customData.userId;
+  if (userId && UUID_RE.test(userId)) {
+    const createdAt = data?.createdAt ? new Date(data.createdAt) : new Date();
+    const { data: byUser } = await sb.from('checkout_attempts')
+      .select('id').eq('user_id', userId).is('paddle_transaction_id', null)
+      .in('status', ['initiated', 'abandoned'])
+      .lte('created_at', new Date(createdAt.getTime() + 60_000).toISOString())
+      .gte('created_at', new Date(createdAt.getTime() - 2 * 60 * 60 * 1000).toISOString())
+      .order('created_at', { ascending: false }).limit(1).maybeSingle();
+    if (byUser?.id) return byUser.id as string;
+  }
+  return null;
+}
+
+async function updateCheckoutAttempt(data: any, newStatus: 'completed' | 'failed' | null, reason?: string) {
+  try {
+    // Only transactions opened from our checkout (origin web / custom data) map to attempts;
+    // subscription renewals have no attempt and are skipped.
+    if (data?.origin && data.origin !== 'web') return;
+    const id = await findAttemptId(data);
+    if (!id) return;
+    const sb = getSupabase();
+    const { data: row } = await sb.from('checkout_attempts')
+      .select('status, paddle_transaction_id').eq('id', id).maybeSingle();
+    if (!row) return;
+    const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    if (!row.paddle_transaction_id && data?.id) patch.paddle_transaction_id = data.id;
+    const cc = data?.address?.countryCode;
+    if (typeof cc === 'string' && /^[A-Z]{2}$/.test(cc)) patch.country = cc;
+    if (newStatus === 'completed' && row.status !== 'completed') patch.status = 'completed';
+    if (newStatus === 'failed' && (row.status === 'initiated' || row.status === 'abandoned')) {
+      patch.status = 'failed';
+      if (reason) patch.reason = reason.slice(0, 200);
+    }
+    if (row.paddle_transaction_id && data?.id && row.paddle_transaction_id !== data.id && newStatus === null) return;
+    await sb.from('checkout_attempts').update(patch).eq('id', id);
+  } catch (e) {
+    console.warn('updateCheckoutAttempt failed', e instanceof Error ? e.message : String(e));
+  }
+}
+
+function lastPaymentErrorCode(data: any): string | undefined {
+  const payments: any[] = Array.isArray(data?.payments) ? data.payments : [];
+  const p = payments.find((x) => x?.errorCode) ?? payments[0];
+  return p?.errorCode ?? p?.status ?? undefined;
+}
+
 // ---------- Subscription handlers ----------
 async function handleSubscriptionCreated(data: any, env: PaddleEnv) {
   const { id, customerId, items, status, currentBillingPeriod, customData, discount } = data;
@@ -219,10 +290,18 @@ async function handleWebhook(req: Request, env: PaddleEnv) {
       await handleSubscriptionCanceled(event.data, env);
       break;
     case EventName.TransactionCompleted:
+      await updateCheckoutAttempt(event.data, 'completed');
       await handleTransactionCompleted(event.data, env);
       break;
     case EventName.TransactionPaymentFailed:
+      await updateCheckoutAttempt(event.data, 'failed', lastPaymentErrorCode(event.data));
       await handleTransactionPaymentFailed(event.data, env);
+      break;
+    case EventName.TransactionCreated:
+    case EventName.TransactionReady:
+    case EventName.TransactionUpdated:
+      // Link the Paddle transaction id to the attempt (status unchanged).
+      await updateCheckoutAttempt(event.data, null);
       break;
     default:
       console.log('Unhandled event:', event.eventType);

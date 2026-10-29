@@ -198,6 +198,7 @@ export default function Pricing() {
 
       // Pre-checkout anti-fraud / trial-redemption check.
       const intent = 'pro_normal';
+      let attemptId: string | undefined;
       try {
         const { data: check } = await supabase.functions.invoke('pre-checkout-check', {
           body: { intent },
@@ -219,13 +220,16 @@ export default function Pricing() {
           setIsLoadingPro(false);
           return;
         }
+        if (typeof check?.attemptId === 'string') attemptId = check.attemptId;
       } catch (e) {
         // Fail open — pre-check should not block checkout on internal errors.
         console.warn('pre-checkout-check failed, continuing', e);
       }
 
-      const { initializePaddle, getPaddlePriceId, getPaddleDiscountId } = await import('@/lib/paddle');
+      const { initializePaddle, getPaddlePriceId, getPaddleDiscountId, setCheckoutAttemptId } = await import('@/lib/paddle');
       await initializePaddle();
+      setCheckoutAttemptId(attemptId);
+      const attemptData: Record<string, string> = attemptId ? { attemptId } : {};
 
       if (proAppliedPromo?.code) {
         // Promo flow: normal monthly price with discount code.
@@ -236,7 +240,7 @@ export default function Pricing() {
         window.Paddle.Checkout.open({
           items: [{ priceId: paddlePriceId, quantity: 1 }],
           customer: { email: user.email! },
-          customData: { userId: user.id },
+          customData: { userId: user.id, ...attemptData },
           discountId: paddleDiscountId,
           settings: {
             displayMode: 'overlay',
@@ -254,7 +258,7 @@ export default function Pricing() {
           items: [{ priceId: subscriptionId, quantity: 1 }],
           ...(code ? { discountCode: code } : {}),
           customer: { email: user.email! },
-          customData: { userId: user.id, ...campaignAttribution() },
+          customData: { userId: user.id, ...campaignAttribution(), ...attemptData },
           settings: {
             displayMode: 'overlay',
             successUrl: `${window.location.origin}/subscription-success`,
