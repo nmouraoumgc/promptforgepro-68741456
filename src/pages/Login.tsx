@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Flame, Mail, Lock, Eye, EyeOff } from 'lucide-react';
@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { useAuthStore } from '@/stores/authStore';
+import { useAuthStore, initialAuthUrlError } from '@/stores/authStore';
+import { ResendConfirmationButton } from '@/components/auth/ResendConfirmationButton';
 import { useTranslation } from 'react-i18next';
 
 export default function Login() {
@@ -20,17 +21,60 @@ export default function Login() {
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get('redirect') || '/';
   const { toast } = useToast();
-  const { signIn } = useAuthStore();
+  const { signIn, user, isLoading: authLoading } = useAuthStore();
   const { i18n } = useTranslation();
   const isEnglish = (i18n.resolvedLanguage || i18n.language || 'pt').startsWith('en');
+  const [unconfirmedEmail, setUnconfirmedEmail] = useState<string | null>(null);
+  const [linkError, setLinkError] = useState<boolean>(!!initialAuthUrlError);
+  const fromConfirmLink = searchParams.get('confirmed') === '1';
+  const handledConfirm = useRef(false);
+
+  // Landing from the confirmation email (/login?confirmed=1#access_token=...): supabase-js picks the
+  // session up from the URL; once it's there, greet the user and send them into the app.
+  useEffect(() => {
+    if (!fromConfirmLink || handledConfirm.current || authLoading) return;
+    if (initialAuthUrlError) {
+      handledConfirm.current = true;
+      toast({
+        title: isEnglish ? 'Confirmation link invalid or expired' : 'Link de confirmação inválido ou expirado',
+        description: isEnglish
+          ? 'Enter your email below and request a new confirmation link.'
+          : 'Escreve o teu email abaixo e pede um novo link de confirmação.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    handledConfirm.current = true;
+    if (user) {
+      toast({
+        title: isEnglish ? 'Email confirmed!' : 'Email confirmado!',
+        description: isEnglish ? 'Welcome to PromptForge.' : 'Bem-vindo ao PromptForge.',
+      });
+      navigate(redirectTo, { replace: true });
+    } else {
+      toast({
+        title: isEnglish ? 'Email confirmed!' : 'Email confirmado!',
+        description: isEnglish ? 'You can now sign in.' : 'Já podes entrar.',
+      });
+    }
+  }, [fromConfirmLink, authLoading, user, isEnglish, navigate, redirectTo, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    const { error } = await signIn(email, password);
+    const { error, emailNotConfirmed } = await signIn(email, password);
 
-    if (error) {
+    if (error && emailNotConfirmed) {
+      setUnconfirmedEmail(email.trim());
+      toast({
+        title: isEnglish ? 'Email not confirmed yet' : 'Email ainda não confirmado',
+        description: isEnglish
+          ? 'Click the link we sent to your email to activate your account. Need a new one? Use the button below.'
+          : 'Clica no link que enviámos para o teu email para ativar a conta. Precisas de um novo? Usa o botão abaixo.',
+      });
+    } else if (error) {
+      setUnconfirmedEmail(null);
       toast({
         title: isEnglish ? 'Sign in error' : 'Erro ao entrar',
         description: isEnglish ? 'Incorrect email or password.' : 'Email ou palavra-passe incorretos.',
@@ -121,6 +165,26 @@ export default function Login() {
                 {isLoading ? (isEnglish ? 'Signing in...' : 'A entrar...') : (isEnglish ? 'Sign in' : 'Entrar')}
               </Button>
             </form>
+
+            {(unconfirmedEmail || linkError) && (
+              <div className="mt-4 space-y-3 rounded-lg border border-primary/30 bg-primary/5 p-4 text-sm">
+                <p className="text-foreground">
+                  {unconfirmedEmail
+                    ? (isEnglish
+                        ? <>Your email <strong>{unconfirmedEmail}</strong> isn't confirmed yet. Check your inbox (and spam) for the confirmation link.</>
+                        : <>O teu email <strong>{unconfirmedEmail}</strong> ainda não foi confirmado. Procura o link de confirmação na caixa de entrada (e no spam).</>)
+                    : (isEnglish
+                        ? 'That confirmation link is invalid or has expired. Enter your email above and request a new one.'
+                        : 'Esse link de confirmação é inválido ou expirou. Escreve o teu email acima e pede um novo.')}
+                </p>
+                <ResendConfirmationButton email={(unconfirmedEmail || email).trim()} isEnglish={isEnglish} />
+                {linkError && !unconfirmedEmail && (
+                  <button type="button" onClick={() => setLinkError(false)} className="w-full text-xs text-muted-foreground hover:text-foreground">
+                    {isEnglish ? 'Dismiss' : 'Fechar'}
+                  </button>
+                )}
+              </div>
+            )}
 
             <div className="mt-6 text-center text-sm">
               <span className="text-muted-foreground">{isEnglish ? "Don't have an account? " : 'Não tens conta? '}</span>

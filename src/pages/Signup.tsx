@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Flame, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { Flame, Mail, MailCheck, Lock, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/stores/authStore';
 import { useTranslation } from 'react-i18next';
+import { ResendConfirmationButton } from '@/components/auth/ResendConfirmationButton';
 
 export default function Signup() {
   const [email, setEmail] = useState('');
@@ -17,6 +18,7 @@ export default function Signup() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -58,7 +60,7 @@ export default function Signup() {
       return;
     }
 
-    const { error } = await signUp(email, password);
+    const { error, needsConfirmation } = await signUp(email, password);
 
     if (error) {
       toast({
@@ -66,6 +68,9 @@ export default function Signup() {
         description: /DISPOSABLE_EMAIL/.test(error.message || '') ? disposableMsg : (error.message || (isEnglish ? 'Try again.' : 'Tenta novamente.')),
         variant: 'destructive',
       });
+    } else if (needsConfirmation) {
+      // Email confirmation required: no session yet. Show the "check your email" state.
+      setPendingEmail(email.trim());
     } else {
       toast({
         title: isEnglish ? 'Account created!' : 'Conta criada!',
@@ -95,6 +100,37 @@ export default function Signup() {
           </span>
         </Link>
 
+        {pendingEmail ? (
+        <Card>
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+              <MailCheck className="h-6 w-6 text-primary" />
+            </div>
+            <CardTitle className="text-2xl">{isEnglish ? 'Check your email' : 'Verifica o teu email'}</CardTitle>
+            <CardDescription>
+              {isEnglish ? (
+                <>We sent a confirmation link to <strong className="text-foreground">{pendingEmail}</strong>. Click it to activate your account and sign in.</>
+              ) : (
+                <>Enviámos um link de confirmação para <strong className="text-foreground">{pendingEmail}</strong>. Clica nele para ativar a tua conta e entrar.</>
+              )}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-muted-foreground text-center">
+              {isEnglish
+                ? "Can't find it? Check your spam/promotions folder. If you already had an account with this email, just sign in."
+                : 'Não encontras? Verifica a pasta de spam/promoções. Se já tinhas conta com este email, basta entrares.'}
+            </p>
+            <ResendConfirmationButton email={pendingEmail} isEnglish={isEnglish} />
+            <Button asChild className="w-full h-11">
+              <Link to="/login">{isEnglish ? 'Go to sign in' : 'Ir para entrar'}</Link>
+            </Button>
+            <button type="button" onClick={() => setPendingEmail(null)} className="w-full text-sm text-muted-foreground hover:text-foreground">
+              {isEnglish ? 'Use a different email' : 'Usar outro email'}
+            </button>
+          </CardContent>
+        </Card>
+        ) : (
         <Card>
           <CardHeader className="text-center">
             <CardTitle className="text-2xl">{isEnglish ? 'Create account' : 'Criar conta'}</CardTitle>
@@ -176,6 +212,7 @@ export default function Signup() {
             </div>
           </CardContent>
         </Card>
+        )}
       </motion.div>
     </div>
   );

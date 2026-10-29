@@ -25,14 +25,27 @@ interface AuthStore {
   setIsLoading: (isLoading: boolean) => void;
   
   // Auth methods
-  signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string) => Promise<{ error: Error | null; needsConfirmation: boolean }>;
+  signIn: (email: string, password: string) => Promise<{ error: Error | null; emailNotConfirmed: boolean }>;
+  resendConfirmation: (email: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   
   // Data methods
   fetchProfile: () => Promise<void>;
   checkAdminRole: () => Promise<void>;
 }
+
+// Where the confirmation link lands. /login detects the session from the URL hash and forwards the user in.
+// Captured at module load, before supabase-js consumes/clears the URL hash, so /login can show
+// a friendly message when a confirmation link is expired or invalid (#error_code=otp_expired ...).
+export const initialAuthUrlError: { code: string; description: string } | null = (() => {
+  if (typeof window === 'undefined') return null;
+  const params = new URLSearchParams(window.location.hash.replace(/^#/, '') || window.location.search);
+  const err = params.get('error_code') || params.get('error');
+  return err ? { code: err, description: params.get('error_description') || '' } : null;
+})();
+
+export const emailConfirmRedirect = () => `${window.location.origin}/login?confirmed=1`;
 
 export const useAuthStore = create<AuthStore>((set, get) => ({
   user: null,
@@ -48,17 +61,31 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   setIsLoading: (isLoading) => set({ isLoading }),
   
   signUp: async (email, password) => {
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: { emailRedirectTo: emailConfirmRedirect() },
     });
-    return { error: error as Error | null };
+    // With "Confirm email" enabled, signUp returns a user but no session until the link is clicked.
+    // (For an already-registered email Supabase also returns no session, and sends no new mail.)
+    return { error: error as Error | null, needsConfirmation: !error && !data.session };
   },
   
   signIn: async (email, password) => {
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
+    });
+    const code = (error as { code?: string } | null)?.code;
+    const emailNotConfirmed = !!error && (code === 'email_not_confirmed' || /email not confirmed/i.test(error.message || ''));
+    return { error: error as Error | null, emailNotConfirmed };
+  },
+
+  resendConfirmation: async (email) => {
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email,
+      options: { emailRedirectTo: emailConfirmRedirect() },
     });
     return { error: error as Error | null };
   },
