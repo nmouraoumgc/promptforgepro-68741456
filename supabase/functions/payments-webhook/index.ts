@@ -138,6 +138,50 @@ function lastPaymentErrorCode(data: any): string | undefined {
   return p?.errorCode ?? p?.status ?? undefined;
 }
 
+// ---------- Discount enforcement ----------
+// Discount codes are only valid on transactions created server-side by pre-checkout-check (which checks
+// confirmed email + once per account and records a checkout_attempts row with discount_code + txn id).
+// Paddle.js can still be driven by hand with a code/discount id, so a subscription whose first transaction
+// carries a discount that we did not issue (or a second redemption on the same account) is cancelled
+// immediately when nothing was charged, and flagged for review otherwise. Returns true if it was blocked.
+async function enforceDiscount(data: any, env: PaddleEnv, userId: string): Promise<boolean> {
+  try {
+    const txnId: string | undefined = data?.transactionId ?? data?.transaction_id;
+    if (!txnId) return false;
+    const r = await gatewayFetch(env, `/transactions/${encodeURIComponent(txnId)}`);
+    if (!r.ok) return false;
+    const txn = (await r.json())?.data;
+    if (!txn?.discount_id) return false;
+    const sb = getSupabase();
+    const { data: attempt } = await sb.from('checkout_attempts')
+      .select('id, user_id, discount_code').eq('paddle_transaction_id', txnId)
+      .not('discount_code', 'is', null).maybeSingle();
+    let reason: string | null = null;
+    if (!attempt || attempt.user_id !== userId) {
+      reason = 'discount_not_issued_by_server';
+    } else {
+      const { count } = await sb.from('checkout_attempts').select('id', { count: 'exact', head: true })
+        .eq('user_id', userId).eq('discount_code', attempt.discount_code).eq('status', 'completed').neq('id', attempt.id);
+      if ((count ?? 0) > 0) reason = 'discount_already_used';
+    }
+    if (!reason) return false;
+    const charged = Number(txn?.details?.totals?.grand_total ?? txn?.details?.totals?.total ?? '1');
+    if (charged === 0) {
+      const c = await gatewayFetch(env, `/subscriptions/${encodeURIComponent(data.id)}/cancel`, {
+        method: 'POST', body: JSON.stringify({ effective_from: 'immediately' }),
+      });
+      console.warn('discount enforcement: cancelled subscription', { sub: data.id, txn: txnId, reason, status: c.status });
+      if (attempt?.id) await sb.from('checkout_attempts').update({ status: 'blocked', reason, updated_at: new Date().toISOString() }).eq('id', attempt.id);
+      return true;
+    }
+    console.warn('discount enforcement: paid transaction with unverified discount, review manually', { sub: data.id, txn: txnId, reason });
+    return false;
+  } catch (e) {
+    console.warn('enforceDiscount failed', e instanceof Error ? e.message : String(e));
+    return false;
+  }
+}
+
 // ---------- Subscription handlers ----------
 async function handleSubscriptionCreated(data: any, env: PaddleEnv) {
   const { id, customerId, items, status, currentBillingPeriod, customData, discount } = data;
@@ -147,6 +191,8 @@ async function handleSubscriptionCreated(data: any, env: PaddleEnv) {
     console.error('subscription.created: missing customData.userId');
     return;
   }
+
+  if (await enforceDiscount(data, env, userId)) return;
 
   const item = items[0];
   const priceId = item?.price?.importMeta?.externalId;
