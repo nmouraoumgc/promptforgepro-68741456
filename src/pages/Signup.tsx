@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Flame, Mail, Lock, Eye, EyeOff } from 'lucide-react';
@@ -46,12 +47,23 @@ export default function Signup() {
 
     setIsLoading(true);
 
+    const disposableMsg = isEnglish
+      ? 'Disposable/temporary email addresses are not allowed. Please use a permanent email.'
+      : 'Emails temporários/descartáveis não são permitidos. Usa um email permanente.';
+    // UX pre-check only; the real block is server-side (auth.users trigger on the disposable_email_domains list).
+    const { data: isDisposable } = await supabase.rpc('is_disposable_email' as never, { _email: email } as never);
+    if (isDisposable === true) {
+      toast({ title: isEnglish ? 'Account creation failed' : 'Erro ao criar conta', description: disposableMsg, variant: 'destructive' });
+      setIsLoading(false);
+      return;
+    }
+
     const { error } = await signUp(email, password);
 
     if (error) {
       toast({
         title: isEnglish ? 'Account creation failed' : 'Erro ao criar conta',
-        description: error.message || (isEnglish ? 'Try again.' : 'Tenta novamente.'),
+        description: /DISPOSABLE_EMAIL/.test(error.message || '') ? disposableMsg : (error.message || (isEnglish ? 'Try again.' : 'Tenta novamente.')),
         variant: 'destructive',
       });
     } else {

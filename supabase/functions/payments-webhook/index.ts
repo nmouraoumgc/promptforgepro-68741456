@@ -105,9 +105,11 @@ async function findAttemptId(data: any): Promise<string | null> {
 
 async function updateCheckoutAttempt(data: any, newStatus: 'completed' | 'failed' | null, reason?: string) {
   try {
-    // Only transactions opened from our checkout (origin web / custom data) map to attempts;
+    // Only transactions opened from our checkout (origin web, or origin api for discount-code
+    // transactions created by pre-checkout-check with customData.attemptId) map to attempts;
     // subscription renewals have no attempt and are skipped.
-    if (data?.origin && data.origin !== 'web') return;
+    const apiAttempt = data?.origin === 'api' && typeof data?.customData?.attemptId === 'string';
+    if (data?.origin && data.origin !== 'web' && !apiAttempt) return;
     const id = await findAttemptId(data);
     if (!id) return;
     const sb = getSupabase();

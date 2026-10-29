@@ -11,7 +11,7 @@ export function trackCampaignLanding() {
     const r = (url.searchParams.get('r') || '').trim();
     if (!c || !/^[A-Za-z0-9_-]{1,40}$/.test(c)) return;
     if (!r) {
-      // Public channel link (e.g. ?code=ONEHACK50&c=ONEHACK): one visit per tab session; the server ignores unknown channels.
+      // Public channel link (e.g. ?code=ONEHACK100&c=ONEHACK): one visit per tab session; the server ignores unknown channels.
       url.searchParams.delete('c');
       window.history.replaceState(window.history.state, '', url.pathname + url.search + url.hash);
       const ck = `pf_visit_${c.toUpperCase()}`;

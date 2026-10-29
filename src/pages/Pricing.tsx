@@ -196,22 +196,42 @@ export default function Pricing() {
         return;
       }
 
-      // Pre-checkout anti-fraud / trial-redemption check.
+      // Pre-checkout anti-fraud / trial-redemption / velocity check. Discount codes (typed, in-app promo or
+      // /pricing?code=XXX campaign links) are validated server-side (confirmed email, once per account) and the
+      // Paddle transaction with the discount is created there; we only open it.
       const intent = 'pro_normal';
+      const code = (proAppliedPromo?.code || proPromoInput.trim() || urlCode || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); // Paddle codes are alphanumeric (EARLY-A1 -> EARLYA1)
+      const { initializePaddle, getPaddlePriceId, getPaddleEnvironment, setCheckoutAttemptId } = await import('@/lib/paddle');
+      const attribution = campaignAttribution();
       let attemptId: string | undefined;
+      let transactionId: string | undefined;
+      const reasonMap: Record<string, string> = {
+        disposable_email: isEnglish
+          ? 'Disposable email addresses are not allowed. Please use a permanent email.'
+          : 'Emails temporários não são permitidos. Usa um email permanente.',
+        too_many_attempts: isEnglish
+          ? 'Too many failed payment attempts. Please try again in 24 hours.'
+          : 'Demasiadas tentativas de pagamento falhadas. Tenta novamente dentro de 24 horas.',
+        too_many_attempts_ip: isEnglish
+          ? 'Too many checkout attempts from this network. Please try again later.'
+          : 'Demasiadas tentativas de checkout a partir desta rede. Tenta novamente mais tarde.',
+        email_not_confirmed: isEnglish
+          ? 'Please confirm your email address before using a discount code.'
+          : 'Confirma o teu email antes de usar um código de desconto.',
+        code_already_used: isEnglish
+          ? 'This discount code has already been used on your account.'
+          : 'Este código de desconto já foi usado na tua conta.',
+        invalid_code: isEnglish ? 'Invalid discount code.' : 'Código de desconto inválido.',
+        code_expired: isEnglish ? 'This discount code has expired.' : 'Este código de desconto expirou.',
+        code_limit_reached: isEnglish ? 'This discount code has reached its usage limit.' : 'Este código atingiu o limite de utilizações.',
+        code_not_applicable: isEnglish ? 'This code is not valid for this plan.' : 'Este código não é válido para este plano.',
+        checkout_unavailable: isEnglish ? 'Checkout is temporarily unavailable. Please try again.' : 'O checkout está temporariamente indisponível. Tenta novamente.',
+      };
       try {
-        const { data: check } = await supabase.functions.invoke('pre-checkout-check', {
-          body: { intent },
+        const { data: check, error: checkErr } = await supabase.functions.invoke('pre-checkout-check', {
+          body: { intent, ...(code ? { discountCode: code, environment: getPaddleEnvironment(), ...attribution } : {}) },
         });
         if (check && check.allowed === false) {
-          const reasonMap: Record<string, string> = {
-            disposable_email: isEnglish
-              ? 'Disposable email addresses are not allowed. Please use a permanent email.'
-              : 'Emails temporários não são permitidos. Usa um email permanente.',
-            too_many_attempts: isEnglish
-              ? 'Too many failed attempts. Please try again later.'
-              : 'Demasiadas tentativas falhadas. Tenta novamente mais tarde.',
-          };
           toast({
             title: isEnglish ? 'Checkout blocked' : 'Checkout bloqueado',
             description: reasonMap[check.reason as string] ?? (isEnglish ? 'Unable to proceed.' : 'Não foi possível prosseguir.'),
@@ -220,51 +240,37 @@ export default function Pricing() {
           setIsLoadingPro(false);
           return;
         }
+        if (checkErr && code) throw checkErr; // codes need the server-created transaction
         if (typeof check?.attemptId === 'string') attemptId = check.attemptId;
+        if (typeof check?.transactionId === 'string') transactionId = check.transactionId;
       } catch (e) {
-        // Fail open — pre-check should not block checkout on internal errors.
+        if (code) throw e;
+        // Fail open (no code) — pre-check should not block checkout on internal errors.
         console.warn('pre-checkout-check failed, continuing', e);
       }
+      if (code && !transactionId) throw new Error('No transaction for discount code');
 
-      const { initializePaddle, getPaddlePriceId, getPaddleDiscountId, setCheckoutAttemptId } = await import('@/lib/paddle');
       await initializePaddle();
       setCheckoutAttemptId(attemptId);
       const attemptData: Record<string, string> = attemptId ? { attemptId } : {};
+      const settings = {
+        displayMode: 'overlay',
+        successUrl: `${window.location.origin}/subscription-success`,
+        allowLogout: false,
+        variant: 'one-page',
+      };
 
-      if (proAppliedPromo?.code) {
-        // Promo flow: normal monthly price with discount code.
-        const [paddlePriceId, paddleDiscountId] = await Promise.all([
-          getPaddlePriceId('pro_monthly'),
-          getPaddleDiscountId(proAppliedPromo.code),
-        ]);
-        window.Paddle.Checkout.open({
-          items: [{ priceId: paddlePriceId, quantity: 1 }],
-          customer: { email: user.email! },
-          customData: { userId: user.id, ...attemptData },
-          discountId: paddleDiscountId,
-          settings: {
-            displayMode: 'overlay',
-            successUrl: `${window.location.origin}/subscription-success`,
-            allowLogout: false,
-            variant: 'one-page',
-          },
-        });
+      if (transactionId) {
+        // Discount flow: transaction (price + discount + customer + customData) created server-side.
+        window.Paddle.Checkout.open({ transactionId, settings });
       } else {
-        // Default flow: Pro monthly (9€/month). A Paddle discount code typed in the dialog or
-        // passed as /pricing?code=XXX (campaign links) is handed to Paddle, which validates it.
+        // Default flow: Pro monthly (9€/month).
         const subscriptionId = await getPaddlePriceId('pro_monthly');
-        const code = (proPromoInput.trim() || urlCode || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); // Paddle codes are alphanumeric (EARLY-A1 -> EARLYA1)
         window.Paddle.Checkout.open({
           items: [{ priceId: subscriptionId, quantity: 1 }],
-          ...(code ? { discountCode: code } : {}),
           customer: { email: user.email! },
-          customData: { userId: user.id, ...campaignAttribution(), ...attemptData },
-          settings: {
-            displayMode: 'overlay',
-            successUrl: `${window.location.origin}/subscription-success`,
-            allowLogout: false,
-            variant: 'one-page',
-          },
+          customData: { userId: user.id, ...attribution, ...attemptData },
+          settings,
         });
       }
     } catch (err) {
