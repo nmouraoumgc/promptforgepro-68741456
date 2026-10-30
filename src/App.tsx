@@ -5,33 +5,38 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AppLayout } from "@/components/layout";
-import Dashboard from "@/pages/Dashboard";
-import PromptLibrary from "@/pages/PromptLibrary";
-import PromptDetail from "@/pages/PromptDetail";
-import Create from "@/pages/Create";
-import BrandKit from "@/pages/BrandKit";
 import { RedirectToCreate, RedirectToPromptTab } from "@/components/layout/LegacyRedirects";
-import Learn from "@/pages/Learn";
-import LessonDetail from "@/pages/LessonDetail";
 import { RouteMeta } from '@/lib/pageMeta';
-import PromptPacks from "@/pages/PromptPacks";
-import PackDetail from "@/pages/PackDetail";
-import Settings from "@/pages/Settings";
-import Pricing from "@/pages/Pricing";
-import Checkout from "@/pages/Checkout";
-import PurchaseSuccess from "@/pages/PurchaseSuccess";
-import SubscriptionSuccess from "@/pages/SubscriptionSuccess";
-import Login from "@/pages/Login";
-import Signup from "@/pages/Signup";
-import Account from "@/pages/Account";
-import Admin from "@/pages/Admin";
-import Terms from "@/pages/legal/Terms";
-import Refunds from "@/pages/legal/Refunds";
-import Privacy from "@/pages/legal/Privacy";
-import NotFound from "./pages/NotFound";
+import { lazy, Suspense } from 'react';
 import Home from "@/pages/Home";
-import Unsubscribe from '@/pages/Unsubscribe';
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+
+// Route-level code splitting: only the landing page (and the shell) ship in the main bundle.
+const Dashboard = lazy(() => import("@/pages/Dashboard"));
+const PromptLibrary = lazy(() => import("@/pages/PromptLibrary"));
+const PromptDetail = lazy(() => import("@/pages/PromptDetail"));
+const Create = lazy(() => import("@/pages/Create"));
+const BrandKit = lazy(() => import("@/pages/BrandKit"));
+const Learn = lazy(() => import("@/pages/Learn"));
+const LessonDetail = lazy(() => import("@/pages/LessonDetail"));
+const PromptPacks = lazy(() => import("@/pages/PromptPacks"));
+const PackDetail = lazy(() => import("@/pages/PackDetail"));
+const Settings = lazy(() => import("@/pages/Settings"));
+const Pricing = lazy(() => import("@/pages/Pricing"));
+const Checkout = lazy(() => import("@/pages/Checkout"));
+const PurchaseSuccess = lazy(() => import("@/pages/PurchaseSuccess"));
+const SubscriptionSuccess = lazy(() => import("@/pages/SubscriptionSuccess"));
+const Login = lazy(() => import("@/pages/Login"));
+const Signup = lazy(() => import("@/pages/Signup"));
+const Account = lazy(() => import("@/pages/Account"));
+const Admin = lazy(() => import("@/pages/Admin"));
+const Terms = lazy(() => import("@/pages/legal/Terms"));
+const Refunds = lazy(() => import("@/pages/legal/Refunds"));
+const Privacy = lazy(() => import("@/pages/legal/Privacy"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const Unsubscribe = lazy(() => import("@/pages/Unsubscribe"));
+
+const RouteFallback = () => <div className="min-h-[50vh]" aria-busy="true" />;
 
 const queryClient = new QueryClient();
 
@@ -42,6 +47,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <RouteMeta />
+        <Suspense fallback={<RouteFallback />}>
         <Routes>
           {/* Auth routes (no layout) */}
           <Route path="/login" element={<Login />} />
@@ -84,6 +90,7 @@ const App = () => (
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
+        </Suspense>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

@@ -1,7 +1,7 @@
 import { Outlet, useLocation, Link } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
 import { usePromptStore } from '@/stores/promptStore';
 import { PaymentTestModeBanner } from '@/components/PaymentTestModeBanner';
 import { PastDueBanner } from '@/components/PastDueBanner';
@@ -31,7 +31,9 @@ export function AppLayout() {
         <div className="flex flex-1 flex-col overflow-hidden">
           <Header />
           <main className="flex-1 overflow-auto">
-            <Outlet />
+            <Suspense fallback={<div className="min-h-[50vh]" aria-busy="true" />}>
+              <Outlet />
+            </Suspense>
             <footer className="border-t border-border mt-12 py-6 px-6">
               <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-muted-foreground">
                 <span>© {new Date().getFullYear()} PromptForge Pro</span>
