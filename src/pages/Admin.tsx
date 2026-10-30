@@ -6,7 +6,7 @@ import {
   ToggleLeft, ToggleRight, Search, Ticket, Copy,
   CheckCircle, XCircle, LayoutDashboard
 } from 'lucide-react';
-import { AdminOverview } from '@/components/admin/AdminOverview';
+import { AdminOverview, type AdminMetrics, type UserCounts } from '@/components/admin/AdminOverview';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -81,6 +81,9 @@ export default function Admin() {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
+  const [userCounts, setUserCounts] = useState<UserCounts | null>(null);
+  const [metrics, setMetrics] = useState<AdminMetrics | null>(null);
+  const [metricsError, setMetricsError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -116,6 +119,38 @@ export default function Admin() {
     }
   }, [isAdmin]);
 
+  const fetchUserCounts = async () => {
+    const baseCount = () => supabase.from('profiles').select('id', { count: 'exact', head: true });
+    type CountQuery = ReturnType<typeof baseCount>;
+    const countWhere = async (apply?: (q: CountQuery) => CountQuery) => {
+      const q = baseCount();
+      const { count } = await (apply ? apply(q) : q);
+      return count ?? 0;
+    };
+    const now = new Date();
+    const last30 = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const monthStarts: Date[] = [];
+    for (let i = 5; i >= 0; i--) monthStarts.push(new Date(now.getFullYear(), now.getMonth() - i, 1));
+    const [total, pro, premium, free, new30d, ...perMonth] = await Promise.all([
+      countWhere(),
+      countWhere((q) => q.eq('current_plan', 'pro')),
+      countWhere((q) => q.eq('current_plan', 'premium')),
+      countWhere((q) => q.eq('current_plan', 'free')),
+      countWhere((q) => q.gte('created_at', last30)),
+      ...monthStarts.map((start, i) => {
+        const end = new Date(start.getFullYear(), start.getMonth() + 1, 1);
+        return countWhere((q) => q.gte('created_at', start.toISOString()).lt('created_at', end.toISOString()));
+      }),
+    ]);
+    setUserCounts({
+      total, pro, premium, free, new30d,
+      signupsByMonth: monthStarts.map((d, i) => ({
+        month: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
+        count: perMonth[i],
+      })),
+    });
+  };
+
   const fetchData = async () => {
     setIsLoading(true);
     
@@ -150,6 +185,19 @@ export default function Admin() {
       .order('created_at', { ascending: false });
 
     if (subsData) setSubscriptions(subsData as Subscription[]);
+
+    // Exact user counts (the profiles list above is capped at 1000 rows by PostgREST)
+    await fetchUserCounts();
+
+    // Real revenue / MRR from Paddle, computed server-side (admin-only edge function)
+    setMetricsError(null);
+    const { data: m, error: mErr } = await supabase.functions.invoke('admin-metrics');
+    if (mErr || !m || (m as { error?: string }).error) {
+      setMetrics(null);
+      setMetricsError(isEnglish ? 'Could not load Paddle metrics' : 'Não foi possível carregar as métricas do Paddle');
+    } else {
+      setMetrics(m as AdminMetrics);
+    }
 
     // Fetch promo codes
     await fetchPromoCodes();
@@ -289,7 +337,7 @@ export default function Admin() {
                   <Users className="h-5 w-5 text-info" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{users.length}</p>
+                  <p className="text-2xl font-bold">{userCounts?.total ?? users.length}</p>
                   <p className="text-sm text-muted-foreground">{isEnglish ? 'Users' : 'Utilizadores'}</p>
                 </div>
               </div>
@@ -341,7 +389,7 @@ export default function Admin() {
             {isLoading ? (
               <div className="text-center py-12 text-muted-foreground">{isEnglish ? 'Loading statistics…' : 'A carregar estatísticas…'}</div>
             ) : (
-              <AdminOverview users={users} purchases={purchases} subscriptions={subscriptions} />
+              <AdminOverview counts={userCounts} metrics={metrics} metricsError={metricsError} />
             )}
           </TabsContent>
 
