@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { PlanType } from '@/types/plans';
+import { identifyUser, resetAnalytics, setUserPlan } from '@/lib/analytics';
 
 interface Profile {
   id: string;
@@ -107,6 +108,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     
     if (!error && data) {
       set({ profile: data as Profile });
+      setUserPlan((data as Profile).current_plan);
     }
   },
   
@@ -139,6 +141,9 @@ supabase.auth.onAuthStateChange((event, session) => {
   store.setSession(session);
   store.setUser(session?.user ?? null);
 
+  if (session?.user) identifyUser(session.user.id);
+  else if (event === 'SIGNED_OUT') resetAnalytics();
+
   // Defer async operations with setTimeout to prevent deadlock
   if (session?.user) {
     setTimeout(async () => {
@@ -162,6 +167,7 @@ supabase.auth.getSession().then(async ({ data: { session } }) => {
   store.setIsLoading(true);
   store.setSession(session);
   store.setUser(session?.user ?? null);
+  if (session?.user) identifyUser(session.user.id);
 
   try {
     if (session?.user) {

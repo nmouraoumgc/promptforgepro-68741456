@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
 import { saveCampaignCode, getCampaignCode, getCampaignAttribution } from '@/lib/campaignCode';
+import { track } from '@/lib/analytics';
 
 type PricingPlan = {
   id: PlanType;
@@ -252,6 +253,7 @@ export default function Pricing() {
           settings,
         });
       }
+      track('checkout_opened', { plan: 'pro_monthly', has_campaign_code: !!code, ...(code ? { campaign_code: code } : {}) });
     } catch (err) {
       console.error('Subscription error:', err);
       toast({

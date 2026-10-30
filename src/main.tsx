@@ -5,7 +5,9 @@ import "./i18n";
 import { registerServiceWorker } from "./registerServiceWorker";
 import { trackCampaignLanding } from "./lib/campaignLanding";
 import { captureCampaignCodeFromUrl } from "./lib/campaignCode";
+import { initAnalytics } from "./lib/analytics";
 
+initAnalytics();
 captureCampaignCodeFromUrl();
 trackCampaignLanding();
 

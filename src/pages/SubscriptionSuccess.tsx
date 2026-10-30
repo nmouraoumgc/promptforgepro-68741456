@@ -7,6 +7,7 @@ import { Check, Zap, History, TestTube, BarChart3, Download, Loader2 } from "luc
 import { useAuthStore } from "@/stores/authStore";
 import { useTranslation } from "react-i18next";
 import { clearCampaignCode } from "@/lib/campaignCode";
+import { track } from "@/lib/analytics";
 
 const SubscriptionSuccess = () => {
   const navigate = useNavigate();
@@ -35,7 +36,11 @@ const SubscriptionSuccess = () => {
         if (plan === 'pro' || plan === 'premium') break;
         await new Promise((r) => setTimeout(r, 1500));
       }
-      if (!cancelled) setIsVerifying(false);
+      if (!cancelled) {
+        const plan = useAuthStore.getState().profile?.current_plan ?? null;
+        track("subscription_success", { plan, verified: plan === "pro" || plan === "premium" });
+        setIsVerifying(false);
+      }
     };
     poll();
     return () => { cancelled = true; };

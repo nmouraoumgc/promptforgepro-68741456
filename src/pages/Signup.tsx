@@ -12,6 +12,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { useTranslation } from 'react-i18next';
 import { ResendConfirmationButton } from '@/components/auth/ResendConfirmationButton';
 import { postAuthPath } from '@/lib/campaignCode';
+import { track } from '@/lib/analytics';
 
 export default function Signup() {
   const [email, setEmail] = useState('');
@@ -70,9 +71,11 @@ export default function Signup() {
         variant: 'destructive',
       });
     } else if (needsConfirmation) {
+      track('signup_completed', { method: 'email', needs_confirmation: true });
       // Email confirmation required: no session yet. Show the "check your email" state.
       setPendingEmail(email.trim());
     } else {
+      track('signup_completed', { method: 'email', needs_confirmation: false });
       toast({
         title: isEnglish ? 'Account created!' : 'Conta criada!',
         description: isEnglish ? 'Welcome to PromptForge.' : 'Bem-vindo ao PromptForge.',

@@ -109,6 +109,9 @@ function PrivacyPt() {
               Usamos cookies e tecnologias similares essenciais para autenticação e funcionamento do
               Serviço. Pode gerir as preferências de cookies através do seu navegador.
             </p>
+            <p className="mt-2">
+              Usamos o PostHog (alojado na UE) para análise de utilização e gravações de sessão com os campos de formulário ocultados; respeitamos a definição Do Not Track do navegador.
+            </p>
           </section>
 
           <section>
@@ -215,6 +218,9 @@ function PrivacyEn() {
             <h2 className="text-xl font-semibold mb-2">9. Cookies</h2>
             <p>
               We use cookies and similar technologies that are essential for authentication and for the Service to work. You can manage cookie preferences through your browser.
+            </p>
+            <p className="mt-2">
+              We use PostHog (hosted in the EU) for usage analytics and session recordings with form inputs masked; we respect your browser's Do Not Track setting.
             </p>
           </section>
           <section>

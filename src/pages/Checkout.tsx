@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuthStore } from "@/stores/authStore";
 import { useTranslation } from "react-i18next";
 import { getCampaignCode } from "@/lib/campaignCode";
+import { track } from "@/lib/analytics";
 
 const BASE_PRICE = 19;
 
@@ -193,6 +194,7 @@ const Checkout = () => {
           settings,
         });
       }
+      track("checkout_opened", { plan: "premium_one_time", has_campaign_code: !!code, ...(code ? { campaign_code: code } : {}) });
     } catch (error) {
       console.error("Checkout error:", error);
       toast({
