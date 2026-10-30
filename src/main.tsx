@@ -6,6 +6,7 @@ import { registerServiceWorker } from "./registerServiceWorker";
 import { trackCampaignLanding } from "./lib/campaignLanding";
 import { captureCampaignCodeFromUrl } from "./lib/campaignCode";
 import { initAnalytics } from "./lib/analytics";
+import { initializePaddle } from "./lib/paddle";
 
 initAnalytics();
 captureCampaignCodeFromUrl();
@@ -38,3 +39,9 @@ if (canHydrate()) {
   rootEl.textContent = "";
   createRoot(rootEl).render(<App />);
 }
+
+// Paddle.js is loaded by a static deferred tag in index.html (it runs before this module), so initialize it
+// right away on every page, including the prerendered public ones, without waiting for React. Initialize runs
+// once; pwCustomer is applied later with Paddle.Update (see setRetainCustomer).
+initializePaddle().catch(() => { /* checkout pages retry on demand */ });
+

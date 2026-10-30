@@ -139,9 +139,15 @@ export async function initializePaddle(): Promise<void> {
   }
 
   initPromise = new Promise<void>((resolve, reject) => {
-    const existing = document.querySelector('script[data-paddle="true"]') as HTMLScriptElement | null;
     const onLoad = () => {
       try {
+        if (paddleInitialized) return resolve();
+        if (window.Paddle.Initialized) {
+          // Already initialized (only one Paddle.js copy per page): just sync pwCustomer.
+          paddleInitialized = true;
+          if (retainCustomerId) window.Paddle.Update({ pwCustomer: { id: retainCustomerId } });
+          return resolve();
+        }
         const env = getPaddleEnvironment() === "sandbox" ? "sandbox" : "production";
         window.Paddle.Environment.set(env);
         window.Paddle.Initialize({
@@ -152,12 +158,29 @@ export async function initializePaddle(): Promise<void> {
         paddleInitialized = true;
         resolve();
       } catch (e) {
+        initPromise = null;
         reject(e);
       }
     };
 
-    if (existing && window.Paddle) {
+    // index.html ships a static <script src=".../paddle/v2/paddle.js" data-paddle="true" defer>.
+    // Reuse it: never inject a second copy.
+    if (window.Paddle) {
       onLoad();
+      return;
+    }
+    const existing = document.querySelector(
+      'script[data-paddle="true"], script[src^="https://cdn.paddle.com/paddle/v2/paddle.js"]',
+    ) as HTMLScriptElement | null;
+    const onError = (e: unknown) => {
+      initPromise = null;
+      reject(e);
+    };
+    if (existing) {
+      existing.addEventListener("load", onLoad, { once: true });
+      existing.addEventListener("error", onError, { once: true });
+      // The load event may have fired between the window.Paddle check and the listener.
+      if (window.Paddle) onLoad();
       return;
     }
 
@@ -165,7 +188,7 @@ export async function initializePaddle(): Promise<void> {
     script.src = "https://cdn.paddle.com/paddle/v2/paddle.js";
     script.dataset.paddle = "true";
     script.onload = onLoad;
-    script.onerror = reject;
+    script.onerror = onError;
     document.head.appendChild(script);
   });
 

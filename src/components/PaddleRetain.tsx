@@ -4,9 +4,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { profitwellStart } from '@/lib/profitwell';
 
 /**
- * Loads Paddle.js on every page (public marketing pages and signed-in app pages) so Paddle Retain can run,
- * after the page has finished loading so it never competes with the first paint. For signed-in users with a
- * subscription, passes their Paddle customer id to Retain as pwCustomer.
+ * Paddle.js is a static tag in index.html and is initialized from main.tsx; the effect below is only a fallback
+ * (initializePaddle is a no-op once initialized). For signed-in users with a subscription, passes their Paddle
+ * customer id to Retain as pwCustomer (via Paddle.Update).
  */
 export default function PaddleRetain() {
   const uid = useAuthStore((s) => s.user?.id ?? null);

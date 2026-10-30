@@ -102,12 +102,13 @@ try {
       const texts = []; while (tw.nextNode()) texts.push(tw.currentNode);
       for (const t of texts) if (t.previousSibling && t.previousSibling.nodeType === 3) t.parentNode.insertBefore(document.createComment(' '), t);
       const head = document.head.cloneNode(true);
-      // Keep only build-time scripts (entry module, theme script, JSON-LD); drop runtime-injected ones.
+      // Keep only build-time scripts (entry module, theme script, JSON-LD, static Paddle.js tag); drop runtime-injected ones.
       head.querySelectorAll('script').forEach((s) => {
         const keep = (s.type === 'module' && (s.getAttribute('src') || '').startsWith('/assets/'))
           || s.type === 'application/ld+json'
           || (!s.src && (s.textContent || '').includes('promptforge-storage'))
-          || (s.getAttribute('src') || '').startsWith('/_vercel/');
+          || (s.getAttribute('src') || '').startsWith('/_vercel/')
+          || (s.dataset.paddle === 'true' && (s.getAttribute('src') || '').startsWith('https://cdn.paddle.com/paddle/v2/'));
         if (!keep) s.remove();
       });
       head.querySelectorAll('link[rel="stylesheet"][href^="https://fonts.googleapis.com"]').forEach((l) => l.remove());
