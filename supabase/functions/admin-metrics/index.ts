@@ -31,12 +31,13 @@ Deno.serve(async (req) => {
     const { data: role } = await admin.from('user_roles').select('role').eq('user_id', u.user.id).eq('role', 'admin').maybeSingle();
     if (!role) return json({ error: 'forbidden' }, 403);
 
-    const [subs, txns, adjs] = await Promise.all([
+    const [subs, txns, adjs, discounts] = await Promise.all([
       getAll('/subscriptions?status=active,trialing,past_due,paused&per_page=200&include=recurring_transaction_details'),
       getAll('/transactions?status=completed,paid&per_page=30'),
       getAll('/adjustments?per_page=50'),
+      getAll('/discounts?status=active,archived&per_page=50'),
     ]);
-    return json(computeAdminMetrics(subs, txns, adjs));
+    return json(computeAdminMetrics(subs, txns, adjs, new Date(), discounts));
   } catch (e) {
     console.error('admin-metrics failed', e instanceof Error ? e.message : String(e));
     return json({ error: 'metrics_unavailable' }, 502);

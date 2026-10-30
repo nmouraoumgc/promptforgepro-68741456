@@ -6,7 +6,7 @@ import {
   ToggleLeft, ToggleRight, Search, Ticket, Copy,
   CheckCircle, XCircle, LayoutDashboard
 } from 'lucide-react';
-import { AdminOverview, type AdminMetrics, type UserCounts } from '@/components/admin/AdminOverview';
+import { AdminOverview, fmtCur, fmtMoney, type AdminMetrics, type UserCounts } from '@/components/admin/AdminOverview';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -350,8 +350,13 @@ export default function Admin() {
                   <CreditCard className="h-5 w-5 text-success" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{purchases.length}</p>
-                  <p className="text-sm text-muted-foreground">{isEnglish ? 'Purchases' : 'Compras'}</p>
+                  <p className="text-2xl font-bold">{metrics ? metrics.paid_txns_all_time : 'n/d'}</p>
+                  <p className="text-sm text-muted-foreground">{isEnglish ? 'Purchases (paid, Paddle)' : 'Compras (pagas, Paddle)'}</p>
+                  {metrics && (
+                    <p className="text-xs text-muted-foreground">
+                      {isEnglish ? 'gross' : 'bruto'} {fmtMoney(metrics.revenue_all_time)} · {isEnglish ? 'net' : 'líquido'} {fmtMoney(metrics.revenue_all_time_net)}
+                    </p>
+                  )}
                 </div>
               </div>
             </CardContent>
@@ -363,8 +368,13 @@ export default function Admin() {
                   <Ticket className="h-5 w-5 text-amber-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{promoCodes.length}</p>
-                  <p className="text-sm text-muted-foreground">{isEnglish ? 'Promo codes' : 'Códigos Promo'}</p>
+                  <p className="text-2xl font-bold">{metrics ? `${metrics.discounts_active}/${metrics.discounts_total}` : 'n/d'}</p>
+                  <p className="text-sm text-muted-foreground">{isEnglish ? 'Promo codes (active/total, Paddle)' : 'Códigos Promo (ativos/total, Paddle)'}</p>
+                  {metrics && metrics.discounts.filter((d) => d.status === 'active' && (!d.expires_at || new Date(d.expires_at) > new Date())).slice(0, 2).map((d) => (
+                    <p key={d.id} className="text-xs text-muted-foreground">
+                      {d.code ?? d.id}: {d.times_used}{d.usage_limit ? `/${d.usage_limit}` : ''} {isEnglish ? 'uses' : 'usos'}
+                    </p>
+                  ))}
                 </div>
               </div>
             </CardContent>
@@ -580,10 +590,56 @@ export default function Admin() {
 
           {/* Purchases Tab */}
           <TabsContent value="purchases">
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle>{isEnglish ? 'Paid transactions (Paddle, read-only)' : 'Transações pagas (Paddle, só leitura)'}</CardTitle>
+                <CardDescription>
+                  {metrics
+                    ? (isEnglish
+                      ? `${metrics.paid_txns_all_time} paid of ${metrics.completed_txns_all_time} completed · gross ${fmtMoney(metrics.revenue_all_time)} · refunds/chargebacks ${fmtMoney(metrics.refunds_chargebacks_all_time)}`
+                      : `${metrics.paid_txns_all_time} pagas de ${metrics.completed_txns_all_time} concluídas · bruto ${fmtMoney(metrics.revenue_all_time)} · reembolsos/chargebacks ${fmtMoney(metrics.refunds_chargebacks_all_time)}`)
+                    : (metricsError ?? (isEnglish ? 'Loading…' : 'A carregar…'))}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {metrics && metrics.paid_txns.length > 0 && (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>ID</TableHead>
+                        <TableHead>{isEnglish ? 'Type' : 'Tipo'}</TableHead>
+                        <TableHead>{isEnglish ? 'Amount' : 'Valor'}</TableHead>
+                        <TableHead>{isEnglish ? 'Refunded' : 'Devolvido'}</TableHead>
+                        <TableHead>{isEnglish ? 'Discount' : 'Desconto'}</TableHead>
+                        <TableHead>{isEnglish ? 'Date' : 'Data'}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {metrics.paid_txns.map((t) => (
+                        <TableRow key={t.id}>
+                          <TableCell className="font-mono text-sm">{t.id.slice(0, 14)}...</TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{t.origin === 'subscription_recurring' ? (isEnglish ? 'renewal' : 'renovação') : (isEnglish ? 'new' : 'nova')}</Badge>
+                          </TableCell>
+                          <TableCell>{fmtCur(t.total, t.currency)}</TableCell>
+                          <TableCell>
+                            {t.refunded > 0 ? <Badge variant="destructive">{fmtCur(t.refunded, t.currency)}</Badge> : <span className="text-muted-foreground">0</span>}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">{t.discount_code ?? '-'}</TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {new Date(t.billed_at).toLocaleDateString(isEnglish ? 'en-GB' : 'pt-PT')}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
             <Card>
               <CardHeader>
-                <CardTitle>{isEnglish ? 'Purchases' : 'Compras'}</CardTitle>
-                <CardDescription>{isEnglish ? 'Transaction history' : 'Histórico de transações'}</CardDescription>
+                <CardTitle>{isEnglish ? 'Purchases (database table)' : 'Compras (tabela da base de dados)'}</CardTitle>
+                <CardDescription>{isEnglish ? 'Legacy purchases table, not used by Paddle checkout' : 'Tabela antiga de compras, não é usada pelo checkout Paddle'}</CardDescription>
               </CardHeader>
               <CardContent>
                 <Table>
@@ -626,11 +682,58 @@ export default function Admin() {
 
           {/* Promo Codes Tab - NEW */}
           <TabsContent value="promo">
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle>{isEnglish ? 'Paddle discounts (read-only)' : 'Descontos Paddle (só leitura)'}</CardTitle>
+                <CardDescription>
+                  {metrics
+                    ? (isEnglish ? `${metrics.discounts_active} active of ${metrics.discounts_total}` : `${metrics.discounts_active} ativos de ${metrics.discounts_total}`)
+                    : (metricsError ?? (isEnglish ? 'Loading…' : 'A carregar…'))}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {metrics && metrics.discounts.length > 0 && (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{isEnglish ? 'Code' : 'Código'}</TableHead>
+                        <TableHead>{isEnglish ? 'Discount' : 'Desconto'}</TableHead>
+                        <TableHead>{isEnglish ? 'Uses' : 'Usos'}</TableHead>
+                        <TableHead>{isEnglish ? 'Status' : 'Estado'}</TableHead>
+                        <TableHead>{isEnglish ? 'Expires' : 'Expira'}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {metrics.discounts.map((d) => {
+                        const expired = !!d.expires_at && new Date(d.expires_at) <= new Date();
+                        const state = d.status !== 'active' ? (isEnglish ? 'archived' : 'arquivado') : expired ? (isEnglish ? 'expired' : 'expirado') : (isEnglish ? 'active' : 'ativo');
+                        return (
+                          <TableRow key={d.id}>
+                            <TableCell className="font-mono text-sm">{d.code ?? d.id}</TableCell>
+                            <TableCell>
+                              {d.type === 'percentage' ? `${d.amount}%` : fmtCur(Number(d.amount), d.currency ?? 'EUR')}
+                              {d.recur ? (isEnglish ? ' (recurring)' : ' (recorrente)') : (isEnglish ? ' (1st charge)' : ' (1.ª cobrança)')}
+                            </TableCell>
+                            <TableCell>{d.times_used}{d.usage_limit ? ` / ${d.usage_limit}` : ''}</TableCell>
+                            <TableCell>
+                              <Badge variant={state === 'ativo' || state === 'active' ? 'default' : 'secondary'}>{state}</Badge>
+                            </TableCell>
+                            <TableCell className="text-muted-foreground">
+                              {d.expires_at ? new Date(d.expires_at).toLocaleDateString(isEnglish ? 'en-GB' : 'pt-PT') : '-'}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
-                  <CardTitle>{isEnglish ? 'Promo codes' : 'Códigos de Promoção'}</CardTitle>
-                  <CardDescription>{isEnglish ? 'Manage discounts and offers' : 'Gerir descontos e ofertas'}</CardDescription>
+                  <CardTitle>{isEnglish ? 'Promo codes (database table)' : 'Códigos de Promoção (tabela da base de dados)'}</CardTitle>
+                  <CardDescription>{isEnglish ? 'Internal promo codes, separate from Paddle discounts' : 'Códigos internos, separados dos descontos Paddle'}</CardDescription>
                 </div>
                 <Button 
                   onClick={() => { 

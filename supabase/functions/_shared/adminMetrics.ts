@@ -25,7 +25,15 @@ export interface AdminMetrics {
   paying_user_ids: string[];  // supabase user ids (customData.userId) currently paying
   revenue_by_month: { month: string; amounts: Money }[]; // last 6 months, gross
   recent_paid: { id: string; billed_at: string; currency: string; total: number; origin: string; user_id: string | null }[];
+  completed_txns_all_time: number; // completed incl. 0-value ones
+  paid_txns: PaidTxn[];           // every completed transaction with value > 0 (newest first, max 200)
+  discounts: DiscountInfo[];
+  discounts_active: number;
+  discounts_total: number;
 }
+
+export interface PaidTxn { id: string; billed_at: string; currency: string; total: number; refunded: number; origin: string; subscription_id: string | null; discount_code: string | null }
+export interface DiscountInfo { id: string; code: string | null; description: string | null; type: string; amount: string; currency: string | null; status: string; recur: boolean; times_used: number; usage_limit: number | null; expires_at: string | null; created_at: string }
 
 const add = (m: Money, cur: string, v: number) => { if (v) m[cur] = (m[cur] ?? 0) + v; };
 const num = (v: unknown) => Number(v ?? 0) || 0;
@@ -46,7 +54,7 @@ function monthlyFactor(cycle: { interval?: string; frequency?: number } | null |
 // deno-lint-ignore no-explicit-any
 type Any = any;
 
-export function computeAdminMetrics(subs: Any[], txns: Any[], adjs: Any[], now = new Date()): AdminMetrics {
+export function computeAdminMetrics(subs: Any[], txns: Any[], adjs: Any[], now = new Date(), discounts: Any[] = []): AdminMetrics {
   const completed = txns.filter((t) => t.status === 'completed' || t.status === 'paid');
   const txTotal = (t: Any) => num(t?.details?.totals?.grand_total ?? t?.details?.totals?.total);
   const when = (t: Any) => new Date(t.billed_at ?? t.created_at);
@@ -66,8 +74,10 @@ export function computeAdminMetrics(subs: Any[], txns: Any[], adjs: Any[], now =
     active_subs: 0, zero_charge_active_subs: 0, revenue_month: {}, revenue_month_net: {}, paid_txns_month: 0,
     free_txns_month: 0, revenue_30d: {}, paid_txns_30d: 0, revenue_all_time: {}, revenue_all_time_net: {},
     paid_txns_all_time: 0, refunds_chargebacks_all_time: {}, refunds_chargebacks_count: 0, paying_user_ids: [],
-    revenue_by_month: [], recent_paid: [],
+    revenue_by_month: [], recent_paid: [], completed_txns_all_time: completed.length, paid_txns: [],
+    discounts: [], discounts_active: 0, discounts_total: 0,
   };
+  const codeById = new Map<string, string | null>(discounts.map((d) => [d.id, d.code ?? null]));
   const paying = new Set<string>();
 
   for (const s of subs) {
@@ -116,8 +126,17 @@ export function computeAdminMetrics(subs: Any[], txns: Any[], adjs: Any[], now =
     // one-time (non-subscription) paid purchase in the last 30 days that was not refunded -> paying user
     const uid = t.custom_data?.userId;
     if (uid && !t.subscription_id && d >= since30 && (refundedTx.get(t.id) ?? 0) < v) paying.add(uid);
+    m.paid_txns.push({ id: t.id, billed_at: d.toISOString(), currency: cur, total: v, refunded: refundedTx.get(t.id) ?? 0, origin: t.origin,
+      subscription_id: t.subscription_id ?? null, discount_code: t.discount_id ? (codeById.get(t.discount_id) ?? t.discount_id) : null });
     m.recent_paid.push({ id: t.id, billed_at: d.toISOString(), currency: cur, total: v, origin: t.origin, user_id: uid ?? null });
   }
+  m.paid_txns.sort((a, b) => b.billed_at.localeCompare(a.billed_at)); m.paid_txns = m.paid_txns.slice(0, 200);
+  m.discounts = discounts.map((d) => ({ id: d.id, code: d.code ?? null, description: d.description ?? null, type: d.type, amount: String(d.amount),
+    currency: d.currency_code ?? null, status: d.status, recur: !!d.recur, times_used: num(d.times_used), usage_limit: d.usage_limit ?? null,
+    expires_at: d.expires_at ?? null, created_at: d.created_at }))
+    .sort((a, b) => b.created_at.localeCompare(a.created_at));
+  m.discounts_total = m.discounts.length;
+  m.discounts_active = m.discounts.filter((d) => d.status === 'active' && (!d.expires_at || new Date(d.expires_at) > now)).length;
   m.recent_paid.sort((a, b) => b.billed_at.localeCompare(a.billed_at)); m.recent_paid = m.recent_paid.slice(0, 5);
 
   for (const [cur, v] of Object.entries(m.revenue_month)) m.revenue_month_net[cur] = v;

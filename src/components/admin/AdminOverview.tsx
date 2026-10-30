@@ -55,6 +55,11 @@ export interface AdminMetrics {
   paying_user_ids: string[];
   revenue_by_month: { month: string; amounts: Money }[];
   recent_paid: { id: string; billed_at: string; currency: string; total: number; origin: string; user_id: string | null }[];
+  completed_txns_all_time: number;
+  paid_txns: { id: string; billed_at: string; currency: string; total: number; refunded: number; origin: string; subscription_id: string | null; discount_code: string | null }[];
+  discounts: { id: string; code: string | null; description: string | null; type: string; amount: string; currency: string | null; status: string; recur: boolean; times_used: number; usage_limit: number | null; expires_at: string | null; created_at: string }[];
+  discounts_active: number;
+  discounts_total: number;
 }
 
 /** Exact counts from `count: 'exact'` queries (not limited by the 1000-row API cap). */
@@ -73,11 +78,11 @@ interface Props {
   metricsError: string | null;
 }
 
-const fmtCur = (cents: number, currency: string) =>
+export const fmtCur = (cents: number, currency: string) =>
   new Intl.NumberFormat(isEnglishNow() ? 'en-GB' : 'pt-PT', { style: 'currency', currency }).format(cents / 100);
 
-/** "0,00 €" when empty, otherwise "63,00 US$ + 9,00 €" — each currency shown as-is, never converted. */
-const fmtMoney = (m: Money | undefined, fallbackCurrency = 'EUR') => {
+/** "0,00 €" when empty, otherwise "63,00 US$ + 9,00 €"; each currency shown as-is, never converted. */
+export const fmtMoney = (m: Money | undefined, fallbackCurrency = 'EUR') => {
   const entries = Object.entries(m ?? {}).filter(([, v]) => v !== 0);
   if (entries.length === 0) return fmtCur(0, fallbackCurrency);
   return entries.map(([c, v]) => fmtCur(v, c)).join(' + ');
@@ -91,7 +96,7 @@ const monthLabel = (key: string) => {
 
 export function AdminOverview({ counts, metrics, metricsError }: Props) {
   const isEnglish = useIsEnglish();
-  const na = '—';
+  const na = 'n/d';
 
   const stats = useMemo(() => {
     const total = counts?.total ?? 0;
@@ -281,8 +286,8 @@ export function AdminOverview({ counts, metrics, metricsError }: Props) {
             <CardTitle>{isEnglish ? 'Plan distribution (profile flag)' : 'Distribuição de planos (flag do perfil)'}</CardTitle>
             <CardDescription>
               {isEnglish
-                ? 'Plan flag on profiles — not the same as paying (includes 100%-discount and manual grants)'
-                : 'Flag de plano nos perfis — não é o mesmo que pagar (inclui descontos de 100% e atribuições manuais)'}
+                ? 'Plan flag on profiles, not the same as paying (includes 100%-discount and manual grants)'
+                : 'Flag de plano nos perfis, não é o mesmo que pagar (inclui descontos de 100% e atribuições manuais)'}
             </CardDescription>
           </CardHeader>
           <CardContent>
