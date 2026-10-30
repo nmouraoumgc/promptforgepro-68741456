@@ -11,6 +11,7 @@ import { lazy, Suspense } from 'react';
 import Home from "@/pages/Home";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { ThemeSync } from "@/components/layout/ThemeSync";
+import PaddleRetain from "@/components/PaddleRetain";
 
 // Route-level code splitting: only the landing page (and the shell) ship in the main bundle.
 const Dashboard = lazy(() => import("@/pages/Dashboard"));
@@ -49,6 +50,7 @@ const App = () => (
       <BrowserRouter>
         <RouteMeta />
         <ThemeSync />
+        <PaddleRetain />
         <Suspense fallback={<RouteFallback />}>
         <Routes>
           {/* Auth routes (no layout) */}

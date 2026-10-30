@@ -111,6 +111,25 @@ export function handlePaddleEvent(event: any) {
 
 let initPromise: Promise<void> | null = null;
 
+// ---------- Paddle Retain ----------
+// Live client-side tokens also authenticate Retain, so loading Paddle.js is all Retain needs on public pages.
+// On signed-in pages Retain wants pwCustomer.id = the Paddle customer id (ctm_...); other ids are not supported.
+let retainCustomerId: string | null = null;
+
+/** Set (or clear) the Paddle customer id Retain should use; applies immediately when Paddle.js is already initialized. */
+export function setRetainCustomer(id: string | null) {
+  const next = typeof id === "string" && id.startsWith("ctm_") ? id : null;
+  if (next === retainCustomerId) return;
+  retainCustomerId = next;
+  if (paddleInitialized && window.Paddle?.Update) {
+    try {
+      window.Paddle.Update({ pwCustomer: next ? { id: next } : {} });
+    } catch {
+      /* Retain is best effort */
+    }
+  }
+}
+
 export async function initializePaddle(): Promise<void> {
   if (paddleInitialized) return;
   if (initPromise) return initPromise;
@@ -125,7 +144,11 @@ export async function initializePaddle(): Promise<void> {
       try {
         const env = getPaddleEnvironment() === "sandbox" ? "sandbox" : "production";
         window.Paddle.Environment.set(env);
-        window.Paddle.Initialize({ token: clientToken, eventCallback: handlePaddleEvent });
+        window.Paddle.Initialize({
+          token: clientToken,
+          eventCallback: handlePaddleEvent,
+          ...(retainCustomerId ? { pwCustomer: { id: retainCustomerId } } : {}),
+        });
         paddleInitialized = true;
         resolve();
       } catch (e) {
