@@ -3,9 +3,25 @@
   "framework": "vite",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
+  "redirects": [
+    {
+      "source": "/planos",
+      "destination": "/pricing",
+      "permanent": true
+    },
+    {
+      "source": "/planos/",
+      "destination": "/pricing",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/(app|create|brand|builder|quick|optimizer|versions|tester|settings|pricing|checkout|purchase-success|subscription-success|account|admin|login|signup|terms|refunds|privacy|unsubscribe)(/?)",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/(library|learn|packs)(/.*)?",
       "destination": "/index.html"
     }
   ],

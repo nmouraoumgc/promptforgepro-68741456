@@ -523,7 +523,7 @@ export default function Pricing() {
                         : ''})
                     </span>
                   </div>
-                  <Button type="button" variant="ghost" size="icon" onClick={removeProPromo}>
+                  <Button type="button" variant="ghost" size="icon" aria-label={isEnglish ? 'Remove code' : 'Remover código'} onClick={removeProPromo}>
                     <X className="h-4 w-4" />
                   </Button>
                 </div>

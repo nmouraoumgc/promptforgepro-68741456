@@ -195,6 +195,7 @@ export default function QuickPrompt({ embedded = false, initialRequest = '' }: {
               )}
               onClick={handleMicClick}
               disabled={isTranscribing || isGenerating}
+              aria-label={(i18n.resolvedLanguage || i18n.language || 'pt').startsWith('en') ? (isRecording ? 'Stop recording' : 'Voice input') : (isRecording ? 'Parar gravação' : 'Ditar por voz')}
             >
               {isTranscribing ? (
                 <Loader2 className="h-5 w-5 animate-spin" />

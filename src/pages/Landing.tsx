@@ -1,5 +1,6 @@
 // Public landing page for logged-out visitors at "/". Signed-in users are sent to the app (/app) by Home.
 // Kept free of heavy dependencies (no animation library) so it paints fast on mobile.
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Check, Flame, Sparkles, Wand2, Library, Gauge, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -25,7 +26,37 @@ Format: caption of up to 80 words, 1 question at the end and 3 local hashtags.
 Avoid: price promises and too many emojis.`,
 };
 
+const JSON_LD = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'PromptForge Pro',
+  url: 'https://promptforgepro.me/',
+  image: 'https://promptforgepro.me/og-image.png',
+  applicationCategory: 'BusinessApplication',
+  operatingSystem: 'Web',
+  inLanguage: ['pt-PT', 'en'],
+  description: 'Cria, otimiza e guarda prompts profissionais para ChatGPT, Gemini e Claude, em português de Portugal.',
+  offers: [
+    { '@type': 'Offer', name: 'Free', price: '0', priceCurrency: 'EUR' },
+    { '@type': 'Offer', name: 'Pro', price: '9', priceCurrency: 'EUR', description: 'Subscrição mensal' },
+    { '@type': 'Offer', name: 'Premium', price: '19', priceCurrency: 'EUR', description: 'Pagamento único' },
+  ],
+};
+
+/** Adds the SoftwareApplication JSON-LD while the landing page is mounted. */
+function useJsonLd() {
+  useEffect(() => {
+    const el = document.createElement('script');
+    el.type = 'application/ld+json';
+    el.id = 'ld-software-application';
+    el.text = JSON.stringify(JSON_LD);
+    document.head.appendChild(el);
+    return () => { el.remove(); };
+  }, []);
+}
+
 export default function Landing() {
+  useJsonLd();
   const en = useIsEnglish();
   const L = (pt: string, eng: string) => (en ? eng : pt);
 

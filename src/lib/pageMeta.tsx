@@ -4,8 +4,12 @@ import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useIsEnglish } from '@/i18n/lang';
 
-type Meta = { title: string; description: string };
+type Meta = { title: string; description: string; noindex?: boolean };
 const BRAND = 'PromptForge Pro';
+const SITE = 'https://promptforgepro.me';
+const OG_IMAGE = `${SITE}/og-image.png`;
+// App-only screens: useful to members, not to search results.
+const NOINDEX = /^\/(app|create|library|brand|settings|checkout|purchase-success|subscription-success|account|admin|unsubscribe|builder|quick|optimizer|versions|tester)(\/|$)/;
 
 const META: Record<string, { pt: Meta; en: Meta }> = {
   '/': {
@@ -111,10 +115,20 @@ const META: Record<string, { pt: Meta; en: Meta }> = {
 };
 
 const NOT_FOUND = {
-  pt: { title: 'Página não encontrada', description: 'A página que procuras não existe.' },
-  en: { title: 'Page not found', description: 'The page you are looking for does not exist.' },
+  pt: { title: 'Página não encontrada', description: 'A página que procuras não existe.', noindex: true },
+  en: { title: 'Page not found', description: 'The page you are looking for does not exist.', noindex: true },
 };
 const DYNAMIC: Record<string, { pt: Meta; en: Meta }> = { '/learn/': META['/learn'], '/packs/': META['/packs'], '/library/': META['/library'] };
+
+function setLink(rel: string, href: string) {
+  let el = document.head.querySelector<HTMLLinkElement>(`link[rel="${rel}"]`);
+  if (!el) {
+    el = document.createElement('link');
+    el.setAttribute('rel', rel);
+    document.head.appendChild(el);
+  }
+  el.setAttribute('href', href);
+}
 
 function setMetaTag(selector: string, attr: 'name' | 'property', key: string, value: string) {
   let el = document.head.querySelector<HTMLMetaElement>(selector);
@@ -126,13 +140,25 @@ function setMetaTag(selector: string, attr: 'name' | 'property', key: string, va
   el.setAttribute('content', value);
 }
 
-export function applyMeta(meta: Meta, isEnglish: boolean) {
+export function applyMeta(meta: Meta, isEnglish: boolean, path?: string) {
   const full = meta.title === BRAND ? BRAND : `${meta.title} | ${BRAND}`;
   document.title = full;
   document.documentElement.lang = isEnglish ? 'en' : 'pt-PT';
   setMetaTag('meta[name="description"]', 'name', 'description', meta.description);
   setMetaTag('meta[property="og:title"]', 'property', 'og:title', full);
   setMetaTag('meta[property="og:description"]', 'property', 'og:description', meta.description);
+  setMetaTag('meta[property="og:image"]', 'property', 'og:image', OG_IMAGE);
+  setMetaTag('meta[name="twitter:title"]', 'name', 'twitter:title', full);
+  setMetaTag('meta[name="twitter:description"]', 'name', 'twitter:description', meta.description);
+  setMetaTag('meta[name="twitter:image"]', 'name', 'twitter:image', OG_IMAGE);
+  if (path !== undefined) {
+    const clean = path.length > 1 ? path.replace(/\/+$/, '') : '/';
+    const url = `${SITE}${clean === '/' ? '/' : clean}`;
+    setLink('canonical', url);
+    setMetaTag('meta[property="og:url"]', 'property', 'og:url', url);
+    const noindex = meta.noindex || NOINDEX.test(clean);
+    setMetaTag('meta[name="robots"]', 'name', 'robots', noindex ? 'noindex, follow' : 'index, follow');
+  }
 }
 
 export function metaForPath(path: string, isEnglish: boolean): Meta {
@@ -145,7 +171,7 @@ export function metaForPath(path: string, isEnglish: boolean): Meta {
 export function RouteMeta() {
   const { pathname } = useLocation();
   const isEnglish = useIsEnglish();
-  useEffect(() => { applyMeta(metaForPath(pathname, isEnglish), isEnglish); }, [pathname, isEnglish]);
+  useEffect(() => { applyMeta(metaForPath(pathname, isEnglish), isEnglish, pathname); }, [pathname, isEnglish]);
   return null;
 }
 

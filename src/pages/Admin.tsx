@@ -507,6 +507,7 @@ export default function Admin() {
                               variant="ghost"
                               size="icon"
                               onClick={() => handleToggleActive(pack)}
+                              aria-label={pack.is_active ? (isEnglish ? 'Deactivate pack' : 'Desativar pack') : (isEnglish ? 'Activate pack' : 'Ativar pack')}
                             >
                               {pack.is_active ? (
                                 <ToggleRight className="h-4 w-4" />
@@ -518,6 +519,7 @@ export default function Admin() {
                               variant="ghost"
                               size="icon"
                               onClick={() => openEditPack(pack)}
+                              aria-label={isEnglish ? 'Edit pack' : 'Editar pack'}
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
@@ -525,6 +527,7 @@ export default function Admin() {
                               variant="ghost"
                               size="icon"
                               onClick={() => handleDeletePack(pack.id)}
+                              aria-label={isEnglish ? 'Delete pack' : 'Apagar pack'}
                             >
                               <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>

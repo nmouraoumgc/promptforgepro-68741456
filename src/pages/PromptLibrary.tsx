@@ -51,8 +51,8 @@ export default function PromptLibrary() {
           <Input placeholder={t('library.searchPlaceholder')} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9" />
         </div>
         <div className="flex gap-2">
-          <Button variant={viewMode === 'grid' ? 'default' : 'outline'} size="icon" onClick={() => setViewMode('grid')}><Grid className="h-4 w-4" /></Button>
-          <Button variant={viewMode === 'list' ? 'default' : 'outline'} size="icon" onClick={() => setViewMode('list')}><List className="h-4 w-4" /></Button>
+          <Button variant={viewMode === 'grid' ? 'default' : 'outline'} size="icon" aria-label={isEnglishUi ? 'Grid view' : 'Vista em grelha'} onClick={() => setViewMode('grid')}><Grid className="h-4 w-4" /></Button>
+          <Button variant={viewMode === 'list' ? 'default' : 'outline'} size="icon" aria-label={isEnglishUi ? 'List view' : 'Vista em lista'} onClick={() => setViewMode('list')}><List className="h-4 w-4" /></Button>
           <Link to="/create"><Button><Plus className="h-4 w-4 mr-2" />{t('library.newPrompt')}</Button></Link>
         </div>
       </div>
@@ -106,11 +106,11 @@ export default function PromptLibrary() {
                 <div className="flex justify-between items-start">
                   <CardTitle className="text-base truncate flex-1 min-w-0"><Link to={`/library/${prompt.id}`} className="hover:text-primary" data-testid="library-open">{prompt.title}</Link></CardTitle>
                   <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => toggleFavorite(prompt.id)}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" aria-label={isEnglishUi ? 'Toggle favourite' : 'Marcar como favorito'} onClick={() => toggleFavorite(prompt.id)}>
                       <Star className={cn("h-4 w-4", prompt.isFavorite && "fill-warning text-warning")} />
                     </Button>
                     <DropdownMenu>
-                      <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                      <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8" aria-label={isEnglishUi ? 'More actions' : 'Mais ações'}><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
                       <DropdownMenuContent>
                         <DropdownMenuItem onClick={() => handleDuplicate(prompt.id)}><Copy className="h-4 w-4 mr-2" />{t('library.duplicate')}</DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleDelete(prompt.id)} className="text-destructive"><Trash2 className="h-4 w-4 mr-2" />{t('library.delete')}</DropdownMenuItem>

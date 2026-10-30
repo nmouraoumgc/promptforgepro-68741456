@@ -129,7 +129,7 @@ const SubscriptionSuccess = () => {
           className="text-center mt-6"
         >
           <button
-            onClick={() => navigate("/plans")}
+            onClick={() => navigate("/account")}
             className="text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             {isEnglish ? "Manage my subscription →" : "Gerir a minha subscrição →"}

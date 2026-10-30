@@ -319,6 +319,7 @@ const Checkout = () => {
                         size="icon"
                         onClick={removePromo}
                         disabled={isLoading}
+                        aria-label={isEnglish ? 'Remove code' : 'Remover código'}
                       >
                         <X className="h-4 w-4" />
                       </Button>

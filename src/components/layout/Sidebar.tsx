@@ -27,6 +27,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuthStore } from '@/stores/authStore';
+import { useIsEnglish } from '@/i18n/lang';
 
 interface NavItem {
   to: string;
@@ -62,6 +63,7 @@ export function Sidebar() {
   const isMobile = useIsMobile();
   const { isAdmin } = useAuthStore();
   const { t } = useTranslation();
+  const isEnglish = useIsEnglish();
 
   const section = sectionOf(location.pathname);
 
@@ -84,6 +86,7 @@ export function Sidebar() {
             variant="ghost"
             size="icon"
             className="h-8 w-8 text-sidebar-foreground hover:bg-sidebar-accent"
+            aria-label={collapsed ? (isEnglish ? 'Expand menu' : 'Expandir menu') : (isEnglish ? 'Collapse menu' : 'Recolher menu')}
             onClick={() => setCollapsed(!collapsed)}
           >
             {collapsed ? (
@@ -157,6 +160,7 @@ export function Sidebar() {
               variant="ghost"
               size="icon"
               className="fixed left-4 top-4 z-50 h-10 w-10 bg-sidebar/95 backdrop-blur-sm shadow-lg md:hidden"
+              aria-label={isEnglish ? 'Open menu' : 'Abrir menu'}
             >
               <Menu className="h-5 w-5" />
             </Button>
