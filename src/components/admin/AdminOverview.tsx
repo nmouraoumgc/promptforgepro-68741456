@@ -60,6 +60,8 @@ export interface AdminMetrics {
   discounts: { id: string; code: string | null; description: string | null; type: string; amount: string; currency: string | null; status: string; recur: boolean; times_used: number; usage_limit: number | null; expires_at: string | null; created_at: string }[];
   discounts_active: number;
   discounts_total: number;
+  /** Exact signups per month and how many of them are Pro (flag or active/trialing subscription). */
+  signups_by_month?: { month: string; signups: number; pro: number }[];
 }
 
 /** Exact counts from `count: 'exact'` queries (not limited by the 1000-row API cap). */
@@ -113,17 +115,21 @@ export function AdminOverview({ counts, metrics, metricsError }: Props) {
   }, [metrics]);
 
   const monthlySeries = useMemo(() => {
-    const months = counts?.signupsByMonth.map((s) => s.month) ?? metrics?.revenue_by_month.map((r) => r.month) ?? [];
+    const serverSignups = metrics?.signups_by_month?.length ? metrics.signups_by_month : null;
+    const months = serverSignups?.map((s) => s.month) ?? counts?.signupsByMonth.map((s) => s.month) ?? metrics?.revenue_by_month.map((r) => r.month) ?? [];
     return months.map((m) => {
       const rev = metrics?.revenue_by_month.find((r) => r.month === m)?.amounts ?? {};
+      const srv = serverSignups?.find((s) => s.month === m);
       const row: Record<string, string | number> = {
         month: monthLabel(m),
-        signups: counts?.signupsByMonth.find((s) => s.month === m)?.count ?? 0,
+        signups: srv?.signups ?? counts?.signupsByMonth.find((s) => s.month === m)?.count ?? 0,
       };
+      if (srv) row.pro = srv.pro;
       currencies.forEach((c) => { row[c] = Number(((rev[c] ?? 0) / 100).toFixed(2)); });
       return row;
     });
   }, [counts, metrics, currencies]);
+  const hasProSeries = !!metrics?.signups_by_month?.length;
 
   const planData = useMemo(
     () => [
@@ -255,7 +261,11 @@ export function AdminOverview({ counts, metrics, metricsError }: Props) {
         <Card>
           <CardHeader>
             <CardTitle>{isEnglish ? 'New users (last 6 months)' : 'Novos utilizadores (últimos 6 meses)'}</CardTitle>
-            <CardDescription>{isEnglish ? 'Sign-ups per month (exact count)' : 'Registos por mês (contagem exata)'}</CardDescription>
+            <CardDescription>
+              {isEnglish
+                ? 'Sign-ups per month and how many of them became Pro (exact counts)'
+                : 'Registos por mês e quantos desses passaram a Pro (contagens exatas)'}
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-72">
@@ -272,7 +282,11 @@ export function AdminOverview({ counts, metrics, metricsError }: Props) {
                       color: 'hsl(var(--popover-foreground))',
                     }}
                   />
-                  <Bar dataKey="signups" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} />
+                  <Legend />
+                  <Bar dataKey="signups" name={isEnglish ? 'Sign-ups' : 'Registos'} fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} />
+                  {hasProSeries && (
+                    <Bar dataKey="pro" name={isEnglish ? 'Became Pro' : 'Passaram a Pro'} fill="hsl(45 93% 58%)" radius={[6, 6, 0, 0]} />
+                  )}
                 </BarChart>
               </ResponsiveContainer>
             </div>

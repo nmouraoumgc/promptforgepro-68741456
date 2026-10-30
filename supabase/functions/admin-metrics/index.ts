@@ -2,7 +2,7 @@
 // Only GET requests are made to Paddle; the API key stays server-side and is never returned or logged.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { gatewayFetch } from '../_shared/paddle.ts';
-import { computeAdminMetrics } from '../_shared/adminMetrics.ts';
+import { computeAdminMetrics, toSignupMonths } from '../_shared/adminMetrics.ts';
 
 const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type' };
 const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { ...cors, 'Content-Type': 'application/json' } });
@@ -31,13 +31,20 @@ Deno.serve(async (req) => {
     const { data: role } = await admin.from('user_roles').select('role').eq('user_id', u.user.id).eq('role', 'admin').maybeSingle();
     if (!role) return json({ error: 'forbidden' }, 403);
 
-    const [subs, txns, adjs, discounts] = await Promise.all([
+    const [signups, subs, txns, adjs, discounts] = await Promise.all([
+      // exact counts computed in SQL (no PostgREST row cap); service-role only
+      admin.rpc('admin_signups_pro_by_month', { p_months: 6, p_tz: 'Europe/Lisbon' }).then(({ data, error }) => {
+        if (error) { console.error('signups_by_month failed', error.message); return []; }
+        return data as unknown[];
+      }),
       getAll('/subscriptions?status=active,trialing,past_due,paused&per_page=200&include=recurring_transaction_details'),
       getAll('/transactions?status=completed,paid&per_page=30'),
       getAll('/adjustments?per_page=50'),
       getAll('/discounts?status=active,archived&per_page=50'),
     ]);
-    return json(computeAdminMetrics(subs, txns, adjs, new Date(), discounts));
+    const metrics = computeAdminMetrics(subs, txns, adjs, new Date(), discounts);
+    metrics.signups_by_month = toSignupMonths(signups);
+    return json(metrics);
   } catch (e) {
     console.error('admin-metrics failed', e instanceof Error ? e.message : String(e));
     return json({ error: 'metrics_unavailable' }, 502);

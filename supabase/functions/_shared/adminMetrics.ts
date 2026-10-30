@@ -30,6 +30,16 @@ export interface AdminMetrics {
   discounts: DiscountInfo[];
   discounts_active: number;
   discounts_total: number;
+  // exact signups per month (Europe/Lisbon months) and how many of them are Pro (flag or active/trialing sub)
+  signups_by_month: SignupMonth[];
+}
+
+export interface SignupMonth { month: string; signups: number; pro: number }
+
+/** Normalises rows from the admin_signups_pro_by_month SQL function (bigint may arrive as string). */
+export function toSignupMonths(rows: Any[] | null | undefined): SignupMonth[] {
+  return (rows ?? []).map((r) => ({ month: String(r.month), signups: num(r.signups), pro: num(r.pro) }))
+    .sort((a, b) => a.month.localeCompare(b.month));
 }
 
 export interface PaidTxn { id: string; billed_at: string; currency: string; total: number; refunded: number; origin: string; subscription_id: string | null; discount_code: string | null }
@@ -75,7 +85,7 @@ export function computeAdminMetrics(subs: Any[], txns: Any[], adjs: Any[], now =
     free_txns_month: 0, revenue_30d: {}, paid_txns_30d: 0, revenue_all_time: {}, revenue_all_time_net: {},
     paid_txns_all_time: 0, refunds_chargebacks_all_time: {}, refunds_chargebacks_count: 0, paying_user_ids: [],
     revenue_by_month: [], recent_paid: [], completed_txns_all_time: completed.length, paid_txns: [],
-    discounts: [], discounts_active: 0, discounts_total: 0,
+    discounts: [], discounts_active: 0, discounts_total: 0, signups_by_month: [],
   };
   const codeById = new Map<string, string | null>(discounts.map((d) => [d.id, d.code ?? null]));
   const paying = new Set<string>();
