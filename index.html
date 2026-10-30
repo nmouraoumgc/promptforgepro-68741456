@@ -29,18 +29,19 @@
         r.style.colorScheme = dark ? 'dark' : 'light';
         var m = document.querySelector('meta[name="theme-color"]');
         if (m) m.setAttribute('content', dark ? '#0f121a' : '#f5f6f8');
-        // Web fonts load without blocking the first paint (font-display: swap).
-        var f = document.createElement('link');
-        f.rel = 'stylesheet';
-        f.media = 'print';
-        f.onload = function () { f.media = 'all'; };
-        f.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap';
-        document.head.appendChild(f);
+        // Web fonts load after the page has rendered (metric-matched fallback below avoids layout shift).
+        var loadFonts = function () {
+          var f = document.createElement('link');
+          f.rel = 'stylesheet';
+          f.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap';
+          document.head.appendChild(f);
+        };
+        if (document.readyState === 'complete') loadFonts(); else window.addEventListener('load', loadFonts);
         // Vercel Web Analytics queue stub.
         window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
       })();
     </script>
-    <style>html{background:#f5f6f8}html.dark{background:#0f121a}</style>
+    <style>html{background:#f5f6f8}html.dark{background:#0f121a}@font-face{font-family:'Inter Fallback';src:local('Arial');ascent-override:90.44%;descent-override:22.52%;line-gap-override:0%;size-adjust:107.12%}</style>
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="icon" href="/favicon.ico" sizes="48x48" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
