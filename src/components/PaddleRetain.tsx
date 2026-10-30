@@ -1,6 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuthStore } from '@/stores/authStore';
 import { supabase } from '@/integrations/supabase/client';
+import { profitwellStart } from '@/lib/profitwell';
 
 /**
  * Loads Paddle.js on every page (public marketing pages and signed-in app pages) so Paddle Retain can run,
@@ -10,6 +11,22 @@ import { supabase } from '@/integrations/supabase/client';
 export default function PaddleRetain() {
   const uid = useAuthStore((s) => s.user?.id ?? null);
   const authLoading = useAuthStore((s) => s.isLoading);
+  const email = useAuthStore((s) => s.user?.email ?? null);
+  const [pageLoaded, setPageLoaded] = useState(() => typeof document !== 'undefined' && document.readyState === 'complete');
+
+  useEffect(() => {
+    if (pageLoaded) return;
+    const on = () => setPageLoaded(true);
+    window.addEventListener('load', on, { once: true });
+    return () => window.removeEventListener('load', on);
+  }, [pageLoaded]);
+
+  // ProfitWell Engagement: start once identity is known (after page load so it never competes with first paint);
+  // signed-in users by email, visitors with {}. Re-runs on login/logout.
+  useEffect(() => {
+    if (authLoading || !pageLoaded) return;
+    profitwellStart(email);
+  }, [email, authLoading, pageLoaded]);
 
   useEffect(() => {
     let cancelled = false;
