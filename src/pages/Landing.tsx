@@ -69,10 +69,10 @@ export default function Landing() {
     { icon: Gauge, title: L('Otimiza e guarda', 'Optimise and save'), text: L('Vê a pontuação, melhora com sugestões explicadas e guarda os melhores na tua biblioteca.', 'See the score, improve it with explained suggestions and keep the best ones in your library.') },
   ];
 
-  const plans: { name: string; price: string; detail: string; note?: string; items: string[]; highlight?: boolean; secondary?: boolean }[] = [
+  const plans: { name: string; price: string; detail: string; note?: string; items: string[]; highlight?: boolean }[] = [
     { name: 'Free', price: '0€', detail: L('para sempre', 'forever'), items: [L('3 otimizações por prompt', '3 optimisations per prompt'), L('Biblioteca de prompts', 'Prompt library'), L('Criador guiado básico', 'Basic guided builder')] },
+    { name: 'Prompt Packs', price: '19€', detail: L('pagamento único', 'one-time payment'), items: [L('Todos os Prompt Packs premium', 'All premium Prompt Packs'), L('Todas as lições do Aprender', 'All Learn lessons'), L('Atualizações futuras incluídas', 'Future updates included')] },
     { name: 'Pro', price: '9€', detail: L('/mês, sem fidelização', '/month, no commitment'), note: L('ou 90€/ano, 2 meses grátis', 'or 90€/year, 2 months free'), items: [L('Tudo dos Prompt Packs incluído', 'Everything in Prompt Packs included'), L('Otimizações ilimitadas', 'Unlimited optimisations'), L('Histórico de versões e testes A/B', 'Version history and A/B tests'), L('Todas as lições do Aprender', 'All Learn lessons')], highlight: true },
-    { name: 'Prompt Packs', price: '19€', detail: L('pagamento único', 'one-time payment'), items: [L('Todos os Prompt Packs premium', 'All premium Prompt Packs'), L('Todas as lições do Aprender', 'All Learn lessons'), L('Atualizações futuras incluídas', 'Future updates included')], secondary: true },
   ];
 
   const faqs = [
@@ -160,12 +160,12 @@ export default function Landing() {
           <h2 id="planos" className="mb-10 text-center text-2xl font-semibold">{L('Planos', 'Plans')}</h2>
           <div className="grid gap-6 md:grid-cols-3">
             {plans.map((p) => (
-              <div key={p.name} data-testid={`landing-plan-${p.name.toLowerCase().replace(/\s+/g, '-')}`} className={`flex flex-col rounded-xl border p-6 ${p.highlight ? 'bg-card border-primary shadow-sm' : p.secondary ? 'bg-muted/20 border-border/60' : 'bg-card border-border'}`}>
-                <h3 className={`font-semibold ${p.secondary ? 'text-base text-muted-foreground' : 'text-lg'}`}>{p.name}</h3>
-                <p className="mt-2"><span className={`font-bold ${p.secondary ? 'text-2xl' : 'text-3xl'}`}>{p.price}</span> <span className="text-sm text-muted-foreground">{p.detail}</span></p>
+              <div key={p.name} data-testid={`landing-plan-${p.name.toLowerCase().replace(/\s+/g, '-')}`} className={`flex flex-col rounded-xl border p-6 ${p.highlight ? 'bg-card border-primary shadow-sm' : 'bg-card border-border'}`}>
+                <h3 className="text-lg font-semibold">{p.name}</h3>
+                <p className="mt-2"><span className="text-3xl font-bold">{p.price}</span> <span className="text-sm text-muted-foreground">{p.detail}</span></p>
                 {p.note && <p className="mt-1 text-xs font-medium text-orange-700 dark:text-primary">{p.note}</p>}
-                <ul className={`mt-4 flex-1 space-y-2 text-sm ${p.secondary ? 'text-muted-foreground' : ''}`}>
-                  {p.items.map((it) => <li key={it} className="flex items-start gap-2"><Check className={`mt-0.5 h-4 w-4 shrink-0 ${p.secondary ? 'text-muted-foreground' : 'text-primary'}`} aria-hidden="true" />{it}</li>)}
+                <ul className="mt-4 flex-1 space-y-2 text-sm">
+                  {p.items.map((it) => <li key={it} className="flex items-start gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />{it}</li>)}
                 </ul>
               </div>
             ))}

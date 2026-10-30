@@ -356,17 +356,20 @@ export default function Pricing() {
 
       <div className="flex justify-center mb-8">{billingToggle('billing')}</div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
-        {mainPlans.map((plan) => {
-          const isActive = currentPlan === plan.id;
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+        {[mainPlans[0], premiumPlan, mainPlans[1]].map((plan) => {
+          const isPacks = plan.id === 'packs';
+          const isActive = isPacks ? ownsPacksProduct : currentPlan === plan.id;
+          const includedInPro = isPacks && !ownsPacksProduct && currentPlan === 'pro';
           return (
             <Card
               key={plan.id}
+              data-testid={`${plan.id}-card`}
               className={`relative flex flex-col transition-all ${
                 plan.highlight
                   ? 'border-primary shadow-lg shadow-primary/10 md:scale-[1.02]'
                   : 'border-border hover:border-muted-foreground/30'
-              } ${isActive ? 'ring-2 ring-primary' : ''}`}
+              } ${isActive ? (plan.highlight ? 'ring-2 ring-primary' : 'ring-2 ring-muted-foreground/30') : ''}`}
             >
               {plan.highlight && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
@@ -417,10 +420,15 @@ export default function Pricing() {
                 <Button
                   className={`w-full ${plan.highlight ? 'shadow-md' : ''}`}
                   variant={plan.highlight ? 'default' : 'outline'}
-                  disabled={isActive}
+                  disabled={isActive || includedInPro}
                   onClick={() => handleSelectPlan(plan.id)}
                 >
-                  {isActive ? (
+                  {includedInPro ? (
+                    <>
+                      <Check className="h-4 w-4 mr-2" />
+                      {isEnglish ? 'Included in your Pro' : 'Incluído no teu Pro'}
+                    </>
+                  ) : isActive ? (
                     <>
                       <Check className="h-4 w-4 mr-2" />
                       {isEnglish ? 'Current plan' : 'Plano atual'}
@@ -436,70 +444,6 @@ export default function Pricing() {
             </Card>
           );
         })}
-      </div>
-
-      <div className="mt-16 max-w-3xl mx-auto">
-        <div className="flex items-center gap-4 mb-8">
-          <div className="flex-1 h-px bg-border" />
-          <span className="text-sm text-muted-foreground font-medium flex items-center gap-2">
-            <Sparkles className="h-4 w-4" />
-            {isEnglish ? 'Just want the prompts?' : 'Só queres os prompts?'}
-          </span>
-          <div className="flex-1 h-px bg-border" />
-        </div>
-
-        <Card className={`border-border/60 bg-muted/20 shadow-none ${ownsPacksProduct ? 'ring-2 ring-primary' : ''}`} data-testid="packs-card">
-          <div className="p-5 flex flex-col md:flex-row md:items-center gap-4">
-            <div className="flex-1 space-y-2">
-              <div className="flex items-center gap-3 flex-wrap">
-                <h3 className="text-lg font-semibold">{premiumPlan.name}</h3>
-                <span className="bg-primary/15 text-primary text-xs font-semibold px-2 py-0.5 rounded-full">
-                  {isEnglish ? 'One-time payment' : 'Pagamento único'}
-                </span>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-lg font-bold">19€</span>
-                  <span className="text-muted-foreground text-sm">
-                    {isEnglish ? '· lifetime access' : '· acesso vitalício'}
-                  </span>
-                </div>
-              </div>
-              <p className="text-sm text-muted-foreground">{premiumPlan.description}</p>
-              <div className="flex flex-wrap gap-x-4 gap-y-1 pt-2">
-                {premiumPlan.features.map((feature) => (
-                  <span key={feature} className="text-xs text-muted-foreground flex items-center gap-1.5">
-                    <Check className="h-3 w-3 text-muted-foreground" />
-                    {feature}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            <Button
-              variant="outline"
-              size="sm"
-              className="shrink-0"
-              disabled={ownsPacksProduct || currentPlan === 'pro'}
-              onClick={() => handleSelectPlan('packs')}
-            >
-              {ownsPacksProduct ? (
-                <>
-                  <Check className="h-4 w-4 mr-2" />
-                  {isEnglish ? 'Current plan' : 'Plano atual'}
-                </>
-              ) : currentPlan === 'pro' ? (
-                <>
-                  <Check className="h-4 w-4 mr-2" />
-                  {isEnglish ? 'Included in your Pro' : 'Incluído no teu Pro'}
-                </>
-              ) : (
-                <>
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  {premiumPlan.cta}
-                </>
-              )}
-            </Button>
-          </div>
-        </Card>
       </div>
 
       <footer className="text-center mt-12 md:mt-16 max-w-lg mx-auto">
