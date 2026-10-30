@@ -132,7 +132,7 @@
       ]
     },
     {
-      "source": "/(?:index\\.html|(?:pricing|terms|privacy|refunds|signup|login)(?:/|/index\\.html)?)",
+      "source": "/((?:index\\.html|(?:pricing|terms|privacy|refunds|signup|login)(?:/|/index\\.html)?))",
       "headers": [
         {
           "key": "Content-Security-Policy",
