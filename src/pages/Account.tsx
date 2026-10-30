@@ -329,7 +329,7 @@ export default function Account() {
                 <Separator />
 
                 <div className="flex gap-3">
-                  <Button variant="outline" onClick={() => navigate('/planos')}>
+                  <Button variant="outline" onClick={() => navigate('/pricing')}>
                     {t('account.viewPlans')}
                   </Button>
                   {currentPlan !== 'premium' && (

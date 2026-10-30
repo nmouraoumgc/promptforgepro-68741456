@@ -62,9 +62,9 @@ export function clearCampaignCode() {
 
 /** Where to go after login/signup/confirmation: an explicit ?redirect wins; otherwise /pricing when a
  *  campaign code is waiting, else the fallback. Only same-site paths are accepted. */
-export function postAuthPath(redirectParam: string | null | undefined, fallback = '/'): string {
+export function postAuthPath(redirectParam: string | null | undefined, fallback = '/app'): string {
   const r = typeof redirectParam === 'string' && /^\/(?!\/)/.test(redirectParam) ? redirectParam : '';
-  if (r && r !== '/') return r;
+  if (r && r !== '/' && r !== '/app') return r;
   if (getCampaignCode()) return '/pricing';
   return r || fallback;
 }

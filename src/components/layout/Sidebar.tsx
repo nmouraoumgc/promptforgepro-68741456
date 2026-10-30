@@ -38,7 +38,7 @@ interface NavItem {
 
 // 5 items. Account items (Cofre de marca, Planos, Definições, Admin) live in the header user menu.
 const mainNavItems: NavItem[] = [
-  { to: '/', icon: Home, labelKey: 'nav.dashboard', descriptionKey: 'nav.dashboardDesc' },
+  { to: '/app', icon: Home, labelKey: 'nav.dashboard', descriptionKey: 'nav.dashboardDesc' },
   { to: '/create', icon: Wand2, labelKey: 'nav.create', descriptionKey: 'nav.createDesc' },
   { to: '/library', icon: Library, labelKey: 'nav.library', descriptionKey: 'nav.libraryDesc' },
   { to: '/packs', icon: Package, labelKey: 'nav.packs', descriptionKey: 'nav.packsDesc' },
@@ -47,7 +47,7 @@ const mainNavItems: NavItem[] = [
 
 /** Which nav item a path belongs to (old routes map to their new home). */
 const sectionOf = (path: string): string => {
-  if (path === '/') return '/';
+  if (path === '/app') return '/app';
   if (/^\/(create|quick|builder|optimizer)(\/|$)/.test(path)) return '/create';
   if (/^\/(library|tester|versions)(\/|$)/.test(path)) return '/library';
   if (path.startsWith('/packs')) return '/packs';
@@ -69,7 +69,7 @@ export function Sidebar() {
     <>
       {/* Logo */}
       <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-4">
-        <NavLink to="/" className="flex items-center gap-2" onClick={onNavigate}>
+        <NavLink to="/app" className="flex items-center gap-2" onClick={onNavigate}>
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
             <Flame className="h-5 w-5 text-primary-foreground" />
           </div>

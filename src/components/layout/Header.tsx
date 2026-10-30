@@ -29,7 +29,7 @@ export function Header() {
   return (
     <header className="flex h-16 items-center justify-between border-b border-border bg-card px-4 md:px-6">
       {/* Logo - clickable to Dashboard */}
-      <Link to="/" className={`flex items-center gap-2 ${isMobile ? 'ml-12' : ''}`}>
+      <Link to="/app" className={`flex items-center gap-2 ${isMobile ? 'ml-12' : ''}`}>
         <span className="text-lg font-bold text-foreground">
           Prompt<span className="text-primary">Forge</span>
         </span>
@@ -81,7 +81,7 @@ export function Header() {
                 <Palette className="mr-2 h-4 w-4" />
                 {t('header.brand')}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate('/planos')} data-testid="menu-plans">
+              <DropdownMenuItem onClick={() => navigate('/pricing')} data-testid="menu-plans">
                 <CreditCard className="mr-2 h-4 w-4" />
                 {t('header.plans')}
               </DropdownMenuItem>

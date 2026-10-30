@@ -105,7 +105,7 @@ export default function Admin() {
 
   useEffect(() => {
     if (!authLoading && !isAdmin) {
-      navigate('/');
+      navigate('/app');
       showToast({
         title: (isEnglish ? 'Access denied' : 'Acesso negado'),
         description: (isEnglish ? "You don't have administrator permissions." : 'Não tens permissões de administrador.'),

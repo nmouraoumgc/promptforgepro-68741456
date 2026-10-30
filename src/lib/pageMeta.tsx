@@ -9,6 +9,10 @@ const BRAND = 'PromptForge Pro';
 
 const META: Record<string, { pt: Meta; en: Meta }> = {
   '/': {
+    pt: { title: 'PromptForge Pro', description: 'Cria, otimiza e guarda prompts profissionais para ChatGPT, Gemini e Claude, em português de Portugal. Começa grátis.' },
+    en: { title: 'PromptForge Pro', description: 'Create, optimise and save professional prompts for ChatGPT, Gemini and Claude. Start free.' },
+  },
+  '/app': {
     pt: { title: 'Painel', description: 'Cria, otimiza e testa prompts profissionais com IA, em português de Portugal.' },
     en: { title: 'Dashboard', description: 'Create, optimise and test professional AI prompts.' },
   },

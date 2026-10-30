@@ -3,7 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { PromoCodeDialog } from '@/components/promo/PromoCodeDialog';
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AppLayout } from "@/components/layout";
 import Dashboard from "@/pages/Dashboard";
 import PromptLibrary from "@/pages/PromptLibrary";
@@ -24,12 +24,12 @@ import SubscriptionSuccess from "@/pages/SubscriptionSuccess";
 import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
 import Account from "@/pages/Account";
-import Plans from "@/pages/Plans";
 import Admin from "@/pages/Admin";
 import Terms from "@/pages/legal/Terms";
 import Refunds from "@/pages/legal/Refunds";
 import Privacy from "@/pages/legal/Privacy";
 import NotFound from "./pages/NotFound";
+import Home from "@/pages/Home";
 import Unsubscribe from '@/pages/Unsubscribe';
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
@@ -52,10 +52,14 @@ const App = () => (
           <Route path="/refunds" element={<Refunds />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/unsubscribe" element={<Unsubscribe />} />
+
+          {/* Public landing (signed-in users are redirected to /app) */}
+          <Route path="/" element={<Home />} />
+          <Route path="/planos" element={<Navigate to="/pricing" replace />} />
           
           {/* App routes */}
           <Route element={<AppLayout />}>
-            <Route path="/" element={<Dashboard />} />
+            <Route path="/app" element={<Dashboard />} />
             <Route path="/create" element={<Create />} />
             <Route path="/library" element={<PromptLibrary />} />
             <Route path="/library/:id" element={<PromptDetail />} />
@@ -76,7 +80,6 @@ const App = () => (
             <Route path="/purchase-success" element={<ProtectedRoute><PurchaseSuccess /></ProtectedRoute>} />
             <Route path="/subscription-success" element={<ProtectedRoute><SubscriptionSuccess /></ProtectedRoute>} />
             <Route path="/account" element={<ProtectedRoute><Account /></ProtectedRoute>} />
-            <Route path="/planos" element={<ProtectedRoute><Plans /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute requireAdmin><Admin /></ProtectedRoute>} />
           </Route>
           <Route path="*" element={<NotFound />} />
