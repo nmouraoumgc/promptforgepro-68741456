@@ -1,5 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import { verifyWebhook, EventName, gatewayFetch, type PaddleEnv } from '../_shared/paddle.ts';
+import { verifyWebhook, EventName, gatewayFetch, priceExternalIdOf, type PaddleEnv } from '../_shared/paddle.ts';
 
 let _supabase: ReturnType<typeof createClient> | null = null;
 function getSupabase() {
@@ -202,7 +202,7 @@ async function flagDiscount(env: PaddleEnv, userId: string, c: DiscountCheck,
       transaction_id: txn.id,
       subscription_id: txn.subscription_id ?? null,
       kind: txn.subscription_id ? 'subscription' : (item ? 'one_time' : 'other'),
-      price_external_id: item?.price?.import_meta?.external_id ?? item?.price?.custom_data?.external_id ?? item?.price?.id ?? null,
+      price_external_id: priceExternalIdOf(item?.price) ?? item?.price?.id ?? null,
       discount_id: txn.discount_id ?? null,
       discount_code: c.code,
       issued_code: c.issuedCode,
@@ -280,7 +280,7 @@ async function handleSubscriptionCreated(data: any, env: PaddleEnv) {
   if (await enforceDiscount(data, env, userId)) return;
 
   const item = items[0];
-  const priceId = item?.price?.importMeta?.externalId;
+  const priceId = priceExternalIdOf(item?.price); // pro_monthly, pro_annual (alias), ...
   const productId = item?.product?.importMeta?.externalId;
   if (!priceId || !productId) {
     console.warn('Skipping subscription: missing importMeta.externalId', {
@@ -363,7 +363,7 @@ async function handleTransactionCompleted(data: any, env: PaddleEnv) {
   }
 
   const item = items?.[0];
-  const priceExternalId = item?.price?.importMeta?.externalId;
+  const priceExternalId = priceExternalIdOf(item?.price);
   if (!priceExternalId) {
     console.warn('transaction.completed: missing importMeta.externalId');
     return;

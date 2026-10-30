@@ -64,3 +64,37 @@ export async function verifyWebhook(req: Request, env: PaddleEnv) {
   const paddle = getPaddleClient(env);
   return await paddle.webhooks.unmarshal(body, secret, signature);
 }
+
+// ---------- Price aliases ----------
+// Prices imported from Lovable carry import_meta.external_id (pro_monthly, premium_one_time, ...).
+// Prices created later directly in Paddle cannot get an import_meta, so they are mapped here
+// (Paddle price id -> logical external id). The logical id is what subscriptions.price_id stores
+// and what the sync_profile_plan_from_subscription trigger maps to a plan.
+export const PRICE_ALIASES: Record<PaddleEnv, Record<string, string>> = {
+  live: {
+    pro_annual: 'pri_01m67br0e15t23kqzaa4m3qa78', // Pro annual, 90 EUR/year (created 2026-10-30)
+  },
+  sandbox: {},
+};
+
+const ALIAS_BY_PADDLE_ID: Record<string, string> = Object.fromEntries(
+  Object.values(PRICE_ALIASES).flatMap((m) => Object.entries(m).map(([ext, id]) => [id, ext])),
+);
+
+/** Logical external id of a Paddle price object (SDK camelCase or REST snake_case). */
+// deno-lint-ignore no-explicit-any
+export function priceExternalIdOf(price: any): string | null {
+  return price?.importMeta?.externalId ?? price?.import_meta?.external_id ??
+    price?.customData?.external_id ?? price?.custom_data?.external_id ??
+    (typeof price?.id === 'string' ? ALIAS_BY_PADDLE_ID[price.id] : undefined) ?? null;
+}
+
+/** Paddle price id for a logical external id (alias first, then import_meta.external_id lookup). */
+export async function resolvePriceId(env: PaddleEnv, externalId: string, activeOnly = false): Promise<string | null> {
+  const alias = PRICE_ALIASES[env][externalId];
+  if (alias) return alias;
+  const r = await gatewayFetch(env, `/prices?external_id=${encodeURIComponent(externalId)}${activeOnly ? '&status=active' : ''}`);
+  if (!r.ok) throw new Error(`Paddle price lookup failed (${r.status})`);
+  const j = await r.json();
+  return j?.data?.[0]?.id ?? null;
+}

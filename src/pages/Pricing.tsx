@@ -33,6 +33,14 @@ type ProPromo = {
   duration_months: number;
 };
 
+const searchParamsInit = () => {
+  try { return new URLSearchParams(window.location.search); } catch { return new URLSearchParams(); }
+};
+
+// Pro prices (EUR). Annual = 10 x monthly (2 months free).
+const PRO_MONTHLY_PRICE = 9;
+const PRO_ANNUAL_PRICE = 90;
+
 export default function Pricing() {
   const { currentPlan, setPlan } = usePlanStore();
   const { user, isLoading: authLoading } = useAuthStore();
@@ -41,6 +49,10 @@ export default function Pricing() {
   const isEnglish = (i18n.resolvedLanguage || i18n.language || 'pt').startsWith('en');
 
   const [isLoadingPro, setIsLoadingPro] = useState(false);
+  // Pro billing interval: /pricing?billing=annual preselects the annual price (90€/year).
+  const [billing, setBilling] = useState<'monthly' | 'annual'>(() =>
+    (searchParamsInit().get('billing') || '').toLowerCase().startsWith('annual') ? 'annual' : 'monthly');
+  const isAnnual = billing === 'annual';
 
   // Promo dialog state (mínimo para compilar + funcionar)
   const [showProPromoDialog, setShowProPromoDialog] = useState(false);
@@ -90,8 +102,8 @@ export default function Pricing() {
       description: isEnglish
         ? 'For users who rely on PromptForge Pro every day at work'
         : 'Para quem usa o PromptForge Pro como ferramenta diária de trabalho',
-      price: '9€',
-      priceDetail: isEnglish ? '/month' : '/mês',
+      price: isAnnual ? `${PRO_ANNUAL_PRICE}€` : `${PRO_MONTHLY_PRICE}€`,
+      priceDetail: isAnnual ? (isEnglish ? '/year' : '/ano') : (isEnglish ? '/month' : '/mês'),
       features: isEnglish
         ? ['Unlimited optimizations', 'Version history', 'A/B prompt testing', 'Detailed scoring', 'Prompt export', 'All Learn lessons']
         : ['Otimizações ilimitadas', 'Histórico de versões', 'Testes A/B de prompts', 'Pontuação detalhada', 'Exportação de prompts', 'Todas as lições do Aprender'],
@@ -203,7 +215,8 @@ export default function Pricing() {
       // Pre-checkout anti-fraud / trial-redemption / velocity check. Discount codes (typed, in-app promo or
       // /pricing?code=XXX campaign links) are validated server-side (confirmed email, once per account) and the
       // Paddle transaction with the discount is created there; we only open it.
-      const intent = 'pro_normal';
+      const intent = isAnnual ? 'pro_annual' : 'pro_normal';
+      const priceKey = isAnnual ? 'pro_annual' : 'pro_monthly';
       const code = (proAppliedPromo?.code || proPromoInput.trim() || urlCode || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); // Paddle codes are alphanumeric (EARLY-A1 -> EARLYA1)
       const { initializePaddle, getPaddlePriceId, getPaddleEnvironment, setCheckoutAttemptId } = await import('@/lib/paddle');
       const { runPreCheckoutCheck, checkoutBlockMessage, checkoutRetryMessage } = await import('@/lib/checkoutGuard');
@@ -244,16 +257,16 @@ export default function Pricing() {
         // Discount flow: transaction (price + discount + customer + customData) created server-side.
         window.Paddle.Checkout.open({ transactionId, settings });
       } else {
-        // Default flow: Pro monthly (9€/month).
-        const subscriptionId = await getPaddlePriceId('pro_monthly');
+        // Default flow: Pro monthly (9€/month) or Pro annual (90€/year).
+        const subscriptionId = await getPaddlePriceId(priceKey);
         window.Paddle.Checkout.open({
           items: [{ priceId: subscriptionId, quantity: 1 }],
           customer: { email: user.email! },
-          customData: { userId: user.id, ...attribution, ...attemptData },
+          customData: { userId: user.id, billing, ...attribution, ...attemptData },
           settings,
         });
       }
-      track('checkout_opened', { plan: 'pro_monthly', has_campaign_code: !!code, ...(code ? { campaign_code: code } : {}) });
+      track('checkout_opened', { plan: priceKey, has_campaign_code: !!code, ...(code ? { campaign_code: code } : {}) });
     } catch (err) {
       console.error('Subscription error:', err);
       toast({
@@ -266,7 +279,8 @@ export default function Pricing() {
     }
   };
 
-  const BASE_PRO_PRICE = 9;
+  const BASE_PRO_PRICE = isAnnual ? PRO_ANNUAL_PRICE : PRO_MONTHLY_PRICE;
+  const perUnit = isAnnual ? (isEnglish ? 'year' : 'ano') : (isEnglish ? 'month' : 'mês');
   const proIsFreeDays = proAppliedPromo?.discount_type === 'free_days';
   const proDiscount = proAppliedPromo && !proIsFreeDays
     ? proAppliedPromo.discount_type === 'percentage'
@@ -274,6 +288,35 @@ export default function Pricing() {
       : Math.min(BASE_PRO_PRICE, proAppliedPromo.discount_value)
     : 0;
   const proFinalPrice = Math.max(0, BASE_PRO_PRICE - proDiscount);
+
+  const billingToggle = (testIdPrefix: string) => (
+    <div
+      role="radiogroup"
+      aria-label={isEnglish ? 'Pro billing period' : 'Período de faturação do Pro'}
+      className="inline-flex items-center gap-1 rounded-full border border-border bg-muted/50 p-1"
+    >
+      {(['monthly', 'annual'] as const).map((b) => (
+        <button
+          key={b}
+          type="button"
+          role="radio"
+          aria-checked={billing === b}
+          data-testid={`${testIdPrefix}-${b}`}
+          onClick={() => setBilling(b)}
+          className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+            billing === b ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          {b === 'monthly' ? (isEnglish ? 'Monthly' : 'Mensal') : (isEnglish ? 'Annual' : 'Anual')}
+          {b === 'annual' && (
+            <span className="ml-2 rounded-full bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary">
+              {isEnglish ? '2 months free' : '2 meses grátis'}
+            </span>
+          )}
+        </button>
+      ))}
+    </div>
+  );
 
   return (
     <div className="p-6 md:p-8 lg:p-10 animate-fade-in">
@@ -308,6 +351,8 @@ export default function Pricing() {
         </div>
       </div>
 
+      <div className="flex justify-center mb-8">{billingToggle('billing')}</div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
         {mainPlans.map((plan) => {
           const isActive = currentPlan === plan.id;
@@ -337,9 +382,16 @@ export default function Pricing() {
                     <span className="text-4xl font-bold">{plan.price}</span>
                     <span className="text-muted-foreground text-sm">{plan.priceDetail}</span>
                   </div>
+                  {plan.id === 'pro' && isAnnual && (
+                    <p className="text-sm font-medium text-primary mt-1.5" data-testid="annual-equivalent">
+                      {isEnglish ? '7.50€/month, 2 months free' : '7,50€/mês, 2 meses grátis'}
+                    </p>
+                  )}
                   {plan.id === 'pro' && (
                     <p className="text-xs text-muted-foreground mt-1.5">
-                      {isEnglish ? 'No commitment, cancel anytime.' : 'Sem fidelização, cancela quando quiseres.'}
+                      {isAnnual
+                        ? (isEnglish ? 'Billed yearly. Cancel anytime, access until the end of the year paid.' : 'Faturado anualmente. Cancela quando quiseres, acesso até ao fim do ano pago.')
+                        : (isEnglish ? 'No commitment, cancel anytime.' : 'Sem fidelização, cancela quando quiseres.')}
                     </p>
                   )}
                 </div>
@@ -459,18 +511,23 @@ export default function Pricing() {
           <DialogHeader>
             <DialogTitle>{isEnglish ? 'Subscribe to Pro' : 'Subscrever o Pro'}</DialogTitle>
             <DialogDescription>
-              {isEnglish
-                ? '9€/month, cancel anytime in your account.'
-                : '9€/mês, cancela quando quiseres na tua conta.'}
+              {isAnnual
+                ? (isEnglish
+                  ? '90€/year (7.50€/month, 2 months free), cancel anytime in your account.'
+                  : '90€/ano (7,50€/mês, 2 meses grátis), cancela quando quiseres na tua conta.')
+                : (isEnglish
+                  ? '9€/month, cancel anytime in your account.'
+                  : '9€/mês, cancela quando quiseres na tua conta.')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 pt-2">
+            <div className="flex justify-center">{billingToggle('dialog-billing')}</div>
             <div className="text-center">
               {proAppliedPromo && proIsFreeDays ? (
                 <div className="flex flex-col items-center gap-1">
                   <span className="text-2xl font-bold text-foreground">
-                    {BASE_PRO_PRICE}€/{isEnglish ? 'month' : 'mês'}
+                    {BASE_PRO_PRICE}€/{perUnit}
                   </span>
                   <span className="text-xs text-primary font-medium">
                     {isEnglish
@@ -481,20 +538,24 @@ export default function Pricing() {
               ) : proAppliedPromo && proDiscount > 0 ? (
                 <div className="flex flex-col items-center gap-1">
                   <span className="text-sm text-muted-foreground line-through">
-                    {BASE_PRO_PRICE}€/{isEnglish ? 'month' : 'mês'}
+                    {BASE_PRO_PRICE}€/{perUnit}
                   </span>
                   <span className="text-2xl font-bold text-primary">
-                    {proFinalPrice.toFixed(2)}€ <span className="text-sm font-medium">{isEnglish ? 'first month' : 'no primeiro mês'}</span>
+                    {proFinalPrice.toFixed(2)}€ <span className="text-sm font-medium">{isAnnual ? (isEnglish ? 'first year' : 'no primeiro ano') : (isEnglish ? 'first month' : 'no primeiro mês')}</span>
                   </span>
                   <span className="text-xs text-primary font-medium">
-                    {isEnglish
-                      ? `From the second month, ${BASE_PRO_PRICE}€/month. Cancel anytime.`
-                      : `A partir do segundo mês, ${BASE_PRO_PRICE}€/mês. Cancela quando quiseres.`}
+                    {isAnnual
+                      ? (isEnglish
+                        ? `From the second year, ${BASE_PRO_PRICE}€/year. Cancel anytime.`
+                        : `A partir do segundo ano, ${BASE_PRO_PRICE}€/ano. Cancela quando quiseres.`)
+                      : (isEnglish
+                        ? `From the second month, ${BASE_PRO_PRICE}€/month. Cancel anytime.`
+                        : `A partir do segundo mês, ${BASE_PRO_PRICE}€/mês. Cancela quando quiseres.`)}
                   </span>
                 </div>
               ) : (
                 <span className="text-2xl font-bold text-foreground">
-                  {BASE_PRO_PRICE}€/{isEnglish ? 'month' : 'mês'}
+                  {BASE_PRO_PRICE}€/{perUnit}
                 </span>
               )}
             </div>

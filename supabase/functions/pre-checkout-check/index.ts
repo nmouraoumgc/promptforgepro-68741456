@@ -1,5 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import { gatewayFetch, type PaddleEnv } from '../_shared/paddle.ts';
+import { gatewayFetch, resolvePriceId, type PaddleEnv } from '../_shared/paddle.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -21,7 +21,7 @@ const CODE_RE = /^[A-Z0-9]{3,32}$/;
 const TXN_RE = /^txn_[a-z0-9]{26}$/;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 // Intents that accept a discount code (validated here, transaction created here).
-const PRICE_FOR_INTENT: Record<string, string> = { pro_normal: 'pro_monthly', premium: 'premium_one_time' };
+const PRICE_FOR_INTENT: Record<string, string> = { pro_normal: 'pro_monthly', pro_annual: 'pro_annual', premium: 'premium_one_time' };
 
 // deno-lint-ignore no-explicit-any
 type Admin = any;
@@ -93,7 +93,7 @@ Deno.serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     const action = typeof body?.action === 'string' ? body.action : 'check';
-    const intent = typeof body?.intent === 'string' ? body.intent.slice(0, 40) : undefined; // 'pro_trial' | 'pro_normal' | 'premium'
+    const intent = typeof body?.intent === 'string' ? body.intent.slice(0, 40) : undefined; // 'pro_trial' | 'pro_normal' | 'pro_annual' | 'premium'
     const rawCode = typeof body?.discountCode === 'string' ? body.discountCode.trim().toUpperCase().replace(/[^A-Z0-9]/g, '') : '';
     const discountCode = rawCode || null;
     const environment: PaddleEnv = body?.environment === 'sandbox' ? 'sandbox' : 'live';
@@ -205,10 +205,10 @@ Deno.serve(async (req) => {
       try {
         const [d, p] = await Promise.all([
           paddleJson(environment, `/discounts?code=${encodeURIComponent(discountCode)}&status=active`),
-          paddleJson(environment, `/prices?external_id=${encodeURIComponent(priceExternalId)}&status=active`),
+          resolvePriceId(environment, priceExternalId, true),
         ]);
         discount = d?.data?.[0];
-        priceId = p?.data?.[0]?.id;
+        priceId = p as string;
       } catch (e) {
         console.error('pre-checkout-check paddle lookup', e instanceof Error ? e.message : String(e));
         return json({ allowed: false, reason: 'checkout_unavailable' });
