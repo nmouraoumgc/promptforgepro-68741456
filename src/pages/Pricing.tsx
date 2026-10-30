@@ -105,27 +105,30 @@ export default function Pricing() {
       price: isAnnual ? `${PRO_ANNUAL_PRICE}€` : `${PRO_MONTHLY_PRICE}€`,
       priceDetail: isAnnual ? (isEnglish ? '/year' : '/ano') : (isEnglish ? '/month' : '/mês'),
       features: isEnglish
-        ? ['Unlimited optimizations', 'Version history', 'A/B prompt testing', 'Detailed scoring', 'Prompt export', 'All Learn lessons']
-        : ['Otimizações ilimitadas', 'Histórico de versões', 'Testes A/B de prompts', 'Pontuação detalhada', 'Exportação de prompts', 'Todas as lições do Aprender'],
+        ? ['Everything in Prompt Packs included', 'Unlimited optimizations', 'Version history', 'A/B prompt testing', 'Detailed scoring', 'Prompt export', '100 runs per day', '3 brand profiles', 'All Learn lessons']
+        : ['Tudo dos Prompt Packs incluído', 'Otimizações ilimitadas', 'Histórico de versões', 'Testes A/B de prompts', 'Pontuação detalhada', 'Exportação de prompts', '100 execuções por dia', '3 perfis de marca', 'Todas as lições do Aprender'],
       cta: isEnglish ? 'Get Pro' : 'Subscrever o Pro',
       highlight: true,
     },
   ];
 
+  // One-time product (Paddle premium_one_time). New buyers get plan 'packs'; 'premium' = grandfathered.
   const premiumPlan: PricingPlan = {
-    id: 'premium',
+    id: 'packs',
     name: 'Prompt Packs',
     description: isEnglish ? 'Ready-to-use prompt library. Does not include Pro tools.' : 'Biblioteca de prompts prontos a usar. Não inclui as ferramentas do Pro.',
     price: '19€',
     priceDetail: isEnglish ? 'one-time payment' : 'pagamento único',
     features: isEnglish
-      ? ['All premium Prompt Packs', 'Hooks, scripts, structures and CTAs', 'Professional templates', 'All Learn lessons', 'Future updates included']
-      : ['Todos os Prompt Packs premium', 'Ganchos, guiões, estruturas e CTAs', 'Modelos profissionais', 'Todas as lições do Aprender', 'Atualizações futuras incluídas'],
+      ? ['All premium Prompt Packs', 'All Learn lessons', 'Future updates included']
+      : ['Todos os Prompt Packs premium', 'Todas as lições do Aprender', 'Atualizações futuras incluídas'],
     cta: isEnglish ? 'Get the Prompt Packs' : 'Comprar os Prompt Packs',
   };
 
+  const ownsPacksProduct = currentPlan === 'packs' || currentPlan === 'premium';
+
   const handleSelectPlan = async (planId: PlanType) => {
-    if (planId === 'premium') {
+    if (planId === 'packs' || planId === 'premium') {
       navigate('/checkout');
       return;
     }
@@ -445,27 +448,22 @@ export default function Pricing() {
           <div className="flex-1 h-px bg-border" />
         </div>
 
-        <Card className={`border-border ${currentPlan === 'premium' ? 'ring-2 ring-primary' : ''}`}>
-          <div className="p-6 flex flex-col md:flex-row md:items-center gap-6">
+        <Card className={`border-border/60 bg-muted/20 shadow-none ${ownsPacksProduct ? 'ring-2 ring-primary' : ''}`} data-testid="packs-card">
+          <div className="p-5 flex flex-col md:flex-row md:items-center gap-4">
             <div className="flex-1 space-y-2">
               <div className="flex items-center gap-3 flex-wrap">
-                <h3 className="text-xl font-semibold">{premiumPlan.name}</h3>
+                <h3 className="text-lg font-semibold">{premiumPlan.name}</h3>
                 <span className="bg-primary/15 text-primary text-xs font-semibold px-2 py-0.5 rounded-full">
                   {isEnglish ? 'One-time payment' : 'Pagamento único'}
                 </span>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-xl font-bold">19€</span>
+                  <span className="text-lg font-bold">19€</span>
                   <span className="text-muted-foreground text-sm">
                     {isEnglish ? '· lifetime access' : '· acesso vitalício'}
                   </span>
                 </div>
               </div>
               <p className="text-sm text-muted-foreground">{premiumPlan.description}</p>
-              <p className="text-xs text-muted-foreground">
-                {isEnglish
-                  ? 'Immediate access after purchase. Future updates included.'
-                  : 'Acesso imediato após compra. Atualizações futuras incluídas.'}
-              </p>
               <div className="flex flex-wrap gap-x-4 gap-y-1 pt-2">
                 {premiumPlan.features.map((feature) => (
                   <span key={feature} className="text-xs text-muted-foreground flex items-center gap-1.5">
@@ -477,14 +475,21 @@ export default function Pricing() {
             </div>
 
             <Button
-              className="shrink-0 shadow-md"
-              disabled={currentPlan === 'premium'}
-              onClick={() => handleSelectPlan('premium')}
+              variant="outline"
+              size="sm"
+              className="shrink-0"
+              disabled={ownsPacksProduct || currentPlan === 'pro'}
+              onClick={() => handleSelectPlan('packs')}
             >
-              {currentPlan === 'premium' ? (
+              {ownsPacksProduct ? (
                 <>
                   <Check className="h-4 w-4 mr-2" />
                   {isEnglish ? 'Current plan' : 'Plano atual'}
+                </>
+              ) : currentPlan === 'pro' ? (
+                <>
+                  <Check className="h-4 w-4 mr-2" />
+                  {isEnglish ? 'Included in your Pro' : 'Incluído no teu Pro'}
                 </>
               ) : (
                 <>

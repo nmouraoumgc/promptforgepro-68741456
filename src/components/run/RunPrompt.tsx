@@ -99,8 +99,8 @@ export function RunPrompt({ prompt, compact = false, className, withBrand = fals
       {limitHit && (
         <div className="rounded-md border border-warning/40 bg-warning/10 p-3 text-sm" data-testid="run-limit">
           {isEnglish ? `You've used all ${quota?.limit ?? ''} runs for today. They reset at midnight (Lisbon time).` : `Já usaste as ${quota?.limit ?? ''} execuções de hoje. Renovam à meia-noite (hora de Lisboa).`}
-          {plan !== 'premium' && (
-            <> {' '}<Link to="/pricing" className="font-medium text-primary hover:underline">{plan === 'pro' ? (isEnglish ? 'Premium gives 300/day.' : 'O Premium dá 300 por dia.') : (isEnglish ? 'Pro gives 100/day.' : 'O Pro dá 100 por dia.')}</Link></>
+          {plan !== 'premium' && plan !== 'pro' && (
+            <> {' '}<Link to="/pricing" className="font-medium text-primary hover:underline">{isEnglish ? 'Pro gives 100/day.' : 'O Pro dá 100 por dia.'}</Link></>
           )}
         </div>
       )}

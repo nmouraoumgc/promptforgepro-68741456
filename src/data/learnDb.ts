@@ -1,6 +1,6 @@
 // Aprender / Learn: lessons live in the DB (learn_lessons + learn_lesson_content), never in the bundle.
 // RLS returns every lesson's title/summary, but the body only for free lessons or entitled users
-// (pro, premium or admin). Progress is per user in learn_progress (localStorage for visitors).
+// (pro, packs, premium or admin). Progress is per user in learn_progress (localStorage for visitors).
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthStore } from '@/stores/authStore';
@@ -38,7 +38,7 @@ const mapLesson = (r: Row, en: boolean): Lesson => ({
 export function useLearnEntitled(): boolean {
   const plan = useAuthStore((s) => s.profile?.current_plan ?? 'free');
   const isAdmin = useAuthStore((s) => s.isAdmin);
-  return isAdmin || plan === 'pro' || plan === 'premium';
+  return isAdmin || plan === 'pro' || plan === 'premium' || plan === 'packs';
 }
 
 export function useLessons(isEnglish: boolean) {

@@ -113,10 +113,10 @@ export default function BrandKit() {
                 <p className="font-semibold flex items-center gap-2"><Sparkles className="h-4 w-4 text-primary" />{isEnglish ? 'Need more brands?' : 'Precisas de mais marcas?'}</p>
                 <p className="text-sm text-muted-foreground">
                   {plan === 'pro'
-                    ? (isEnglish ? 'Pro includes 3 brand profiles. Premium has no limit.' : 'O Pro inclui 3 perfis de marca. O Premium não tem limite.')
-                    : (isEnglish ? 'Free includes 1 brand profile. Pro gives you 3, Premium unlimited.' : 'O plano grátis inclui 1 perfil de marca. O Pro dá-te 3 e o Premium ilimitados.')}
+                    ? (isEnglish ? 'Pro includes 3 brand profiles. Edit or delete one to add another.' : 'O Pro inclui 3 perfis de marca. Edita ou apaga um para criares outro.')
+                    : (isEnglish ? 'Your plan includes 1 brand profile. Pro gives you 3.' : 'O teu plano inclui 1 perfil de marca. O Pro dá-te 3.')}
                 </p>
-                <Button asChild size="sm"><Link to="/pricing">{isEnglish ? 'See plans' : 'Ver planos'}</Link></Button>
+                {plan !== 'pro' && <Button asChild size="sm"><Link to="/pricing">{isEnglish ? 'See Pro' : 'Ver Pro'}</Link></Button>}
               </CardContent>
             </Card>
           )}

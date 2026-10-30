@@ -139,7 +139,7 @@ export default function PromptPacks() {
         );
       })}
 
-      {/* Bottom CTA for non-premium users */}
+      {/* Bottom CTA for users without pack access (Free) */}
       {!hasAccess && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -151,14 +151,14 @@ export default function PromptPacks() {
             {isEnglish ? 'Unlock all Packs' : 'Desbloqueia todos os Packs'}
           </h3>
           <p className="text-muted-foreground mb-4">
-            {isEnglish ? 'Lifetime access to all templates and future updates.' : 'Acesso vitalício a todos os templates e futuras atualizações.'}
+            {isEnglish ? 'Prompt Packs (19€ one-time): lifetime access to all templates and future pack updates. Also included in Pro.' : 'Prompt Packs (19€, pagamento único): acesso vitalício a todos os templates e futuras atualizações dos packs. Também incluído no Pro.'}
           </p>
           <Button
             size="lg"
             onClick={() => navigate('/pricing')}
             className="bg-primary hover:bg-primary/90"
           >
-            {isEnglish ? 'View Premium Plan' : 'Ver Plano Premium'}
+            {isEnglish ? 'See Prompt Packs and Pro' : 'Ver Prompt Packs e Pro'}
             <ChevronRight className="h-4 w-4 ml-1" />
           </Button>
         </motion.div>

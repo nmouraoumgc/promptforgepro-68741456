@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { usePlanStore } from '@/stores/planStore';
 import { useAuthStore } from '@/stores/authStore';
-import { PlanType } from '@/types/plans';
+import { PLAN_LIMITS } from '@/types/plans';
 import { useNavigate } from 'react-router-dom';
 import { useIsEnglish } from '@/i18n/lang';
 
@@ -17,9 +17,11 @@ interface FeatureGateProps {
 export function FeatureGate({ feature, children, fallback, inline = false }: FeatureGateProps) {
   const { currentPlan } = usePlanStore();
   
-  const hasAccess = feature === 'pro' 
+  // 'pro' = Pro tools (Pro or grandfathered Premium). 'premium' = premium Prompt Packs
+  // (Pro, Prompt Packs or grandfathered Premium).
+  const hasAccess = feature === 'pro'
     ? currentPlan === 'pro' || currentPlan === 'premium'
-    : currentPlan === 'premium';
+    : currentPlan === 'pro' || currentPlan === 'packs' || currentPlan === 'premium';
   
   if (hasAccess) {
     return <>{children}</>;
@@ -52,11 +54,11 @@ export function ProBadge({ feature, className = '' }: ProBadgeProps) {
           isPremium ? 'text-primary' : 'text-muted-foreground'
         } ${className}`}>
           {isPremium ? <Crown className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
-          {isPremium ? 'Premium' : 'Pro'}
+          {isPremium ? 'Prompt Packs' : 'Pro'}
         </span>
       </TooltipTrigger>
       <TooltipContent>
-        <p>{isEnglish ? `${isPremium ? 'Premium' : 'Pro'} feature` : `Funcionalidade ${isPremium ? 'Premium' : 'Pro'}`}</p>
+        <p>{isPremium ? (isEnglish ? 'Included in Prompt Packs and Pro' : 'Incluído nos Prompt Packs e no Pro') : (isEnglish ? 'Pro feature' : 'Funcionalidade Pro')}</p>
       </TooltipContent>
     </Tooltip>
   );
@@ -76,13 +78,12 @@ export function UpgradePrompt({
   compact = false 
 }: UpgradePromptProps) {
   const isPremium = feature === 'premium';
-  const { setPlan } = usePlanStore();
   const navigate = useNavigate();
   const isEnglish = useIsEnglish();
   
   // Pro-specific contextual messaging
   const defaultTitle = isPremium 
-    ? (isEnglish ? 'Available on Premium' : 'Disponível no Premium')
+    ? (isEnglish ? 'Included in Prompt Packs and Pro' : 'Incluído nos Prompt Packs e no Pro')
     : (isEnglish ? 'Pro feature' : 'Funcionalidade Pro');
   
   const defaultDescription = isPremium
@@ -91,8 +92,7 @@ export function UpgradePrompt({
 
   const handleUpgrade = () => {
     if (isPremium) {
-      setPlan('premium');
-      navigate('/packs');
+      navigate('/checkout');
     } else {
       navigate('/pricing');
     }
@@ -136,7 +136,7 @@ export function UpgradePrompt({
         {description || defaultDescription}
       </p>
       <Button onClick={handleUpgrade}>
-        {isPremium ? (isEnglish ? 'Unlock Premium' : 'Desbloquear Premium') : (isEnglish ? 'Discover the Pro plan' : 'Conhecer plano Pro')}
+        {isPremium ? (isEnglish ? 'Unlock Prompt Packs' : 'Desbloquear Prompt Packs') : (isEnglish ? 'Discover the Pro plan' : 'Conhecer plano Pro')}
       </Button>
     </div>
   );
@@ -152,7 +152,7 @@ export function OptimizationLimitNotice({ promptId }: OptimizationLimitProps) {
   const navigate = useNavigate();
   const isEnglish = useIsEnglish();
   
-  if (currentPlan !== 'free') return null;
+  if (PLAN_LIMITS[currentPlan].maxOptimizationsPerPrompt === Infinity) return null;
   
   const count = getOptimizationCount(promptId);
   const remaining = 3 - count;
@@ -185,7 +185,7 @@ export function OptimizationLimitNotice({ promptId }: OptimizationLimitProps) {
   );
 }
 
-// Contextual upsell for specific features - now directs to Premium
+// Contextual upsell for Pro tools (A/B, version history, export): directs to Pro
 interface ContextualUpsellProps {
   context: 'ab-testing' | 'version-history' | 'export' | 'high-usage';
 }
@@ -231,10 +231,10 @@ export function ProContextualUpsell({ context }: ContextualUpsellProps) {
         {message.description}
       </p>
       <p className="text-sm text-muted-foreground mb-4 max-w-sm">
-        {isEnglish ? 'This feature is included in the Premium plan.' : 'Esta funcionalidade está incluída no plano Premium.'}
+        {isEnglish ? 'This feature is included in the Pro plan.' : 'Esta funcionalidade está incluída no plano Pro.'}
       </p>
       <Button onClick={() => navigate('/pricing')}>
-        {isEnglish ? 'See Premium plan' : 'Ver Plano Premium'}
+        {isEnglish ? 'See Pro plan' : 'Ver plano Pro'}
       </Button>
     </div>
   );

@@ -135,7 +135,7 @@ export default function Admin() {
     const [total, pro, premium, free, new30d, ...perMonth] = await Promise.all([
       countWhere(),
       countWhere((q) => q.eq('current_plan', 'pro')),
-      countWhere((q) => q.eq('current_plan', 'premium')),
+      countWhere((q) => q.in('current_plan', ['packs', 'premium'])), // Prompt Packs buyers (+ grandfathered premium)
       countWhere((q) => q.eq('current_plan', 'free')),
       countWhere((q) => q.gte('created_at', last30)),
       ...monthStarts.map((start, i) => {
@@ -576,7 +576,7 @@ export default function Admin() {
                         <TableCell className="font-medium">{user.email}</TableCell>
                         <TableCell>
                           <Badge variant={
-                            user.current_plan === 'premium' ? 'default' :
+                            user.current_plan === 'premium' || user.current_plan === 'packs' ? 'default' :
                             user.current_plan === 'pro' ? 'secondary' : 'outline'
                           }>
                             {user.current_plan}

@@ -39,8 +39,9 @@ const JSON_LD = {
   description: 'Cria, otimiza e guarda prompts profissionais para ChatGPT, Gemini e Claude, em português de Portugal.',
   offers: [
     { '@type': 'Offer', name: 'Free', price: '0', priceCurrency: 'EUR' },
-    { '@type': 'Offer', name: 'Pro', price: '9', priceCurrency: 'EUR', description: 'Subscrição mensal' },
-    { '@type': 'Offer', name: 'Premium', price: '19', priceCurrency: 'EUR', description: 'Pagamento único' },
+    { '@type': 'Offer', name: 'Pro', price: '9', priceCurrency: 'EUR', description: 'Subscrição mensal. Todas as ferramentas, todas as lições do Aprender e todos os Prompt Packs incluídos.' },
+    { '@type': 'Offer', name: 'Pro anual', price: '90', priceCurrency: 'EUR', description: 'Subscrição anual (2 meses grátis). Tudo o que o Pro mensal inclui, com todos os Prompt Packs.' },
+    { '@type': 'Offer', name: 'Prompt Packs', price: '19', priceCurrency: 'EUR', description: 'Pagamento único. Todos os Prompt Packs premium e todas as lições do Aprender. Não inclui as ferramentas do Pro.' },
   ],
 };
 
@@ -68,16 +69,16 @@ export default function Landing() {
     { icon: Gauge, title: L('Otimiza e guarda', 'Optimise and save'), text: L('Vê a pontuação, melhora com sugestões explicadas e guarda os melhores na tua biblioteca.', 'See the score, improve it with explained suggestions and keep the best ones in your library.') },
   ];
 
-  const plans = [
+  const plans: { name: string; price: string; detail: string; note?: string; items: string[]; highlight?: boolean; secondary?: boolean }[] = [
     { name: 'Free', price: '0€', detail: L('para sempre', 'forever'), items: [L('3 otimizações por prompt', '3 optimisations per prompt'), L('Biblioteca de prompts', 'Prompt library'), L('Criador guiado básico', 'Basic guided builder')] },
-    { name: 'Pro', price: '9€', detail: L('/mês, sem fidelização', '/month, no commitment'), items: [L('Otimizações ilimitadas', 'Unlimited optimisations'), L('Histórico de versões e testes A/B', 'Version history and A/B tests'), L('Todas as lições do Aprender', 'All Learn lessons')], highlight: true },
-    { name: 'Premium', price: '19€', detail: L('pagamento único', 'one-time payment'), items: [L('Todos os Prompt Packs premium', 'All premium Prompt Packs'), L('Modelos por setor, prontos a preencher', 'Ready-to-fill templates by industry'), L('Atualizações futuras incluídas', 'Future updates included')] },
+    { name: 'Pro', price: '9€', detail: L('/mês, sem fidelização', '/month, no commitment'), note: L('ou 90€/ano, 2 meses grátis', 'or 90€/year, 2 months free'), items: [L('Tudo dos Prompt Packs incluído', 'Everything in Prompt Packs included'), L('Otimizações ilimitadas', 'Unlimited optimisations'), L('Histórico de versões e testes A/B', 'Version history and A/B tests'), L('Todas as lições do Aprender', 'All Learn lessons')], highlight: true },
+    { name: 'Prompt Packs', price: '19€', detail: L('pagamento único', 'one-time payment'), items: [L('Todos os Prompt Packs premium', 'All premium Prompt Packs'), L('Todas as lições do Aprender', 'All Learn lessons'), L('Atualizações futuras incluídas', 'Future updates included')], secondary: true },
   ];
 
   const faqs = [
     { q: L('Preciso de saber escrever prompts?', 'Do I need to know how to write prompts?'), a: L('Não. Basta descreveres o que queres. O PromptForge Pro faz as perguntas certas e monta o prompt por ti.', 'No. Just describe what you want. PromptForge Pro asks the right questions and builds the prompt for you.') },
     { q: L('Funciona com que ferramentas de IA?', 'Which AI tools does it work with?'), a: L('Os prompts são texto, por isso podes usá-los no ChatGPT, Gemini, Claude, Copilot ou noutra ferramenta à tua escolha.', 'Prompts are plain text, so you can use them in ChatGPT, Gemini, Claude, Copilot or any other tool you like.') },
-    { q: L('O plano Free é mesmo grátis?', 'Is the Free plan really free?'), a: L('Sim. Não pedimos cartão para criar conta. Só pagas se escolheres o Pro ou o Premium.', 'Yes. No card is needed to sign up. You only pay if you choose Pro or Premium.') },
+    { q: L('O plano Free é mesmo grátis?', 'Is the Free plan really free?'), a: L('Sim. Não pedimos cartão para criar conta. Só pagas se escolheres o Pro ou os Prompt Packs.', 'Yes. No card is needed to sign up. You only pay if you choose Pro or the Prompt Packs.') },
     { q: L('Posso cancelar o Pro?', 'Can I cancel Pro?'), a: L('Sim, quando quiseres, na página da tua conta. Manténs o acesso até ao fim do período pago.', 'Yes, at any time from your account page. You keep access until the end of the paid period.') },
     { q: L('Está em português de Portugal?', 'Is it available in English?'), a: L('Sim. A aplicação e os prompts gerados estão em português de Portugal, e também podes mudar para inglês.', 'Yes. The app works in English and European Portuguese, and you can switch at any time.') },
   ];
@@ -101,6 +102,8 @@ export default function Landing() {
       </header>
 
       <main>
+        {/* Light theme: soft brand-orange glow behind the hero (dark theme unchanged). */}
+        <div className="bg-gradient-to-b from-primary/10 via-primary/[0.03] to-transparent dark:from-transparent dark:via-transparent">
         <section className="mx-auto max-w-6xl px-4 pb-12 pt-12 text-center md:pt-20">
           <h1 className="mx-auto max-w-3xl text-3xl font-bold leading-tight md:text-5xl">
             {L('Prompts profissionais para IA, sem complicações', 'Professional AI prompts, without the hassle')}
@@ -115,6 +118,7 @@ export default function Landing() {
           </div>
           <p className="mt-3 text-xs text-muted-foreground">{L('Sem cartão de crédito.', 'No credit card needed.')}</p>
         </section>
+        </div>
 
         <section className="mx-auto max-w-5xl px-4 pb-16" aria-labelledby="exemplo">
           <h2 id="exemplo" className="mb-6 text-center text-2xl font-semibold">{L('Antes e depois', 'Before and after')}</h2>
@@ -156,11 +160,12 @@ export default function Landing() {
           <h2 id="planos" className="mb-10 text-center text-2xl font-semibold">{L('Planos', 'Plans')}</h2>
           <div className="grid gap-6 md:grid-cols-3">
             {plans.map((p) => (
-              <div key={p.name} className={`flex flex-col rounded-xl border bg-card p-6 ${p.highlight ? 'border-primary shadow-sm' : 'border-border'}`}>
-                <h3 className="text-lg font-semibold">{p.name}</h3>
-                <p className="mt-2"><span className="text-3xl font-bold">{p.price}</span> <span className="text-sm text-muted-foreground">{p.detail}</span></p>
-                <ul className="mt-4 flex-1 space-y-2 text-sm">
-                  {p.items.map((it) => <li key={it} className="flex items-start gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />{it}</li>)}
+              <div key={p.name} data-testid={`landing-plan-${p.name.toLowerCase().replace(/\s+/g, '-')}`} className={`flex flex-col rounded-xl border p-6 ${p.highlight ? 'bg-card border-primary shadow-sm' : p.secondary ? 'bg-muted/20 border-border/60' : 'bg-card border-border'}`}>
+                <h3 className={`font-semibold ${p.secondary ? 'text-base text-muted-foreground' : 'text-lg'}`}>{p.name}</h3>
+                <p className="mt-2"><span className={`font-bold ${p.secondary ? 'text-2xl' : 'text-3xl'}`}>{p.price}</span> <span className="text-sm text-muted-foreground">{p.detail}</span></p>
+                {p.note && <p className="mt-1 text-xs font-medium text-orange-700 dark:text-primary">{p.note}</p>}
+                <ul className={`mt-4 flex-1 space-y-2 text-sm ${p.secondary ? 'text-muted-foreground' : ''}`}>
+                  {p.items.map((it) => <li key={it} className="flex items-start gap-2"><Check className={`mt-0.5 h-4 w-4 shrink-0 ${p.secondary ? 'text-muted-foreground' : 'text-primary'}`} aria-hidden="true" />{it}</li>)}
                 </ul>
               </div>
             ))}

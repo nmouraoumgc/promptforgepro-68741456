@@ -353,7 +353,9 @@ async function handleSubscriptionCanceled(data: any, env: PaddleEnv) {
 }
 
 async function handleTransactionCompleted(data: any, env: PaddleEnv) {
-  // One-time purchases (Premium). Subscription renewals also fire this event,
+  // One-time purchases (Prompt Packs, price premium_one_time). Since 2026-10-30 they are recorded as
+  // plan 'packs' (premium Prompt Packs + all Learn lessons, Free limits otherwise). Existing 'premium'
+  // purchase rows are grandfathered with full access. Subscription renewals also fire this event,
   // so we filter by price external id.
   const { id, customData, items, currencyCode, discount } = data;
   const userId = customData?.userId;
@@ -391,14 +393,14 @@ async function handleTransactionCompleted(data: any, env: PaddleEnv) {
   }
 
   if (await checkCompletedTransactionDiscount(data, env, userId)) {
-    console.warn('Premium access withheld: 0-charge transaction with a discount not issued by the server', { txn: id });
+    console.warn('Prompt Packs access withheld: 0-charge transaction with a discount not issued by the server', { txn: id });
     return;
   }
 
   const amountCents = Number(item?.price?.unitPrice?.amount ?? 0) || 1900;
   await getSupabase().from('purchases').insert({
     user_id: userId,
-    plan: 'premium',
+    plan: 'packs',
     amount_cents: amountCents,
     currency: (currencyCode || 'EUR').toUpperCase(),
     status: 'completed',
@@ -407,7 +409,7 @@ async function handleTransactionCompleted(data: any, env: PaddleEnv) {
 
   // Plan sync handled by trigger.
   await incrementPromoUsage(env, discount);
-  console.log('Premium purchase recorded', { userId, txn: id, env });
+  console.log('Prompt Packs purchase recorded', { userId, txn: id, env });
 }
 
 const FAILED_PAYMENT_STATUSES = new Set(['error', 'canceled', 'dropped']);

@@ -158,7 +158,7 @@ export function Sidebar() {
             <Button
               variant="ghost"
               size="icon"
-              className="fixed left-4 top-4 z-50 h-10 w-10 bg-sidebar/95 backdrop-blur-sm shadow-lg md:hidden"
+              className="fixed left-4 top-4 z-50 h-10 w-10 bg-sidebar/95 text-sidebar-foreground backdrop-blur-sm shadow-lg hover:bg-sidebar-accent hover:text-sidebar-accent-foreground md:hidden"
               aria-label={isEnglish ? 'Open menu' : 'Abrir menu'}
             >
               <Menu className="h-5 w-5" />

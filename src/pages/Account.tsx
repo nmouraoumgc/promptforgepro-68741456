@@ -25,6 +25,7 @@ export default function Account() {
   const isEnglish = useIsEnglish();
   const navigate = useNavigate();
   const { user, profile, signOut, isLoading } = useAuthStore();
+  const isAdmin = useAuthStore((s) => s.isAdmin);
   const { toast } = useToast();
   const [isOpeningPortal, setIsOpeningPortal] = useState(false);
   const L = (pt: string, en: string) => (isEnglish ? en : pt);
@@ -152,7 +153,8 @@ export default function Account() {
 
   const getPlanIcon = () => {
     switch (currentPlan) {
-      case 'premium': return <Sparkles className="h-5 w-5" />;
+      case 'premium':
+      case 'packs': return <Sparkles className="h-5 w-5" />;
       case 'pro': return <Zap className="h-5 w-5" />;
       default: return <Crown className="h-5 w-5" />;
     }
@@ -290,7 +292,7 @@ export default function Account() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className={`h-12 w-12 rounded-full flex items-center justify-center ${
-                      currentPlan === 'premium' ? 'bg-primary/10 text-primary' :
+                      currentPlan === 'premium' || currentPlan === 'packs' ? 'bg-primary/10 text-primary' :
                       currentPlan === 'pro' ? 'bg-info/10 text-info' :
                       'bg-muted text-muted-foreground'
                     }`}>
@@ -306,6 +308,7 @@ export default function Account() {
                       <p className="text-sm text-muted-foreground">
                         {currentPlan === 'free' && t('account.freeDesc')}
                         {currentPlan === 'pro' && t('account.proDesc')}
+                        {currentPlan === 'packs' && t('account.packsDesc')}
                         {currentPlan === 'premium' && t('account.premiumDesc')}
                       </p>
                     </div>
@@ -332,9 +335,15 @@ export default function Account() {
                   <Button variant="outline" onClick={() => navigate('/pricing')}>
                     {t('account.viewPlans')}
                   </Button>
-                  {currentPlan !== 'premium' && (
-                    <Button onClick={() => navigate('/checkout')}>
+                  {/* Upgrades always point to Pro. Pro, grandfathered Premium and admins have no upgrade. */}
+                  {(currentPlan === 'free' || currentPlan === 'packs') && !isAdmin && (
+                    <Button onClick={() => navigate('/pricing')}>
                       {t('account.upgrade')}
+                    </Button>
+                  )}
+                  {(currentPlan === 'pro' || currentPlan === 'premium' || isAdmin) && subQ.data && (
+                    <Button onClick={handleOpenBillingPortal}>
+                      {isEnglish ? 'Manage subscription' : 'Gerir subscrição'}
                     </Button>
                   )}
                 </div>

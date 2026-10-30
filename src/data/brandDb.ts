@@ -1,5 +1,5 @@
 // Cofre de marca / Brand Kit. Rows live in brand_profiles (RLS: own rows only). The plan limit is
-// enforced by a DB trigger (free 1, pro 3, premium/admin unlimited); the UI only mirrors it.
+// enforced by a DB trigger (free/packs 1, pro 3, grandfathered premium/admin unlimited); the UI only mirrors it.
 // The ACTIVE profile is read server-side by the AI edge functions (never sent from the client).
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';

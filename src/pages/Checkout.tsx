@@ -38,13 +38,13 @@ const Checkout = () => {
     ? [
         "All premium Prompt Packs",
         "Ready-to-use hooks, scripts, structures and CTAs",
-        "Unlimited generation inside packs",
+        "All Learn lessons",
         "Future updates included",
       ]
     : [
         "Todos os Prompt Packs premium",
         "Hooks, scripts, estruturas e CTAs prontos",
-        "Geração ilimitada dentro dos packs",
+        "Todas as lições do Aprender",
         "Atualizações futuras incluídas",
       ];
 
@@ -52,9 +52,10 @@ const Checkout = () => {
     if (user?.email) setEmail(user.email);
   }, [user]);
 
-  useEffect(() => {
-    if (profile?.current_plan === "premium") navigate("/packs");
-  }, [profile, navigate]);
+  // Already entitled to the packs (Prompt Packs, Pro includes them, grandfathered Premium, admin): no checkout.
+  const isAdminUser = useAuthStore((st) => st.isAdmin);
+  const plan = profile?.current_plan;
+  const hasPacksAccess = isAdminUser || plan === "packs" || plan === "pro" || plan === "premium";
 
   // Force authentication before checkout. Without a logged-in user, the webhook
   // cannot link the purchase to an account and the user would lose access.
@@ -68,6 +69,22 @@ const Checkout = () => {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (hasPacksAccess) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center p-6" data-testid="checkout-has-access">
+        <div className="max-w-md text-center space-y-3">
+          <h1 className="text-2xl font-bold">{isEnglish ? "You already have access to the Prompt Packs" : "Já tens acesso aos Prompt Packs"}</h1>
+          <p className="text-muted-foreground">
+            {plan === "pro"
+              ? (isEnglish ? "Every Prompt Pack is included in your Pro plan." : "Todos os Prompt Packs estão incluídos no teu plano Pro.")
+              : (isEnglish ? "Your account already includes every premium Prompt Pack." : "A tua conta já inclui todos os Prompt Packs premium.")}
+          </p>
+          <Button onClick={() => navigate("/packs")}>{isEnglish ? "Open the Prompt Packs" : "Abrir os Prompt Packs"}</Button>
+        </div>
       </div>
     );
   }

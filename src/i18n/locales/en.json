@@ -227,7 +227,9 @@
       "proPeriod": "/month",
       "proDesc": "For daily professional use",
       "premiumPeriod": "one-time",
-      "premiumDesc": "Full access to Packs"
+      "premiumDesc": "Full access (legacy plan)",
+      "packsPeriod": "one-time payment",
+      "packsDesc": "All Prompt Packs and Learn lessons"
     }
   },
   "account": {
@@ -237,8 +239,9 @@
     "email": "Email",
     "currentPlan": "Current plan",
     "freeDesc": "Basic access to features",
-    "proDesc": "Professional tools active",
-    "premiumDesc": "Full access to all Packs",
+    "proDesc": "Professional tools and all Prompt Packs",
+    "premiumDesc": "Full access to every feature (legacy plan)",
+    "packsDesc": "All Prompt Packs and all Learn lessons",
     "viewPlans": "View plans",
     "upgrade": "Upgrade",
     "billingTitle": "Billing portal",

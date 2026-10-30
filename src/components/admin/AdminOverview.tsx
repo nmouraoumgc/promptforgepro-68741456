@@ -135,7 +135,7 @@ export function AdminOverview({ counts, metrics, metricsError }: Props) {
     () => [
       { name: 'Free', value: counts?.free ?? 0, color: 'hsl(var(--muted-foreground))' },
       { name: 'Pro', value: counts?.pro ?? 0, color: 'hsl(var(--primary))' },
-      { name: 'Premium', value: counts?.premium ?? 0, color: 'hsl(45 93% 58%)' },
+      { name: 'Prompt Packs', value: counts?.premium ?? 0, color: 'hsl(45 93% 58%)' },
     ],
     [counts]
   );
@@ -201,7 +201,7 @@ export function AdminOverview({ counts, metrics, metricsError }: Props) {
 
       {/* Secondary KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
-        <SmallStat icon={Crown} label={isEnglish ? 'Premium (flag)' : 'Premium (flag)'} value={counts?.premium ?? na} />
+        <SmallStat icon={Crown} label={isEnglish ? 'Prompt Packs (plan)' : 'Prompt Packs (plano)'} value={counts?.premium ?? na} />
         <SmallStat icon={Sparkles} label={isEnglish ? 'Pro (flag)' : 'Pro (flag)'} value={counts?.pro ?? na} />
         <SmallStat icon={Users} label={isEnglish ? 'Paying users' : 'Pagantes reais'} value={stats.payingUsers ?? na} />
         <SmallStat

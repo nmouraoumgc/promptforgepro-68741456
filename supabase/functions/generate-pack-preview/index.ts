@@ -95,7 +95,8 @@ serve(async (req) => {
   try {
     const auth = await authenticateRequest(req);
     if (auth instanceof Response) return auth;
-    const isPremium = auth.isPremium;
+    // Full pack previews for anyone with premium Prompt Packs access (Pro, Premium, Prompt Packs, admin).
+    const isPremium = auth.canAccessPacks;
 
     const { tema, packSlug, language: reqLanguage, useBrand } = await req.json();
     const brand = useBrand === false ? null : await loadActiveBrand(auth.userId);

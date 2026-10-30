@@ -1,6 +1,6 @@
 // DB-backed, bilingual packs (pt-PT + EN), seeded by supabase/proposals/20261027_packs_i18n_catalogue.sql.
 // Templates are NOT bundled: RLS on pack_prompts returns free previews to everyone and the full
-// pack only to entitled users (premium plan or admin).
+// pack only to entitled users (pro, packs, grandfathered premium or admin).
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Pack, PackPrompt, OutcomeCategory } from '@/types/packs';

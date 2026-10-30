@@ -227,7 +227,9 @@
       "proPeriod": "/mês",
       "proDesc": "Para uso profissional diário",
       "premiumPeriod": "único",
-      "premiumDesc": "Acesso completo aos Packs"
+      "premiumDesc": "Acesso completo (plano legado)",
+      "packsPeriod": "pagamento único",
+      "packsDesc": "Todos os Prompt Packs e lições do Aprender"
     }
   },
   "account": {
@@ -237,8 +239,9 @@
     "email": "Email",
     "currentPlan": "Plano atual",
     "freeDesc": "Acesso básico às funcionalidades",
-    "proDesc": "Ferramentas profissionais ativas",
-    "premiumDesc": "Acesso completo a todos os Packs",
+    "proDesc": "Ferramentas profissionais e todos os Prompt Packs",
+    "premiumDesc": "Acesso completo a todas as funcionalidades (plano legado)",
+    "packsDesc": "Todos os Prompt Packs e todas as lições do Aprender",
     "viewPlans": "Ver planos",
     "upgrade": "Fazer upgrade",
     "billingTitle": "Portal de faturação",

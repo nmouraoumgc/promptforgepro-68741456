@@ -17,7 +17,7 @@ import OnboardingChecklist from '@/components/dashboard/OnboardingChecklist';
 import { cn } from '@/lib/utils';
 
 const TRACK_ORDER: Record<Lesson['track'], number> = { fundamentos: 0, setor: 1, avancado: 2 };
-const PLAN_LABEL: Record<string, string> = { free: 'Free', pro: 'Pro', premium: 'Prompt Packs' };
+const PLAN_LABEL: Record<string, string> = { free: 'Free', pro: 'Pro', packs: 'Prompt Packs', premium: 'Prompt Packs' };
 
 export default function Dashboard() {
   const isEnglish = useIsEnglish();
@@ -77,23 +77,23 @@ export default function Dashboard() {
       <div className="flex flex-wrap gap-2 text-sm" data-testid="dash-status">
         {user ? (
           <>
-            <Link to="/brand" data-testid="status-brand" className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-3 py-1.5 hover:border-primary/50 transition-colors max-w-full">
+            <Link to="/brand" data-testid="status-brand" className="inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 dark:border-border dark:bg-muted/40 px-3 py-1.5 hover:border-primary/50 transition-colors max-w-full">
               <Palette className="h-3.5 w-3.5 text-primary shrink-0" />
               {brandLoading ? '…' : activeBrand
                 ? <span className="truncate">{L('Marca', 'Brand')}: <span className="font-medium">{activeBrand.name}</span></span>
                 : <span className="inline-flex items-center gap-1 font-medium text-primary"><Plus className="h-3 w-3" />{L('Criar marca', 'Create brand')}</span>}
             </Link>
-            <span data-testid="status-runs" className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-3 py-1.5">
+            <span data-testid="status-runs" className="inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 dark:border-border dark:bg-muted/40 px-3 py-1.5">
               <Gauge className="h-3.5 w-3.5 text-primary" />
               {runsLeft === null ? L('Execuções: …', 'Runs: …') : L(`${runsLeft} de ${usageQ.data!.limit} execuções hoje`, `${runsLeft} of ${usageQ.data!.limit} runs left today`)}
             </span>
-            <Link to={plan === 'free' && !isAdmin ? '/pricing' : '/account'} data-testid="status-plan" className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-3 py-1.5 hover:border-primary/50 transition-colors">
+            <Link to={(plan === 'free' || plan === 'packs') && !isAdmin ? '/pricing' : '/account'} data-testid="status-plan" className="inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 dark:border-border dark:bg-muted/40 px-3 py-1.5 hover:border-primary/50 transition-colors">
               <Crown className="h-3.5 w-3.5 text-primary" />{L('Plano', 'Plan')}: <span className="font-medium">{planLabel}</span>
-              {plan === 'free' && !isAdmin && <span className="text-primary font-medium">· {L('Ver Pro', 'See Pro')}</span>}
+              {(plan === 'free' || plan === 'packs') && !isAdmin && <span className="text-primary font-medium">· {L('Ver Pro', 'See Pro')}</span>}
             </Link>
           </>
         ) : (
-          <Link to="/login" data-testid="status-signin" className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-3 py-1.5 hover:border-primary/50">
+          <Link to="/login" data-testid="status-signin" className="inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 dark:border-border dark:bg-muted/40 px-3 py-1.5 hover:border-primary/50">
             {L('Inicia sessão para guardar a biblioteca, a marca e executar prompts', 'Sign in to save your library and brand and run prompts')} <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         )}

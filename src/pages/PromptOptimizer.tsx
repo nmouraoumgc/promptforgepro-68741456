@@ -71,6 +71,8 @@ export default function PromptOptimizer({ embedded = false, initialPrompt, onSav
   const language = (i18n.resolvedLanguage || i18n.language || 'pt').slice(0, 2);
   const { user } = useAuthStore();
   const { currentPlan, canOptimize, incrementOptimizationCount, getOptimizationCount } = usePlanStore();
+  // Free and Prompt Packs ('packs') keep the Free per-prompt optimization limit; Pro/Premium are unlimited.
+  const isLimitedPlan = currentPlan === 'free' || currentPlan === 'packs';
 
   const [improvements, setImprovements] = useState<string[]>([]);
 
@@ -93,7 +95,7 @@ export default function PromptOptimizer({ embedded = false, initialPrompt, onSav
     }
 
     // Check optimization limit for free users
-    if (currentPlan === 'free' && !canOptimize(currentPromptId)) {
+    if (isLimitedPlan && !canOptimize(currentPromptId)) {
       toast({ title: isEnglish ? 'Limit reached' : 'Limite atingido', description: isEnglish ? 'Upgrade to Pro for unlimited optimizations' : 'Muda para o Pro e tem otimizações ilimitadas', variant: 'destructive' });
       return;
     }
@@ -101,7 +103,7 @@ export default function PromptOptimizer({ embedded = false, initialPrompt, onSav
     setIsOptimizing(true);
     
     // Increment optimization count for free users
-    if (currentPlan === 'free') {
+    if (isLimitedPlan) {
       incrementOptimizationCount(currentPromptId);
     }
 
@@ -170,7 +172,7 @@ export default function PromptOptimizer({ embedded = false, initialPrompt, onSav
     restrictive: { label: isEnglish ? 'More Controlled' : 'Mais Controlado', icon: '🎯', description: isEnglish ? 'Strict format and limits' : 'Formato e limites estritos' },
   };
 
-  const remainingOptimizations = currentPlan === 'free' ? 3 - getOptimizationCount(currentPromptId) : null;
+  const remainingOptimizations = isLimitedPlan ? 3 - getOptimizationCount(currentPromptId) : null;
 
   const shorterOptimization = optimizations.find((o) => o.type === 'shorter');
   const detailedOptimization = optimizations.find((o) => o.type === 'detailed');
