@@ -12,10 +12,31 @@ fs.writeFileSync(path.join(DIST, 'vercel.json'), JSON.stringify(cfg, null, 2) + 
 console.log('postbuild: wrote dist/vercel.json');
 
 // The untouched SPA shell for app routes (index.html becomes the prerendered landing).
+// Guard: when re-run on an already prerendered dist, keep the existing shell.
 const shell = fs.readFileSync(path.join(DIST, 'index.html'), 'utf8');
-fs.writeFileSync(path.join(DIST, 'spa.html'), shell);
+if (!shell.includes('data-prerendered="1"')) fs.writeFileSync(path.join(DIST, 'spa.html'), shell);
 
-if (process.env.PRERENDER === '0') { console.log('postbuild: prerender skipped'); process.exit(0); }
+// Guard: every inline <script> in the shipped HTML must be allowed by a hash in the CSP.
+import crypto from 'node:crypto';
+function checkCspHashes() {
+  const csp = (cfg.headers || []).flatMap((h) => h.headers).find((h) => /^Content-Security-Policy/i.test(h.key))?.value || '';
+  const files = [];
+  const walk = (d) => { for (const e of fs.readdirSync(d, { withFileTypes: true })) { const f = path.join(d, e.name); if (e.isDirectory()) walk(f); else if (f.endsWith('.html')) files.push(f); } };
+  walk(DIST);
+  const missing = [];
+  for (const f of files) {
+    const html = fs.readFileSync(f, 'utf8');
+    for (const m of html.matchAll(/<script(?![^>]*\bsrc=)([^>]*)>([\s\S]*?)<\/script>/g)) {
+      if (/ld\+json/.test(m[1])) continue;
+      const h = `'sha256-${crypto.createHash('sha256').update(m[2]).digest('base64')}'`;
+      if (!csp.includes(h)) missing.push(`${path.relative(DIST, f)} ${h}`);
+    }
+  }
+  if (missing.length) { console.error('postbuild: inline scripts missing from the CSP script-src:\n' + missing.join('\n')); process.exit(1); }
+  console.log(`postbuild: CSP hashes OK (${files.length} html files)`);
+}
+
+if (process.env.PRERENDER === '0') { console.log('postbuild: prerender skipped'); checkCspHashes(); process.exit(0); }
 
 const ROUTES = ['/', '/pricing', '/terms', '/privacy', '/refunds', '/signup', '/login'];
 const CHROME = process.env.CHROME_PATH || ['/usr/bin/google-chrome', '/usr/bin/chromium', '/usr/bin/chromium-browser'].find((p) => fs.existsSync(p));
@@ -104,3 +125,4 @@ try {
   await browser.close();
   server.close();
 }
+checkCspHashes();
