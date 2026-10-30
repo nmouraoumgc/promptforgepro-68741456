@@ -1,11 +1,12 @@
 // PromptForge Pro service worker. __BUILD_ID__ is replaced at build time, so every deploy
 // ships a byte-different sw.js -> browsers install it, it activates immediately and purges old caches.
 const BUILD_ID = "__BUILD_ID__";
-const CACHE_NAME = `promptforgepro-${BUILD_ID}`;
+// "icons2" bumps the cache namespace for the new brand icons (old Lovable favicon purged on activate).
+const CACHE_NAME = `promptforgepro-icons2-${BUILD_ID}`;
 const OFFLINE_URL = "/offline.html";
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then((c) => c.addAll([OFFLINE_URL, "/manifest.webmanifest", "/favicon.ico"])).catch(() => {}));
+  event.waitUntil(caches.open(CACHE_NAME).then((c) => c.addAll([OFFLINE_URL, "/manifest.webmanifest", "/favicon.ico", "/favicon.svg"])).catch(() => {}));
   self.skipWaiting();
 });
 
