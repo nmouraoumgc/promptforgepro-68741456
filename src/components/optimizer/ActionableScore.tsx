@@ -129,7 +129,7 @@ export default function ActionableScore({ score, onAutoFix }: ActionableScorePro
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base">
           <TrendingUp className="h-5 w-5 text-primary" />
-          Prompt Score
+          {isEnglish ? 'Prompt Score' : 'Pontuação do prompt'}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">

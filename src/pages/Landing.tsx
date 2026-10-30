@@ -70,7 +70,7 @@ export default function Landing() {
   const plans = [
     { name: 'Free', price: '0€', detail: L('para sempre', 'forever'), items: [L('3 otimizações por prompt', '3 optimisations per prompt'), L('Biblioteca de prompts', 'Prompt library'), L('Criador guiado básico', 'Basic guided builder')] },
     { name: 'Pro', price: '9€', detail: L('/mês, sem fidelização', '/month, no commitment'), items: [L('Otimizações ilimitadas', 'Unlimited optimisations'), L('Histórico de versões e testes A/B', 'Version history and A/B tests'), L('Todas as lições do Aprender', 'All Learn lessons')], highlight: true },
-    { name: 'Premium', price: '19€', detail: L('pagamento único', 'one-time payment'), items: [L('Todos os Prompt Packs premium', 'All premium Prompt Packs'), L('Templates por setor, prontos a preencher', 'Ready-to-fill templates by industry'), L('Atualizações futuras incluídas', 'Future updates included')] },
+    { name: 'Premium', price: '19€', detail: L('pagamento único', 'one-time payment'), items: [L('Todos os Prompt Packs premium', 'All premium Prompt Packs'), L('Modelos por setor, prontos a preencher', 'Ready-to-fill templates by industry'), L('Atualizações futuras incluídas', 'Future updates included')] },
   ];
 
   const faqs = [

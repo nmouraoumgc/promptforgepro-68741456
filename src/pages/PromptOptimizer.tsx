@@ -94,7 +94,7 @@ export default function PromptOptimizer({ embedded = false, initialPrompt, onSav
 
     // Check optimization limit for free users
     if (currentPlan === 'free' && !canOptimize(currentPromptId)) {
-      toast({ title: isEnglish ? 'Limit reached' : 'Limite atingido', description: isEnglish ? 'Upgrade to Pro for unlimited optimizations' : 'Upgrade para Pro para otimizações ilimitadas', variant: 'destructive' });
+      toast({ title: isEnglish ? 'Limit reached' : 'Limite atingido', description: isEnglish ? 'Upgrade to Pro for unlimited optimizations' : 'Muda para o Pro e tem otimizações ilimitadas', variant: 'destructive' });
       return;
     }
 
@@ -246,7 +246,7 @@ export default function PromptOptimizer({ embedded = false, initialPrompt, onSav
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Sparkles className="h-5 w-5" />
-                {isEnglish ? 'Prompt Score' : 'Prompt Score'}
+                {isEnglish ? 'Prompt Score' : 'Pontuação do prompt'}
               </CardTitle>
               <CardDescription>{isEnglish ? 'Quality analysis of your prompt' : 'Análise da qualidade do teu prompt'}</CardDescription>
             </CardHeader>

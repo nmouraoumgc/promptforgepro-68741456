@@ -66,7 +66,7 @@ export default function PromptPacks() {
         {[
           { icon: Zap, label: isEnglish ? 'Real Cases' : 'Casos Reais', desc: isEnglish ? 'Use-cases from each profession' : 'Casos de uso por profissão' },
           { icon: TrendingUp, label: isEnglish ? 'Result Promise' : 'Promessa de Resultado', desc: isEnglish ? 'Each pack leads to a business outcome' : 'Cada pack aponta para um resultado de negócio' },
-          { icon: Lightbulb, label: isEnglish ? 'Action-Ready' : 'Pronto para Ação', desc: isEnglish ? 'Use today with minimal adaptation' : 'Use hoje com pouca adaptação' },
+          { icon: Lightbulb, label: isEnglish ? 'Action-Ready' : 'Pronto a usar', desc: isEnglish ? 'Use today with minimal adaptation' : 'Usa já, com pouca adaptação' },
         ].map(({ icon: Icon, label, desc }, i) => (
           <div
             key={i}

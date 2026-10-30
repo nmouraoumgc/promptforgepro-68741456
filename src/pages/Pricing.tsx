@@ -93,8 +93,8 @@ export default function Pricing() {
       price: '9€',
       priceDetail: isEnglish ? '/month' : '/mês',
       features: isEnglish
-        ? ['9€/month, cancel anytime', 'Unlimited optimizations', 'Version history', 'A/B prompt testing', 'Detailed scoring', 'Prompt export', 'All Learn lessons']
-        : ['9€/mês, cancela quando quiseres', 'Otimizações ilimitadas', 'Histórico de versões', 'Testes A/B de prompts', 'Pontuação detalhada', 'Exportação de prompts', 'Todas as lições do Aprender'],
+        ? ['Unlimited optimizations', 'Version history', 'A/B prompt testing', 'Detailed scoring', 'Prompt export', 'All Learn lessons']
+        : ['Otimizações ilimitadas', 'Histórico de versões', 'Testes A/B de prompts', 'Pontuação detalhada', 'Exportação de prompts', 'Todas as lições do Aprender'],
       cta: isEnglish ? 'Get Pro' : 'Subscrever o Pro',
       highlight: true,
     },
@@ -108,7 +108,7 @@ export default function Pricing() {
     priceDetail: isEnglish ? 'one-time payment' : 'pagamento único',
     features: isEnglish
       ? ['All premium Prompt Packs', 'Hooks, scripts, structures and CTAs', 'Professional templates', 'All Learn lessons', 'Future updates included']
-      : ['Todos os Prompt Packs premium', 'Hooks, scripts, estruturas e CTAs', 'Templates profissionais', 'Todas as lições do Aprender', 'Atualizações futuras incluídas'],
+      : ['Todos os Prompt Packs premium', 'Ganchos, guiões, estruturas e CTAs', 'Modelos profissionais', 'Todas as lições do Aprender', 'Atualizações futuras incluídas'],
     cta: isEnglish ? 'Unlock full access' : 'Desbloquear acesso completo',
   };
 
@@ -214,7 +214,7 @@ export default function Pricing() {
       });
       if (check.status === 'blocked') {
         toast({
-          title: isEnglish ? 'Checkout blocked' : 'Checkout bloqueado',
+          title: isEnglish ? 'Checkout blocked' : 'Pagamento bloqueado',
           description: checkoutBlockMessage(check.reason, isEnglish),
           variant: 'destructive',
         });

@@ -303,7 +303,7 @@ export function PackPreview({ pack, onUnlock }: PackPreviewProps) {
       {!hasAccess && freePrompts.length > 0 && (
         <Card className="p-5 space-y-3" data-testid="free-templates">
           <h3 className="font-semibold text-lg text-foreground">
-            {isEnglish ? 'Free templates from this pack' : 'Templates grátis deste pack'}
+            {isEnglish ? 'Free templates from this pack' : 'Modelos grátis deste pack'}
           </h3>
           {freePrompts.map((p) => (
             <div key={p.id} className="p-3 rounded-lg border border-border bg-background space-y-3">

@@ -57,7 +57,7 @@ const META: Record<string, { pt: Meta; en: Meta }> = {
     en: { title: 'Learn', description: 'Practical 5-minute lessons on using AI in your business: marketing, small business, freelancers, real estate and hospitality.' },
   },
   '/packs': {
-    pt: { title: 'Prompt Packs', description: 'Packs de templates prontos a usar por setor, com variáveis para preencher.' },
+    pt: { title: 'Prompt Packs', description: 'Packs de modelos prontos a usar por setor, com variáveis para preencher.' },
     en: { title: 'Prompt Packs', description: 'Ready-to-use template packs by industry, with fill-in variables.' },
   },
   '/settings': {

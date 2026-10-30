@@ -163,7 +163,7 @@ const Checkout = () => {
       });
       if (check.status === "blocked") {
         toast({
-          title: isEnglish ? "Checkout blocked" : "Checkout bloqueado",
+          title: isEnglish ? "Checkout blocked" : "Pagamento bloqueado",
           description: checkoutBlockMessage(check.reason, isEnglish),
           variant: "destructive",
         });

@@ -269,7 +269,7 @@ export function AuthGate({ children, fallback, message }: AuthGateProps) {
       <div className="h-12 w-12 rounded-full flex items-center justify-center mb-4 bg-muted">
         <LogIn className="h-6 w-6 text-muted-foreground" />
       </div>
-      <h3 className="font-semibold mb-1">{isEnglish ? 'Sign-in required' : 'Login necessário'}</h3>
+      <h3 className="font-semibold mb-1">{isEnglish ? 'Sign-in required' : 'Inicia sessão para continuar'}</h3>
       <p className="text-sm text-muted-foreground mb-4 max-w-sm">
         {message || (isEnglish ? 'Create a free account to use this feature.' : 'Cria uma conta gratuita para usar esta funcionalidade.')}
       </p>

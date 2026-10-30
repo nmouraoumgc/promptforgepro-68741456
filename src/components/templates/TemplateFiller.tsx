@@ -63,7 +63,7 @@ export function TemplateFiller({ template, isEnglish, idPrefix, labels, extraAct
     setHint(h);
     toast({
       title: isEnglish ? 'Copied!' : 'Copiado!',
-      description: h || (isEnglish ? 'Template copied to clipboard.' : 'Template copiado para a área de transferência.'),
+      description: h || (isEnglish ? 'Template copied to clipboard.' : 'Modelo copiado para a área de transferência.'),
     });
   };
 

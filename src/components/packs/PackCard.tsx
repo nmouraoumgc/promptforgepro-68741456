@@ -82,7 +82,7 @@ export function PackCard({ pack, index = 0 }: PackCardProps) {
               </Badge>
             ) : (
               <Badge variant="secondary" className="text-xs">
-                {isEnglish ? 'Free Preview' : 'Preview Grátis'}
+                {isEnglish ? 'Free Preview' : 'Pré-visualização grátis'}
               </Badge>
             )}
           </div>
@@ -110,7 +110,7 @@ export function PackCard({ pack, index = 0 }: PackCardProps) {
               size="sm"
               className="h-8 text-xs text-primary hover:text-primary hover:bg-primary/10"
             >
-              {hasAccess || !pack.isPremium ? (isEnglish ? 'Open Pack' : 'Abrir Pack') : (isEnglish ? 'View Preview' : 'Ver Preview')}
+              {hasAccess || !pack.isPremium ? (isEnglish ? 'Open Pack' : 'Abrir Pack') : (isEnglish ? 'View Preview' : 'Pré-visualizar')}
               <ChevronRight className="h-3 w-3 ml-1" />
             </Button>
           </div>
