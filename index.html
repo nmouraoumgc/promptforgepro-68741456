@@ -13,6 +13,8 @@
     <link rel="preconnect" href="https://cwrxbxxfaemcvliasycz.supabase.co" crossorigin />
     <link rel="preconnect" href="https://eu.i.posthog.com" crossorigin />
     <link rel="dns-prefetch" href="https://eu-assets.i.posthog.com" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <script>
       // Apply the saved theme (or the system default) before first paint, so no page flashes white.
       (function () {
@@ -27,6 +29,15 @@
         r.style.colorScheme = dark ? 'dark' : 'light';
         var m = document.querySelector('meta[name="theme-color"]');
         if (m) m.setAttribute('content', dark ? '#0f121a' : '#f5f6f8');
+        // Web fonts load without blocking the first paint (font-display: swap).
+        var f = document.createElement('link');
+        f.rel = 'stylesheet';
+        f.media = 'print';
+        f.onload = function () { f.media = 'all'; };
+        f.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap';
+        document.head.appendChild(f);
+        // Vercel Web Analytics queue stub.
+        window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
       })();
     </script>
     <style>html{background:#f5f6f8}html.dark{background:#0f121a}</style>
@@ -49,7 +60,6 @@
 
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:image" content="https://promptforgepro.me/og-image.png" />
-      <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
     <script defer src="/_vercel/insights/script.js"></script>
   </head>
 

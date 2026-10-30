@@ -47,7 +47,8 @@ const JSON_LD = {
 /** Adds the SoftwareApplication JSON-LD while the landing page is mounted. */
 function useJsonLd() {
   useEffect(() => {
-    const el = document.createElement('script');
+    // Reuse the prerendered tag when present, so hydration does not duplicate it.
+    const el = (document.getElementById('ld-software-application') as HTMLScriptElement | null) ?? document.createElement('script');
     el.type = 'application/ld+json';
     el.id = 'ld-software-application';
     el.text = JSON.stringify(JSON_LD);

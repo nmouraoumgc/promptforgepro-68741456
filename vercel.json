@@ -17,12 +17,16 @@
   ],
   "rewrites": [
     {
-      "source": "/(app|create|brand|builder|quick|optimizer|versions|tester|settings|pricing|checkout|purchase-success|subscription-success|account|admin|login|signup|terms|refunds|privacy|unsubscribe)(/?)",
-      "destination": "/index.html"
+      "source": "/(pricing|terms|privacy|refunds|signup|login)(/?)",
+      "destination": "/$1/index.html"
+    },
+    {
+      "source": "/(app|create|brand|builder|quick|optimizer|versions|tester|settings|checkout|purchase-success|subscription-success|account|admin|unsubscribe)(/?)",
+      "destination": "/spa.html"
     },
     {
       "source": "/(library|learn|packs)(/.*)?",
-      "destination": "/index.html"
+      "destination": "/spa.html"
     }
   ],
   "headers": [
@@ -32,6 +36,10 @@
         {
           "key": "Cache-Control",
           "value": "no-cache, no-store, must-revalidate"
+        },
+        {
+          "key": "Service-Worker-Allowed",
+          "value": "/"
         }
       ]
     },
