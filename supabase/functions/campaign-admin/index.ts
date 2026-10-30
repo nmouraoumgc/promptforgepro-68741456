@@ -3,11 +3,16 @@
 //  preview         {campaign, batch, expires_at}            -> rendered HTML for the first recipient (no send)
 //  activate_discount {discount_id, expires_at}              -> Paddle discount: status active + expiry
 //  send            {campaign, batch, expires_at, dry_run=true, max=100}
+//  events          {campaign, batch}                        -> Resend last_event counts for sent rows (no addresses returned)
+// Campaign 'welcome100' (code WELCOME100, any batch) uses its own template and needs no expires_at.
+// Callers: an admin user JWT, or an internal caller (service role / Vault cron secret via pg_net, as dunning-cron).
 // Sends one email per pending row via Resend with ~4 req/s throttling, idempotency keys,
 // List-Unsubscribe headers, and stops on quota/rate errors. Never logs addresses or keys.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { gatewayFetch } from '../_shared/paddle.ts';
 import { renderA1, BATCH_CODES } from '../_shared/campaignA1.ts';
+import { renderWelcome100, WELCOME100_CODE } from '../_shared/campaignWelcome100.ts';
+import { isInternalCaller } from '../_shared/internalAuth.ts';
 
 const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type' };
 const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { ...cors, 'Content-Type': 'application/json' } });
@@ -20,11 +25,13 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: cors });
   try {
     const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
-    const token = (req.headers.get('Authorization') ?? '').replace('Bearer ', '');
-    const { data: u } = await admin.auth.getUser(token);
-    if (!u?.user) return json({ error: 'auth' }, 401);
-    const { data: role } = await admin.from('user_roles').select('role').eq('user_id', u.user.id).eq('role', 'admin').maybeSingle();
-    if (!role) return json({ error: 'forbidden' }, 403);
+    if (!(await isInternalCaller(req))) {
+      const token = (req.headers.get('Authorization') ?? '').replace('Bearer ', '');
+      const { data: u } = await admin.auth.getUser(token);
+      if (!u?.user) return json({ error: 'auth' }, 401);
+      const { data: role } = await admin.from('user_roles').select('role').eq('user_id', u.user.id).eq('role', 'admin').maybeSingle();
+      if (!role) return json({ error: 'forbidden' }, 403);
+    }
 
     const b = await req.json().catch(() => ({}));
     const campaign = String(b.campaign ?? 'early_access_2026'), batch = String(b.batch ?? 'A1');
@@ -43,11 +50,29 @@ Deno.serve(async (req) => {
       return json({ http: r.status, status: d?.data?.status, expires_at: d?.data?.expires_at, code: d?.data?.code, usage_limit: d?.data?.usage_limit, error: d?.error?.code }, r.ok ? 200 : 502);
     }
 
+    if (b.action === 'events') {
+      const key = Deno.env.get('RESEND_API_KEY');
+      if (!key) return json({ error: 'RESEND_API_KEY missing' }, 500);
+      const { data: rows } = await admin.from('campaign_sends').select('id, resend_id, status').eq('campaign', campaign).eq('batch', batch);
+      const counts: Record<string, number> = {}; const flagged: { id: string; event: string }[] = [];
+      for (const r of rows ?? []) {
+        if (!r.resend_id) { counts[`no_resend_id:${r.status}`] = (counts[`no_resend_id:${r.status}`] ?? 0) + 1; continue; }
+        const res = await fetch(`https://api.resend.com/emails/${encodeURIComponent(r.resend_id)}`, { headers: { Authorization: `Bearer ${key}` } });
+        const d = await res.json().catch(() => ({}));
+        const ev = res.ok ? String(d?.last_event ?? 'unknown') : `http_${res.status}`;
+        counts[ev] = (counts[ev] ?? 0) + 1;
+        if (['bounced', 'complained', 'failed', 'suppressed'].includes(ev)) flagged.push({ id: r.id, event: ev });
+        await sleep(220);
+      }
+      return json({ campaign, batch, total: rows?.length ?? 0, counts, flagged });
+    }
+
     if (b.action === 'preview' || b.action === 'send') {
-      if (isNaN(Date.parse(b.expires_at))) return json({ error: 'expires_at required' }, 400);
-      const code = BATCH_CODES[batch];
+      const isWelcome = campaign === 'welcome100';
+      if (!isWelcome && isNaN(Date.parse(b.expires_at))) return json({ error: 'expires_at required' }, 400);
+      const code = isWelcome ? WELCOME100_CODE : BATCH_CODES[batch];
       if (!code) return json({ error: `no discount code configured for batch ${batch}` }, 400);
-      const expiresLisbon = lisbon(b.expires_at);
+      const expiresLisbon = isWelcome ? '' : lisbon(b.expires_at);
       const max = Math.min(Number(b.max ?? 100), 100);
       const { data: rows, error } = await admin.from('campaign_sends')
         .select('id, user_id, email, first_name').eq('campaign', campaign).eq('batch', batch).eq('status', 'pending').order('created_at').limit(max);
@@ -58,7 +83,10 @@ Deno.serve(async (req) => {
       const pref = new Map((prefs ?? []).map((p) => [p.user_id, p]));
       const build = (r: { id: string; user_id: string; first_name: string | null }) => {
         const t = pref.get(r.user_id)!.unsubscribe_token;
-        return { ...renderA1({ firstName: r.first_name, expiresLisbon, code, claimUrl: `${SITE}/pricing?code=${code}&c=${encodeURIComponent(batch)}&r=${r.id}`, unsubscribeUrl: `${SITE}/unsubscribe?t=${t}` }),
+        const claimUrl = `${SITE}/pricing?code=${code}&c=${encodeURIComponent(batch)}&r=${r.id}`;
+        const unsubscribeUrl = `${SITE}/unsubscribe?t=${t}`;
+        const rendered = isWelcome ? renderWelcome100({ claimUrl, unsubscribeUrl }) : renderA1({ firstName: r.first_name, expiresLisbon, code, claimUrl, unsubscribeUrl });
+        return { ...rendered,
           oneClick: `${Deno.env.get('SUPABASE_URL')}/functions/v1/unsubscribe?t=${t}` };
       };
       if (b.action === 'preview') return json({ pending: rows?.length ?? 0, expiresLisbon, code, sample: rows?.[0] ? build(rows[0]).html : null });
