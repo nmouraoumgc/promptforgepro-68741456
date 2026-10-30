@@ -31,7 +31,7 @@ export function Header() {
       {/* Logo - clickable to Dashboard */}
       <Link to="/app" className={`flex items-center gap-2 ${isMobile ? 'ml-12' : ''}`}>
         <span className="text-lg font-bold text-foreground">
-          Prompt<span className="text-primary">Forge</span>
+          Prompt<span className="text-primary">Forge</span> Pro
         </span>
       </Link>
 

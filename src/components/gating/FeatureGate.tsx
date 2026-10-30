@@ -87,7 +87,7 @@ export function UpgradePrompt({
   
   const defaultDescription = isPremium
     ? (isEnglish ? 'Access professional packs and advanced templates' : 'Acede a packs profissionais e templates avançados')
-    : (isEnglish ? "You're using PromptForge as a professional tool. The Pro plan unlocks advanced control." : 'Estás a usar o PromptForge como ferramenta profissional. O plano Pro desbloqueia controlo avançado.');
+    : (isEnglish ? "You're using PromptForge Pro as a professional tool. The Pro plan unlocks advanced control." : 'Estás a usar o PromptForge Pro como ferramenta profissional. O plano Pro desbloqueia controlo avançado.');
 
   const handleUpgrade = () => {
     if (isPremium) {
@@ -194,7 +194,7 @@ const contextMessagesEn: Record<ContextualUpsellProps['context'], { title: strin
   'ab-testing': { title: 'A/B tests', description: 'Compare variations and find out which prompt works best.' },
   'version-history': { title: 'Version history', description: 'Access every previous version of your prompts.' },
   'export': { title: 'Export prompts', description: 'Export your prompts to use in other tools.' },
-  'high-usage': { title: 'Advanced usage detected', description: "You're using PromptForge as a professional tool." },
+  'high-usage': { title: 'Advanced usage detected', description: "You're using PromptForge Pro as a professional tool." },
 };
 
 const contextMessages: Record<ContextualUpsellProps['context'], { title: string; description: string }> = {
@@ -212,7 +212,7 @@ const contextMessages: Record<ContextualUpsellProps['context'], { title: string;
   },
   'high-usage': {
     title: 'Uso avançado detetado',
-    description: 'Estás a usar o PromptForge como ferramenta profissional.',
+    description: 'Estás a usar o PromptForge Pro como ferramenta profissional.',
   },
 };
 

@@ -19,7 +19,7 @@ function RefundsPt() {
             <h2 className="text-xl font-semibold mb-2">Garantia de 30 dias</h2>
             <p>
               {SELLER} oferece uma garantia de devolução do dinheiro de <strong>30 dias</strong>. Se não
-              estiver satisfeito com a sua compra, pode pedir reembolso integral no prazo de 30 dias a
+              estiveres satisfeito com a tua compra, podes pedir reembolso integral no prazo de 30 dias a
               contar da data da encomenda.
             </p>
           </section>
@@ -32,7 +32,7 @@ function RefundsPt() {
             </p>
             <ol className="list-decimal pl-6 space-y-1 mt-2">
               <li>
-                Aceda a{" "}
+                Acede a{" "}
                 <a
                   href="https://paddle.net"
                   target="_blank"
@@ -41,12 +41,12 @@ function RefundsPt() {
                 >
                   paddle.net
                 </a>{" "}
-                e introduza o email usado na compra para gerir a sua encomenda; ou
+                e introduz o email usado na compra para gerir a tua encomenda; ou
               </li>
               <li>
-                Contacte-nos por email em{" "}
+                Contacta-nos por email em{" "}
                 <a className="text-primary underline" href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>{" "}
-                com o seu número de encomenda e indicaremos os próximos passos.
+                com o teu número de encomenda e indicaremos os próximos passos.
               </li>
             </ol>
           </section>
@@ -54,8 +54,8 @@ function RefundsPt() {
           <section>
             <h2 className="text-xl font-semibold mb-2">Subscrições</h2>
             <p>
-              Pode cancelar a sua subscrição a qualquer momento através do portal de cliente. O
-              cancelamento entra em vigor no fim do período de faturação atual e mantém o acesso até
+              Podes cancelar a tua subscrição a qualquer momento através do portal de cliente. O
+              cancelamento entra em vigor no fim do período de faturação atual e manténs o acesso até
               essa data. Não emitimos reembolsos parciais por períodos já faturados, com a ressalva da
               garantia de 30 dias acima referida.
             </p>
@@ -65,7 +65,7 @@ function RefundsPt() {
             <h2 className="text-xl font-semibold mb-2">Processamento</h2>
             <p>
               Após aprovação, o reembolso é creditado no método de pagamento original. O tempo de
-              processamento depende da Paddle e da sua instituição financeira (tipicamente 5–10 dias úteis).
+              processamento depende da Paddle e da tua instituição financeira (tipicamente 5–10 dias úteis).
             </p>
           </section>
 

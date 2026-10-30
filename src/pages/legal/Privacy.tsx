@@ -18,8 +18,8 @@ function PrivacyPt() {
           <section>
             <h2 className="text-xl font-semibold mb-2">1. Quem somos</h2>
             <p>
-              {SELLER} ("nós") é responsável pelo tratamento dos seus dados pessoais ("controller") quando
-              utiliza o nosso serviço em promptforgepro.me. Para questões de privacidade contacte:{" "}
+              {SELLER} ("nós") é responsável pelo tratamento dos teus dados pessoais ("controller") quando
+              utilizas o nosso serviço em promptforgepro.me. Para questões de privacidade contacta:{" "}
               <a className="text-primary underline" href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>.
             </p>
           </section>
@@ -39,13 +39,13 @@ function PrivacyPt() {
           <section>
             <h2 className="text-xl font-semibold mb-2">3. Finalidades e base legal</h2>
             <ul className="list-disc pl-6 space-y-1">
-              <li>Criar e gerir a sua conta — <em>execução de contrato</em>.</li>
-              <li>Prestar o Serviço, incluindo geração assistida por IA — <em>execução de contrato</em>.</li>
-              <li>Segurança, prevenção de fraude e abuso — <em>interesse legítimo</em>.</li>
-              <li>Melhoria do produto e diagnóstico — <em>interesse legítimo</em>.</li>
-              <li>Apoio ao cliente — <em>execução de contrato</em>.</li>
-              <li>Comunicações de marketing — <em>consentimento</em> (pode retirar a qualquer momento).</li>
-              <li>Cumprimento de obrigações legais e fiscais — <em>obrigação legal</em>.</li>
+              <li>Criar e gerir a tua conta: <em>execução de contrato</em>.</li>
+              <li>Prestar o Serviço, incluindo geração assistida por IA: <em>execução de contrato</em>.</li>
+              <li>Segurança, prevenção de fraude e abuso: <em>interesse legítimo</em>.</li>
+              <li>Melhoria do produto e diagnóstico: <em>interesse legítimo</em>.</li>
+              <li>Apoio ao cliente: <em>execução de contrato</em>.</li>
+              <li>Comunicações de marketing: <em>consentimento</em> (podes retirá-lo a qualquer momento).</li>
+              <li>Cumprimento de obrigações legais e fiscais: <em>obrigação legal</em>.</li>
             </ul>
           </section>
 
@@ -53,13 +53,13 @@ function PrivacyPt() {
             <h2 className="text-xl font-semibold mb-2">4. Partilha de dados</h2>
             <p>Partilhamos dados, na medida do necessário, com:</p>
             <ul className="list-disc pl-6 space-y-1">
-              <li><strong>Paddle</strong> — Merchant of Record, para processar pagamentos, subscrições, faturação, impostos e cumprimento legal.</li>
-              <li><strong>Subprocessadores de infraestrutura</strong> — alojamento (Supabase), envio de emails transacionais, análise e monitorização.</li>
-              <li><strong>Fornecedores de IA</strong> — modelos de IA generativa (incluindo OpenAI/Google) para processar os seus prompts e devolver outputs. Estes fornecedores tratam os dados como subprocessadores nossos.</li>
-              <li><strong>Consultores profissionais</strong> — jurídicos e contabilísticos quando necessário.</li>
-              <li><strong>Autoridades</strong> — quando exigido por lei.</li>
+              <li><strong>Paddle</strong>: Merchant of Record, para processar pagamentos, subscrições, faturação, impostos e cumprimento legal.</li>
+              <li><strong>Subprocessadores de infraestrutura</strong>: alojamento (Supabase), envio de emails transacionais, análise e monitorização.</li>
+              <li><strong>Fornecedores de IA</strong>: modelos de IA generativa (incluindo OpenAI/Google) para processar os teus prompts e devolver outputs. Estes fornecedores tratam os dados como subprocessadores nossos.</li>
+              <li><strong>Consultores profissionais</strong>: jurídicos e contabilísticos quando necessário.</li>
+              <li><strong>Autoridades</strong>: quando exigido por lei.</li>
             </ul>
-            <p className="mt-2">Não vendemos os seus dados pessoais.</p>
+            <p className="mt-2">Não vendemos os teus dados pessoais.</p>
           </section>
 
           <section>
@@ -73,24 +73,24 @@ function PrivacyPt() {
           <section>
             <h2 className="text-xl font-semibold mb-2">6. Retenção</h2>
             <p>
-              Mantemos os dados enquanto a sua conta estiver ativa e pelo período necessário para cumprir
+              Mantemos os dados enquanto a tua conta estiver ativa e pelo período necessário para cumprir
               obrigações legais (fiscais, contabilísticas). Após eliminação da conta, os dados são apagados
               ou anonimizados num prazo razoável, salvo retenção exigida por lei.
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold mb-2">7. Os seus direitos (RGPD)</h2>
+            <h2 className="text-xl font-semibold mb-2">7. Os teus direitos (RGPD)</h2>
             <p>Tem o direito de:</p>
             <ul className="list-disc pl-6 space-y-1">
-              <li>Aceder, retificar e apagar os seus dados;</li>
+              <li>Aceder, retificar e apagar os teus dados;</li>
               <li>Limitar ou opor-se ao tratamento;</li>
               <li>Portabilidade dos dados;</li>
               <li>Retirar consentimentos a qualquer momento;</li>
               <li>Apresentar reclamação à autoridade de controlo competente (em Portugal: CNPD).</li>
             </ul>
             <p className="mt-2">
-              Responderemos aos pedidos no prazo de 1 mês. Para exercer os seus direitos, contacte{" "}
+              Responderemos aos pedidos no prazo de 1 mês. Para exercer os teus direitos, contacta{" "}
               <a className="text-primary underline" href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>.
             </p>
           </section>
@@ -107,7 +107,7 @@ function PrivacyPt() {
             <h2 className="text-xl font-semibold mb-2">9. Cookies</h2>
             <p>
               Usamos cookies e tecnologias similares essenciais para autenticação e funcionamento do
-              Serviço. Pode gerir as preferências de cookies através do seu navegador.
+              Serviço. Podes gerir as preferências de cookies no teu navegador.
             </p>
             <p className="mt-2">
               Usamos o PostHog (alojado na UE) para análise de utilização e gravações de sessão com os campos de formulário ocultados; respeitamos a definição Do Not Track do navegador.
@@ -160,24 +160,24 @@ function PrivacyEn() {
           <section>
             <h2 className="text-xl font-semibold mb-2">3. Purposes and legal basis</h2>
             <ul className="list-disc pl-6 space-y-1">
-              <li>Creating and managing your account — <em>performance of a contract</em>.</li>
-              <li>Providing the Service, including AI-assisted generation — <em>performance of a contract</em>.</li>
-              <li>Security, fraud and abuse prevention — <em>legitimate interest</em>.</li>
-              <li>Product improvement and diagnostics — <em>legitimate interest</em>.</li>
-              <li>Customer support — <em>performance of a contract</em>.</li>
-              <li>Marketing communications — <em>consent</em> (you can withdraw it at any time).</li>
-              <li>Compliance with legal and tax obligations — <em>legal obligation</em>.</li>
+              <li>Creating and managing your account: <em>performance of a contract</em>.</li>
+              <li>Providing the Service, including AI-assisted generation: <em>performance of a contract</em>.</li>
+              <li>Security, fraud and abuse prevention: <em>legitimate interest</em>.</li>
+              <li>Product improvement and diagnostics: <em>legitimate interest</em>.</li>
+              <li>Customer support: <em>performance of a contract</em>.</li>
+              <li>Marketing communications: <em>consent</em> (you can withdraw it at any time).</li>
+              <li>Compliance with legal and tax obligations: <em>legal obligation</em>.</li>
             </ul>
           </section>
           <section>
             <h2 className="text-xl font-semibold mb-2">4. Data sharing</h2>
             <p>We share data, to the extent necessary, with:</p>
             <ul className="list-disc pl-6 space-y-1">
-              <li><strong>Paddle</strong> — Merchant of Record, to process payments, subscriptions, invoicing, taxes and legal compliance.</li>
-              <li><strong>Infrastructure sub-processors</strong> — hosting (Supabase), transactional email delivery, analytics and monitoring.</li>
-              <li><strong>AI providers</strong> — generative AI models (including OpenAI/Google) to process your prompts and return outputs. These providers process data as our sub-processors.</li>
-              <li><strong>Professional advisers</strong> — legal and accounting, when necessary.</li>
-              <li><strong>Authorities</strong> — when required by law.</li>
+              <li><strong>Paddle</strong>: Merchant of Record, to process payments, subscriptions, invoicing, taxes and legal compliance.</li>
+              <li><strong>Infrastructure sub-processors</strong>: hosting (Supabase), transactional email delivery, analytics and monitoring.</li>
+              <li><strong>AI providers</strong>: generative AI models (including OpenAI/Google) to process your prompts and return outputs. These providers process data as our sub-processors.</li>
+              <li><strong>Professional advisers</strong>: legal and accounting, when necessary.</li>
+              <li><strong>Authorities</strong>: when required by law.</li>
             </ul>
             <p className="mt-2">We do not sell your personal data.</p>
           </section>

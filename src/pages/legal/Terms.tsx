@@ -26,9 +26,9 @@ function TermsPt() {
           <section>
             <h2 className="text-xl font-semibold mb-2">2. Aceitação dos termos</h2>
             <p>
-              Ao aceder ou continuar a usar o Serviço, confirma que leu, compreendeu e aceitou estes Termos.
-              Se não concordar, não deve utilizar o Serviço. Se está a aceitar em nome de uma organização,
-              declara ter autoridade para a vincular.
+              Ao aceder ou continuar a usar o Serviço, confirmas que leste, compreendeste e aceitaste estes Termos.
+              Se não concordares, não deves utilizar o Serviço. Se estás a aceitar em nome de uma organização,
+              declaras ter autoridade para a vincular.
             </p>
           </section>
 
@@ -44,14 +44,14 @@ function TermsPt() {
           <section>
             <h2 className="text-xl font-semibold mb-2">4. Conta e credenciais</h2>
             <p>
-              É responsável por manter a confidencialidade das credenciais da sua conta e por toda a
-              atividade que ocorra na mesma. Deve fornecer informação precisa e mantê-la atualizada.
+              És responsável por manter a confidencialidade das credenciais da tua conta e por toda a
+              atividade que ocorra na mesma. Deves fornecer informação precisa e mantê-la atualizada.
             </p>
           </section>
 
           <section>
             <h2 className="text-xl font-semibold mb-2">5. Uso aceitável</h2>
-            <p>Não pode utilizar o Serviço para:</p>
+            <p>Não podes utilizar o Serviço para:</p>
             <ul className="list-disc pl-6 space-y-1">
               <li>Atividades ilegais, fraudulentas ou abusivas (incluindo spam);</li>
               <li>Violar direitos de propriedade intelectual ou de privacidade de terceiros;</li>
@@ -66,9 +66,9 @@ function TermsPt() {
           <section>
             <h2 className="text-xl font-semibold mb-2">6. Conteúdo gerado por IA</h2>
             <p>
-              É responsável pelos prompts que submete, pelo uso que faz dos resultados ("outputs") e por
+              És responsável pelos prompts que submetes, pelo uso que fazes dos resultados ("outputs") e por
               ter os direitos sobre qualquer conteúdo de input. Os outputs podem ser imprecisos,
-              incompletos ou desatualizados — não devem ser considerados aconselhamento profissional
+              incompletos ou desatualizados e não devem ser considerados aconselhamento profissional
               regulado (legal, médico, financeiro) sem revisão humana qualificada. Reservamo-nos o
               direito de filtrar, recusar ou remover prompts e outputs que violem estes Termos, bem
               como de suspender contas em caso de infrações repetidas.
@@ -79,9 +79,9 @@ function TermsPt() {
             <h2 className="text-xl font-semibold mb-2">7. Propriedade intelectual</h2>
             <p>
               {SELLER} mantém a propriedade do Serviço, do software, da documentação e da marca.
-              Concedemos-lhe uma licença limitada, não exclusiva e não transferível para usar o Serviço
-              dentro do plano contratado. Mantém os direitos sobre os seus inputs e outputs, sujeito a
-              uma licença limitada para que possamos alojar e processar o seu conteúdo apenas para lhe
+              Concedemos-te uma licença limitada, não exclusiva e não transferível para usar o Serviço
+              dentro do plano contratado. Manténs os direitos sobre os teus inputs e outputs, sujeito a
+              uma licença limitada para que possamos alojar e processar o teu conteúdo apenas para te
               prestar o Serviço.
             </p>
           </section>
@@ -105,7 +105,7 @@ function TermsPt() {
               >
                 Termos de Comprador da Paddle
               </a>
-              . Consulte ainda a nossa{" "}
+              . Consulta ainda a nossa{" "}
               <Link to="/refunds" className="text-primary underline">Política de Reembolsos</Link>.
             </p>
           </section>
@@ -122,9 +122,9 @@ function TermsPt() {
           <section>
             <h2 className="text-xl font-semibold mb-2">10. Suspensão e cessação</h2>
             <p>
-              Podemos suspender ou terminar o seu acesso por: incumprimento material destes Termos, falta
+              Podemos suspender ou terminar o teu acesso por: incumprimento material destes Termos, falta
               de pagamento, risco de segurança ou fraude, ou violações repetidas/graves de políticas.
-              Após a cessação, poderá ser concedido um período razoável para exportar os seus dados,
+              Após a cessação, poderá ser concedido um período razoável para exportar os teus dados,
               após o qual estes serão eliminados.
             </p>
           </section>
@@ -134,7 +134,7 @@ function TermsPt() {
             <p>
               Na máxima extensão permitida por lei, o Serviço é fornecido "tal como está" e renunciamos
               a todas as garantias implícitas (comerciabilidade, adequação a um fim específico). A nossa
-              responsabilidade agregada está limitada ao valor pago por si nos 12 meses anteriores ao
+              responsabilidade agregada está limitada ao valor que pagaste nos 12 meses anteriores ao
               evento que deu origem à reclamação. Não somos responsáveis por danos indiretos, incidentais
               ou consequenciais (perda de lucros, dados ou reputação). Nada nestes Termos exclui
               responsabilidade por dolo, morte ou lesões corporais quando exigido por lei.
@@ -144,8 +144,8 @@ function TermsPt() {
           <section>
             <h2 className="text-xl font-semibold mb-2">12. Indemnização</h2>
             <p>
-              O utilizador compromete-se a indemnizar-nos por reclamações de terceiros decorrentes do
-              seu conteúdo, do uso ilegal do Serviço ou do incumprimento destes Termos.
+              Comprometes-te a indemnizar-nos por reclamações de terceiros decorrentes do
+              teu conteúdo, do uso ilegal do Serviço ou do incumprimento destes Termos.
             </p>
           </section>
 
@@ -153,7 +153,7 @@ function TermsPt() {
             <h2 className="text-xl font-semibold mb-2">13. Lei aplicável e foro</h2>
             <p>
               Estes Termos regem-se pela lei portuguesa. Qualquer litígio será submetido aos tribunais
-              competentes de Portugal, sem prejuízo dos direitos imperativos do consumidor no seu país
+              competentes de Portugal, sem prejuízo dos direitos imperativos do consumidor no teu país
               de residência.
             </p>
           </section>
@@ -228,7 +228,7 @@ function TermsEn() {
           <section>
             <h2 className="text-xl font-semibold mb-2">6. AI-generated content</h2>
             <p>
-              You are responsible for the prompts you submit, for how you use the results ("outputs") and for holding the rights to any input content. Outputs may be inaccurate, incomplete or out of date — they must not be treated as regulated professional advice (legal, medical, financial) without qualified human review. We reserve the right to filter, refuse or remove prompts and outputs that breach these Terms, and to suspend accounts for repeated violations.
+              You are responsible for the prompts you submit, for how you use the results ("outputs") and for holding the rights to any input content. Outputs may be inaccurate, incomplete or out of date and must not be treated as regulated professional advice (legal, medical, financial) without qualified human review. We reserve the right to filter, refuse or remove prompts and outputs that breach these Terms, and to suspend accounts for repeated violations.
             </p>
           </section>
           <section>

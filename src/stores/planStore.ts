@@ -5,7 +5,7 @@ import { useAuthStore } from '@/stores/authStore';
 
 interface PlanStore {
   // SECURITY: This is mirrored from profiles.current_plan via the auth subscription
-  // below. Do NOT rely on persisted localStorage for entitlement — the subscription
+  // below. Do NOT rely on persisted localStorage for entitlement, the subscription
   // overwrites it on every auth/profile change. setPlan() is kept for legacy callers
   // but is overridden as soon as the profile loads.
   currentPlan: PlanType;
@@ -85,7 +85,7 @@ export const usePlanStore = create<PlanStore>()(
 // SECURITY: Mirror the server-authoritative profile.current_plan into the store.
 // This runs whenever auth state changes (login, signout, profile refetch, webhook
 // update polled by success pages). Without this, planStore would be stuck at
-// whatever was last set client-side — including unauthenticated 'free'.
+// whatever was last set client-side, including unauthenticated 'free'.
 let lastSyncedPlan: PlanType | null = null;
 useAuthStore.subscribe((state) => {
   const serverPlan = state.profile?.current_plan ?? 'free';

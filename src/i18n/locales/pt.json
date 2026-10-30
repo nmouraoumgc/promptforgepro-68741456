@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "PromptForge",
+    "appName": "PromptForge Pro",
     "tagline": "Melhores prompts, melhores resultados.",
     "loading": "A carregar...",
     "save": "Guardar",
@@ -32,7 +32,7 @@
   "nav": {
     "dashboard": "Painel",
     "dashboardDesc": "Visão geral",
-    "quickPrompt": "Quick Prompt",
+    "quickPrompt": "Prompt rápido",
     "quickPromptDesc": "Rápido com voz",
     "createPrompt": "Criar Prompt",
     "createPromptDesc": "Criador guiado",
@@ -69,14 +69,14 @@
     "settings": "Definições",
     "adminBackoffice": "Backoffice Admin",
     "signOut": "Terminar Sessão",
-    "login": "Login",
-    "signup": "Sign Up",
+    "login": "Entrar",
+    "signup": "Criar conta",
     "plan": "Plano {{plan}}",
     "plans": "Planos",
     "brand": "Cofre de marca"
   },
   "dashboard": {
-    "greeting": "Olá, Prompt Master!",
+    "greeting": "Olá!",
     "subtitle": "O que vais criar hoje?",
     "actions": {
       "create": "Criar Prompt",
@@ -87,12 +87,12 @@
     "stats": {
       "prompts": "{{count}} prompts",
       "favorites": "{{count}} favoritos",
-      "avgScore": "{{score}}% score médio"
+      "avgScore": "{{score}}% de pontuação média"
     },
     "recent": "Recentes"
   },
   "quickPrompt": {
-    "badge": "Quick Prompt",
+    "badge": "Prompt rápido",
     "title": "Gera prompts instantâneos",
     "description": "Escreve ou dita o que precisas e recebe um prompt otimizado em segundos.",
     "inputTitle": "O que precisas?",
@@ -120,7 +120,7 @@
     "tipVoiceDesc": "Clica no microfone para ditar.",
     "tipLanguage": "PT ou EN",
     "tipLanguageDesc": "Funciona em ambos os idiomas.",
-    "authRequired": "Cria uma conta gratuita para usar o Quick Prompt."
+    "authRequired": "Cria uma conta gratuita para usar o Prompt rápido."
   },
   "settings": {
     "currentPlan": "Plano Atual",
@@ -147,7 +147,7 @@
     "restrictionsDesc": "Limites claros: formato, tom, o que evitar",
     "outputLabel": "[OUTPUT ESPERADO]",
     "outputDesc": "Descrição exata do resultado final",
-    "whyHighScore": "3. Porque o Score é Alto ({{score}}%)",
+    "whyHighScore": "3. Porque a pontuação é alta ({{score}}%)",
     "ctaTitle": "Pronto para criar prompts assim?",
     "ctaButton": "Começar a Construir",
     "objective": "Criar um post viral para Instagram sobre sustentabilidade que gere engagement e partilhas",

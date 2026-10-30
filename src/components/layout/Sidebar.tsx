@@ -75,7 +75,7 @@ export function Sidebar() {
           </div>
           {(!collapsed || isMobile) && (
             <span className="text-lg font-bold text-sidebar-foreground">
-              Prompt<span className="text-primary">Forge</span>
+              Prompt<span className="text-primary">Forge</span> Pro
             </span>
           )}
         </NavLink>

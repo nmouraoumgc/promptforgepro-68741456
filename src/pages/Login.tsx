@@ -50,7 +50,7 @@ export default function Login() {
     if (user) {
       toast({
         title: isEnglish ? 'Email confirmed!' : 'Email confirmado!',
-        description: isEnglish ? 'Welcome to PromptForge.' : 'Bem-vindo ao PromptForge.',
+        description: isEnglish ? 'Welcome to PromptForge Pro.' : 'Bem-vindo ao PromptForge Pro.',
       });
       navigate(redirectTo, { replace: true });
     } else {
@@ -107,7 +107,7 @@ export default function Login() {
             <Flame className="h-6 w-6 text-primary-foreground" />
           </div>
           <span className="text-xl font-bold text-foreground">
-            Prompt<span className="text-primary">Forge</span>
+            Prompt<span className="text-primary">Forge</span> Pro
           </span>
         </Link>
 
@@ -115,7 +115,7 @@ export default function Login() {
           <CardHeader className="text-center">
             <CardTitle className="text-2xl">{isEnglish ? 'Sign in' : 'Entrar'}</CardTitle>
             <CardDescription>
-              {isEnglish ? 'Access your PromptForge account' : 'Acede à tua conta PromptForge'}
+              {isEnglish ? 'Access your PromptForge Pro account' : 'Acede à tua conta PromptForge Pro'}
             </CardDescription>
           </CardHeader>
           <CardContent>

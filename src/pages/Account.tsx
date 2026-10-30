@@ -347,7 +347,7 @@ export default function Account() {
               </CardHeader>
               <CardContent className="grid sm:grid-cols-3 gap-4 text-sm">
                 <div><p className="text-muted-foreground">{L('Execuções hoje', 'Runs today')}</p>
-                  <p className="text-2xl font-semibold" data-testid="usage-runs">{usageQ.data ? `${usageQ.data.used} / ${usageQ.data.limit}` : '—'}</p></div>
+                  <p className="text-2xl font-semibold" data-testid="usage-runs">{usageQ.data ? `${usageQ.data.used} / ${usageQ.data.limit}` : '-'}</p></div>
                 <div><p className="text-muted-foreground">{L('Perfis de marca', 'Brand profiles')}</p>
                   <p className="text-2xl font-semibold" data-testid="usage-brands">{brands.length} / {Number.isFinite(brandLimit) ? brandLimit : '∞'}</p></div>
                 <div><p className="text-muted-foreground">{L('Prompts na biblioteca', 'Library prompts')}</p>

@@ -70,7 +70,7 @@ const getPackCopy = (packSlug: string, isEnglish: boolean) => {
       limitTitle: '🔒 Limite gratuito atingido',
       limitSubtext: 'Desbloqueia o pack para gerar hooks ilimitados e aceder a todo o conteúdo.',
       ctaMicrocopy: 'Inclui todos os hooks, scripts, estruturas e CTAs do TikTok Viral.',
-      trustNote: 'Criado para quem quer publicar com consistência — não apenas "experimentar IA".',
+      trustNote: 'Criado para quem quer publicar com consistência, não apenas "experimentar IA".',
     },
     youtube: {
       inputLabel: 'Tema do conteúdo',
@@ -144,7 +144,7 @@ const getPackCopy = (packSlug: string, isEnglish: boolean) => {
       limitTitle: '🔒 Free limit reached',
       limitSubtext: 'Unlock this pack for full access and unlimited use.',
       ctaMicrocopy: 'Includes all content from the Instagram Reels Prompt Pack.',
-      trustNote: 'Built for creators who want consistent outcomes — not just to experiment with AI.',
+      trustNote: 'Built for creators who want consistent outcomes, not just to experiment with AI.',
     },
     tiktok: {
       inputLabel: 'Video topic',
@@ -157,7 +157,7 @@ const getPackCopy = (packSlug: string, isEnglish: boolean) => {
       limitTitle: '🔒 Free limit reached',
       limitSubtext: 'Unlock this pack to generate unlimited hooks and access all content.',
       ctaMicrocopy: 'Includes all TikTok Viral hooks, scripts, structures and CTAs.',
-      trustNote: 'Built for creators who want consistency — not just to "try AI".',
+      trustNote: 'Built for creators who want consistency, not just to "try AI".',
     },
     youtube: {
       inputLabel: 'Content topic',
@@ -170,7 +170,7 @@ const getPackCopy = (packSlug: string, isEnglish: boolean) => {
       limitTitle: '🔒 Free limit reached',
       limitSubtext: 'Unlock this pack for full access and unlimited use.',
       ctaMicrocopy: 'Includes all content from the YouTube Growth Prompt Pack.',
-      trustNote: 'Built for creators who want consistent outcomes — not just to experiment with AI.',
+      trustNote: 'Built for creators who want consistent outcomes, not just to experiment with AI.',
     },
     copywriting: {
       inputLabel: 'Content topic',
@@ -183,7 +183,7 @@ const getPackCopy = (packSlug: string, isEnglish: boolean) => {
       limitTitle: '🔒 Free limit reached',
       limitSubtext: 'Unlock this pack for full access and unlimited use.',
       ctaMicrocopy: 'Includes all content from the Sales Copywriting Prompt Pack.',
-      trustNote: 'Built for creators who want consistent outcomes — not just to experiment with AI.',
+      trustNote: 'Built for creators who want consistent outcomes, not just to experiment with AI.',
     },
   };
 
@@ -206,7 +206,7 @@ const getPackCopy = (packSlug: string, isEnglish: boolean) => {
       limitTitle: '🔒 Free limit reached',
       limitSubtext: 'Unlock this pack for full access and unlimited use.',
       ctaMicrocopy: 'Includes all pack content.',
-      trustNote: 'Built for creators who want consistent outcomes — not just to experiment with AI.',
+      trustNote: 'Built for creators who want consistent outcomes, not just to experiment with AI.',
     },
     ...(enOverrides[packSlug] || {}),
   };

@@ -78,7 +78,7 @@ export default function Signup() {
       track('signup_completed', { method: 'email', needs_confirmation: false });
       toast({
         title: isEnglish ? 'Account created!' : 'Conta criada!',
-        description: isEnglish ? 'Welcome to PromptForge.' : 'Bem-vindo ao PromptForge.',
+        description: isEnglish ? 'Welcome to PromptForge Pro.' : 'Bem-vindo ao PromptForge Pro.',
       });
       navigate(postAuthPath(null));
     }
@@ -100,7 +100,7 @@ export default function Signup() {
             <Flame className="h-6 w-6 text-primary-foreground" />
           </div>
           <span className="text-xl font-bold text-foreground">
-            Prompt<span className="text-primary">Forge</span>
+            Prompt<span className="text-primary">Forge</span> Pro
           </span>
         </Link>
 

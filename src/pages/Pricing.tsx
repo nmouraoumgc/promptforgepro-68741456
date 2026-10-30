@@ -81,15 +81,15 @@ export default function Pricing() {
       priceDetail: isEnglish ? 'forever' : 'para sempre',
       features: isEnglish
         ? ['3 optimizations per prompt', 'Prompt library', 'Basic guided builder', 'Pack previews', '4 free Learn lessons']
-        : ['3 otimizações por prompt', 'Biblioteca de prompts', 'Guided Builder básico', 'Pré-visualização de packs', '4 lições grátis do Aprender'],
+        : ['3 otimizações por prompt', 'Biblioteca de prompts', 'Criador guiado básico', 'Pré-visualização de packs', '4 lições grátis do Aprender'],
       cta: isEnglish ? 'Start free' : 'Começar grátis',
     },
     {
       id: 'pro',
       name: 'Pro',
       description: isEnglish
-        ? 'For users who rely on PromptForge every day at work'
-        : 'Para quem usa o PromptForge como ferramenta diária de trabalho',
+        ? 'For users who rely on PromptForge Pro every day at work'
+        : 'Para quem usa o PromptForge Pro como ferramenta diária de trabalho',
       price: '9€',
       priceDetail: isEnglish ? '/month' : '/mês',
       features: isEnglish
@@ -279,7 +279,7 @@ export default function Pricing() {
     <div className="p-6 md:p-8 lg:p-10 animate-fade-in">
       <header className="text-center max-w-2xl mx-auto mb-8">
         <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-3">
-          {isEnglish ? 'Choose how you want to use PromptForge' : 'Escolhe como queres usar o PromptForge'}
+          {isEnglish ? 'Choose how you want to use PromptForge Pro' : 'Escolhe como queres usar o PromptForge Pro'}
         </h1>
         <p className="text-muted-foreground text-lg">
           {isEnglish
@@ -301,7 +301,7 @@ export default function Pricing() {
                 <br />
                 {isEnglish
                   ? 'Plans are ideal for ongoing professional workflows.'
-                  : 'Os planos são para quem usa o PromptForge como ferramenta de trabalho contínua.'}
+                  : 'Os planos são para quem usa o PromptForge Pro como ferramenta de trabalho contínua.'}
               </p>
             </div>
           </div>
@@ -339,7 +339,7 @@ export default function Pricing() {
                   </div>
                   {plan.id === 'pro' && (
                     <p className="text-xs text-muted-foreground mt-1.5">
-                      {isEnglish ? 'Then 9€/month, cancel anytime.' : 'Depois 9€/mês, cancela quando quiseres.'}
+                      {isEnglish ? 'No commitment, cancel anytime.' : 'Sem fidelização, cancela quando quiseres.'}
                     </p>
                   )}
                 </div>
@@ -488,8 +488,8 @@ export default function Pricing() {
                   </span>
                   <span className="text-xs text-primary font-medium">
                     {isEnglish
-                      ? `Then ${BASE_PRO_PRICE}€/month, cancel anytime`
-                      : `Depois ${BASE_PRO_PRICE}€/mês, cancela quando quiseres`}
+                      ? `From the second month, ${BASE_PRO_PRICE}€/month. Cancel anytime.`
+                      : `A partir do segundo mês, ${BASE_PRO_PRICE}€/mês. Cancela quando quiseres.`}
                   </span>
                 </div>
               ) : (

@@ -219,7 +219,7 @@ export function PromoCodeDialog({
             </div>
           </div>
 
-          {/* Duração do desconto (meses) — only for percentage/fixed */}
+          {/* Duração do desconto (meses), only for percentage/fixed */}
           {formData.discount_type !== 'free_days' && (
             <div className="space-y-2">
               <Label>{isEnglish ? 'Discount duration (months)' : 'Duração do desconto (meses)'}</Label>
