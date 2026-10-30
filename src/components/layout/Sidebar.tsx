@@ -1,3 +1,4 @@
+import { Wordmark } from '@/components/brand/Wordmark';
 import { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -76,9 +77,7 @@ export function Sidebar() {
             <Flame className="h-5 w-5 text-primary-foreground" />
           </div>
           {(!collapsed || isMobile) && (
-            <span className="text-lg font-bold text-sidebar-foreground">
-              Prompt<span className="text-primary">Forge</span> Pro
-            </span>
+            <Wordmark className="text-lg  text-sidebar-foreground" />
           )}
         </NavLink>
         {!isMobile && (

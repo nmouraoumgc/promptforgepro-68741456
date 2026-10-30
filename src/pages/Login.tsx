@@ -1,3 +1,4 @@
+import { Wordmark } from '@/components/brand/Wordmark';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -106,9 +107,7 @@ export default function Login() {
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
             <Flame className="h-6 w-6 text-primary-foreground" />
           </div>
-          <span className="text-xl font-bold text-foreground">
-            Prompt<span className="text-primary">Forge</span> Pro
-          </span>
+          <Wordmark className="text-xl  text-foreground" />
         </Link>
 
         <Card>

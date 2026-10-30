@@ -14,6 +14,7 @@ import {
 import { useAuthStore } from '@/stores/authStore';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import { Wordmark } from '@/components/brand/Wordmark';
 
 export function Header() {
   const navigate = useNavigate();
@@ -29,14 +30,12 @@ export function Header() {
   return (
     <header className="flex h-16 items-center justify-between border-b border-border bg-card px-4 md:px-6">
       {/* Logo - clickable to Dashboard */}
-      <Link to="/app" className={`flex items-center gap-2 ${isMobile ? 'ml-12' : ''}`}>
-        <span className="text-lg font-bold text-foreground">
-          Prompt<span className="text-primary">Forge</span> Pro
-        </span>
+      <Link to="/app" aria-label="PromptForge Pro" className={`flex min-w-0 items-center gap-2 ${isMobile ? 'ml-12' : ''}`}>
+        <Wordmark className="text-base text-foreground sm:text-lg" />
       </Link>
 
       {/* Actions */}
-      <div className="flex items-center gap-2 md:gap-4">
+      <div className="flex items-center gap-1 sm:gap-2 md:gap-4">
         {/* Search - hidden on mobile */}
         <div className="relative hidden md:block">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -101,7 +100,7 @@ export function Header() {
             <Button variant="outline" size="sm" asChild>
               <Link to="/login">{t('header.login')}</Link>
             </Button>
-            <Button variant="outline" size="sm" asChild>
+            <Button variant="outline" size="sm" asChild className="hidden sm:inline-flex">
               <Link to="/signup">{t('header.signup')}</Link>
             </Button>
           </div>

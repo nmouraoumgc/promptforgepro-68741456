@@ -1,3 +1,4 @@
+import { Wordmark } from '@/components/brand/Wordmark';
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, Link } from 'react-router-dom';
@@ -99,9 +100,7 @@ export default function Signup() {
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
             <Flame className="h-6 w-6 text-primary-foreground" />
           </div>
-          <span className="text-xl font-bold text-foreground">
-            Prompt<span className="text-primary">Forge</span> Pro
-          </span>
+          <Wordmark className="text-xl  text-foreground" />
         </Link>
 
         {pendingEmail ? (

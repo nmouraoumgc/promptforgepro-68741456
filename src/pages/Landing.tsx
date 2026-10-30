@@ -6,6 +6,7 @@ import { ArrowRight, Check, Flame, Sparkles, Wand2, Library, Gauge, Package } fr
 import { Button } from '@/components/ui/button';
 import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher';
 import { useIsEnglish } from '@/i18n/lang';
+import { Wordmark } from '@/components/brand/Wordmark';
 
 const BEFORE = {
   pt: 'Escreve um post para o Instagram sobre o meu restaurante.',
@@ -86,7 +87,7 @@ export default function Landing() {
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
           <Link to="/" className="flex items-center gap-2" aria-label="PromptForge Pro">
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary"><Flame className="h-4 w-4 text-primary-foreground" aria-hidden="true" /></span>
-            <span className="text-lg font-bold">Prompt<span className="text-primary">Forge</span> Pro</span>
+            <Wordmark className="text-lg" />
           </Link>
           <nav className="flex items-center gap-1 sm:gap-2" aria-label={L('Navegação principal', 'Main navigation')}>
             <Link to="/pricing" className="hidden px-2 text-sm text-muted-foreground hover:text-foreground sm:inline">{L('Preços', 'Pricing')}</Link>

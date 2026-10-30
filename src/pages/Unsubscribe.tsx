@@ -1,3 +1,4 @@
+import { Wordmark } from '@/components/brand/Wordmark';
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -36,7 +37,7 @@ export default function Unsubscribe() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-6">
       <Card className="max-w-md w-full"><CardContent className="p-8 text-center space-y-4" data-testid="unsub-card">
-        <p className="text-xl font-bold">Prompt<span className="text-primary">Forge</span> Pro</p>
+        <p className="text-xl"><Wordmark /></p>
         {state === 'loading' && <p className="text-muted-foreground">{L('A carregar…', 'Loading…')}</p>}
         {state === 'subscribed' && (<>
           <p data-testid="unsub-state">{L('Queres deixar de receber emails promocionais do PromptForge Pro?', 'Stop receiving promotional emails from PromptForge Pro?')}</p>
