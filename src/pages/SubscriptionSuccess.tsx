@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Check, Zap, History, TestTube, BarChart3, Download, Loader2 } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
 import { useTranslation } from "react-i18next";
+import { clearCampaignCode } from "@/lib/campaignCode";
 
 const SubscriptionSuccess = () => {
   const navigate = useNavigate();
@@ -21,6 +22,8 @@ const SubscriptionSuccess = () => {
     { icon: BarChart3, label: isEnglish ? "Detailed scoring active" : "Pontuação detalhada ativa" },
     { icon: Download, label: isEnglish ? "Prompt export available" : "Exportação de prompts disponível" },
   ];
+
+  useEffect(() => { clearCampaignCode(); }, []);
 
   useEffect(() => {
     let cancelled = false;

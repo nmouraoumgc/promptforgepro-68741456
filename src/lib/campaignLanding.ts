@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { saveCampaignAttribution } from '@/lib/campaignCode';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -15,7 +16,7 @@ export function trackCampaignLanding() {
       url.searchParams.delete('c');
       window.history.replaceState(window.history.state, '', url.pathname + url.search + url.hash);
       const ck = `pf_visit_${c.toUpperCase()}`;
-      sessionStorage.setItem('pf_campaign', JSON.stringify({ c: c.toUpperCase() }));
+      saveCampaignAttribution({ c: c.toUpperCase() });
       if (sessionStorage.getItem(ck)) return;
       sessionStorage.setItem(ck, '1');
       supabase.rpc('log_campaign_visit' as never, { p_channel: c, p_path: url.pathname } as never).then(() => {}, () => {});
@@ -27,7 +28,7 @@ export function trackCampaignLanding() {
     const key = `pf_landed_${r}`;
     if (sessionStorage.getItem(key)) return;
     sessionStorage.setItem(key, '1');
-    sessionStorage.setItem('pf_campaign', JSON.stringify({ c, r }));
+    saveCampaignAttribution({ c, r });
     // PostgREST builders are lazy: .then() is what actually sends the request.
     supabase.rpc('log_campaign_landing' as never, { p_campaign: c, p_send: r, p_path: url.pathname } as never).then(() => {}, () => {});
   } catch { /* never block the app */ }

@@ -12,6 +12,7 @@ import { PlanType } from '@/types/plans';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
+import { saveCampaignCode, getCampaignCode, getCampaignAttribution } from '@/lib/campaignCode';
 
 type PricingPlan = {
   id: PlanType;
@@ -45,20 +46,22 @@ export default function Pricing() {
   const [proPromoInput, setProPromoInput] = useState('');
   const [proPromoError, setProPromoError] = useState('');
   const [proAppliedPromo, setProAppliedPromo] = useState<ProPromo | null>(null);
-  // Campaign links: /pricing?code=EARLY-A1. Kept in sessionStorage so it survives the login redirect.
+  // Campaign links: /pricing?code=WELCOME100. Kept in localStorage (30 days) + sessionStorage so it survives
+  // signup, email confirmation in a new tab and login (see lib/campaignCode).
   const [searchParams] = useSearchParams();
   const [urlCode, setUrlCode] = useState<string>(() => {
-    const c = (searchParams.get('code') || sessionStorage.getItem('pf_checkout_code') || '').trim().toUpperCase();
-    return /^[A-Z0-9-]{3,32}$/.test(c) ? c : '';
+    const c = (searchParams.get('code') || '').trim().toUpperCase();
+    if (/^[A-Z0-9-]{3,32}$/.test(c)) saveCampaignCode(c);
+    return getCampaignCode();
   });
   useEffect(() => {
     const c = (searchParams.get('code') || '').trim().toUpperCase();
-    if (/^[A-Z0-9-]{3,32}$/.test(c)) { sessionStorage.setItem('pf_checkout_code', c); setUrlCode(c); }
+    if (/^[A-Z0-9-]{3,32}$/.test(c)) { saveCampaignCode(c); setUrlCode(c); }
   }, [searchParams]);
 
   // Campaign/channel that brought the user here (set by trackCampaignLanding), passed to Paddle for attribution.
   const campaignAttribution = (): Record<string, string> => {
-    try { const v = JSON.parse(sessionStorage.getItem('pf_campaign') || 'null'); return v?.c ? { campaign: String(v.c).slice(0, 40), ...(v.r ? { campaignSend: String(v.r) } : {}) } : {}; } catch { return {}; }
+    try { const v = getCampaignAttribution(); return v?.c ? { campaign: String(v.c).slice(0, 40), ...(v.r ? { campaignSend: String(v.r) } : {}) } : {}; } catch { return {}; }
   };
   const [autoOpened, setAutoOpened] = useState(false);
   useEffect(() => {
@@ -121,7 +124,7 @@ export default function Pricing() {
           description: isEnglish ? 'You must sign in to subscribe to Pro.' : 'Tens de iniciar sessão para subscrever o plano Pro.',
           variant: 'destructive',
         });
-        navigate('/login');
+        navigate('/login?redirect=/pricing');
         return;
       }
       if (authLoading) return;
@@ -192,7 +195,7 @@ export default function Pricing() {
 
     try {
       if (!user) {
-        navigate('/login');
+        navigate('/login?redirect=/pricing');
         return;
       }
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthStore } from "@/stores/authStore";
 import { useTranslation } from "react-i18next";
+import { getCampaignCode } from "@/lib/campaignCode";
 
 const BASE_PRICE = 19;
 
@@ -26,6 +27,8 @@ const Checkout = () => {
   const [appliedPromo, setAppliedPromo] = useState<AppliedPromo | null>(null);
   const [promoError, setPromoError] = useState("");
   const navigate = useNavigate();
+  // Stored campaign code (e.g. WELCOME100, Pro monthly only): shown as a hint, never applied to Premium.
+  const [campaignCode] = useState(() => getCampaignCode());
   const { toast } = useToast();
   const { user, profile, isLoading: authLoading } = useAuthStore();
   const { i18n } = useTranslation();
@@ -263,6 +266,13 @@ const Checkout = () => {
               </div>
             )}
           </div>
+
+          {campaignCode && (
+            <div className="mb-4 rounded-lg border border-primary/40 bg-primary/5 p-3 text-sm">
+              {isEnglish ? <>Your code <strong>{campaignCode}</strong> is for the Pro monthly plan, not this one-time purchase. </> : <>O teu código <strong>{campaignCode}</strong> é para o plano Pro mensal, não para esta compra única. </>}
+              <Link to="/pricing" className="text-primary underline font-medium">{isEnglish ? 'Use it on Pricing' : 'Usar nos Preços'}</Link>
+            </div>
+          )}
 
           <Card>
             <CardContent className="pt-6">

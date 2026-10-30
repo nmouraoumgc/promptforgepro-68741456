@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/stores/authStore';
 import { useTranslation } from 'react-i18next';
 import { ResendConfirmationButton } from '@/components/auth/ResendConfirmationButton';
+import { postAuthPath } from '@/lib/campaignCode';
 
 export default function Signup() {
   const [email, setEmail] = useState('');
@@ -76,7 +77,7 @@ export default function Signup() {
         title: isEnglish ? 'Account created!' : 'Conta criada!',
         description: isEnglish ? 'Welcome to PromptForge.' : 'Bem-vindo ao PromptForge.',
       });
-      navigate('/');
+      navigate(postAuthPath(null));
     }
 
     setIsLoading(false);

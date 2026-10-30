@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuthStore, initialAuthUrlError } from '@/stores/authStore';
 import { ResendConfirmationButton } from '@/components/auth/ResendConfirmationButton';
 import { useTranslation } from 'react-i18next';
+import { postAuthPath } from '@/lib/campaignCode';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -19,7 +20,8 @@ export default function Login() {
   
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const redirectTo = searchParams.get('redirect') || '/';
+  // Explicit ?redirect wins; otherwise /pricing when a campaign code is stored (e.g. after email confirmation).
+  const redirectTo = postAuthPath(searchParams.get('redirect'));
   const { toast } = useToast();
   const { signIn, user, isLoading: authLoading } = useAuthStore();
   const { i18n } = useTranslation();

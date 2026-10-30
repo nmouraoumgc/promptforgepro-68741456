@@ -2,6 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { isEnglishNow } from "@/i18n/lang";
 import { checkoutBlockMessage } from "@/lib/checkoutGuard";
+import { clearCampaignCode } from "@/lib/campaignCode";
 
 const clientToken = import.meta.env.VITE_PAYMENTS_CLIENT_TOKEN as string | undefined;
 
@@ -80,6 +81,7 @@ export function handlePaddleEvent(event: any) {
   try {
     const name: string | undefined = event?.name ?? event?.type;
     if (!name || !TRACKED_EVENTS.has(name)) return;
+    if (name === "checkout.completed") clearCampaignCode();
     const d = event?.data ?? {};
     const attemptId = str(d?.custom_data?.attemptId, 64) ?? currentAttemptId;
     const errParts = [event?.type && event.type !== name ? event.type : null, event?.code, event?.detail, event?.error?.code, event?.error?.detail]
