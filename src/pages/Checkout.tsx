@@ -93,7 +93,7 @@ const Checkout = () => {
         PROMO_INACTIVE: isEnglish ? 'Inactive code.' : 'Código inativo.',
         PROMO_EXPIRED: isEnglish ? 'Expired code.' : 'Código expirado.',
         PROMO_LIMIT_REACHED: isEnglish ? 'Code usage limit reached.' : 'Código atingiu o limite de utilizações.',
-        PROMO_NOT_APPLICABLE: isEnglish ? 'Code not valid for Premium.' : 'Código não válido para Premium.',
+        PROMO_NOT_APPLICABLE: isEnglish ? 'Code not valid for Prompt Packs.' : 'Código não válido para os Prompt Packs.',
       };
       const key = Object.keys(map).find((k) => msg.includes(k));
       setPromoError(key ? map[key] : (isEnglish ? 'Could not verify the code.' : 'Não foi possível verificar o código.'));
@@ -218,7 +218,7 @@ const Checkout = () => {
           <div className="text-center mb-8">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary mb-4">
               <Sparkles className="h-4 w-4" />
-              <span className="text-sm font-medium">Premium</span>
+              <span className="text-sm font-medium">Prompt Packs</span>
             </div>
             <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
               {isEnglish ? "Unlock full access to Prompt Packs" : "Desbloqueia acesso completo aos Prompt Packs"}

@@ -114,14 +114,14 @@ export default function Pricing() {
 
   const premiumPlan: PricingPlan = {
     id: 'premium',
-    name: 'Premium',
-    description: isEnglish ? 'Full access to Prompt Packs' : 'Acesso completo aos Prompt Packs',
+    name: 'Prompt Packs',
+    description: isEnglish ? 'Ready-to-use prompt library. Does not include Pro tools.' : 'Biblioteca de prompts prontos a usar. Não inclui as ferramentas do Pro.',
     price: '19€',
     priceDetail: isEnglish ? 'one-time payment' : 'pagamento único',
     features: isEnglish
       ? ['All premium Prompt Packs', 'Hooks, scripts, structures and CTAs', 'Professional templates', 'All Learn lessons', 'Future updates included']
       : ['Todos os Prompt Packs premium', 'Ganchos, guiões, estruturas e CTAs', 'Modelos profissionais', 'Todas as lições do Aprender', 'Atualizações futuras incluídas'],
-    cta: isEnglish ? 'Unlock full access' : 'Desbloquear acesso completo',
+    cta: isEnglish ? 'Get the Prompt Packs' : 'Comprar os Prompt Packs',
   };
 
   const handleSelectPlan = async (planId: PlanType) => {
@@ -440,7 +440,7 @@ export default function Pricing() {
           <div className="flex-1 h-px bg-border" />
           <span className="text-sm text-muted-foreground font-medium flex items-center gap-2">
             <Sparkles className="h-4 w-4" />
-            {isEnglish ? 'One-time purchase' : 'Compra única'}
+            {isEnglish ? 'Just want the prompts?' : 'Só queres os prompts?'}
           </span>
           <div className="flex-1 h-px bg-border" />
         </div>

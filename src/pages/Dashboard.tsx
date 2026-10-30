@@ -17,7 +17,7 @@ import OnboardingChecklist from '@/components/dashboard/OnboardingChecklist';
 import { cn } from '@/lib/utils';
 
 const TRACK_ORDER: Record<Lesson['track'], number> = { fundamentos: 0, setor: 1, avancado: 2 };
-const PLAN_LABEL: Record<string, string> = { free: 'Free', pro: 'Pro', premium: 'Premium' };
+const PLAN_LABEL: Record<string, string> = { free: 'Free', pro: 'Pro', premium: 'Prompt Packs' };
 
 export default function Dashboard() {
   const isEnglish = useIsEnglish();

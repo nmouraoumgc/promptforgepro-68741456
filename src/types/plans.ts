@@ -45,5 +45,5 @@ export const PLAN_LIMITS: Record<PlanType, PlanLimits> = {
 export const PLAN_INFO: Record<PlanType, { name: string; tagline: string; taglineEn: string; color: string }> = {
   free: { name: 'Free', tagline: 'Descoberta', taglineEn: 'Discovery', color: 'text-muted-foreground' },
   pro: { name: 'Pro', tagline: 'Profissional', taglineEn: 'Professional', color: 'text-info' },
-  premium: { name: 'Premium', tagline: 'Acelerado', taglineEn: 'Accelerated', color: 'text-primary' },
+  premium: { name: 'Prompt Packs', tagline: 'Acelerado', taglineEn: 'Accelerated', color: 'text-primary' },
 };
