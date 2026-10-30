@@ -1,4 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
+import { isEnglishNow } from "@/i18n/lang";
+import { checkoutBlockMessage } from "@/lib/checkoutGuard";
 
 const clientToken = import.meta.env.VITE_PAYMENTS_CLIENT_TOKEN as string | undefined;
 
@@ -42,6 +45,37 @@ function str(v: unknown, max = 300): string | null {
   return typeof v === "string" && v.trim() ? v.trim().slice(0, max) : null;
 }
 
+// ---------- In-checkout failure limit ----------
+// Every failed payment inside an open Paddle checkout is reported to pre-checkout-check
+// (action=payment_failed), which records it server-side with the hashed IP and answers whether the
+// account (3 failures/24h) or the network (5 failures/24h) hit its limit. If so the overlay is
+// closed, so cards cannot be retried indefinitely inside one checkout. The signed Paddle webhook
+// records the same failures independently (transaction.payment_failed).
+const FAILURE_EVENTS = new Set(["checkout.payment.failed", "checkout.payment.error"]);
+
+async function reportPaymentFailure(attemptId: string | null, transactionId: string | null, error: string | null) {
+  try {
+    const { data } = await supabase.functions.invoke("pre-checkout-check", {
+      body: { action: "payment_failed", attemptId, transactionId, error, environment: getPaddleEnvironment() },
+    });
+    if (data?.close) {
+      try {
+        window.Paddle?.Checkout?.close();
+      } catch {
+        /* overlay already gone */
+      }
+      const en = isEnglishNow();
+      toast({
+        title: en ? "Checkout closed" : "Checkout fechado",
+        description: checkoutBlockMessage(typeof data.reason === "string" ? data.reason : "too_many_attempts", en),
+        variant: "destructive",
+      });
+    }
+  } catch {
+    // The webhook still records the failure and pre-checkout-check enforces it on the next open.
+  }
+}
+
 export function handlePaddleEvent(event: any) {
   try {
     const name: string | undefined = event?.name ?? event?.type;
@@ -50,6 +84,10 @@ export function handlePaddleEvent(event: any) {
     const attemptId = str(d?.custom_data?.attemptId, 64) ?? currentAttemptId;
     const errParts = [event?.type && event.type !== name ? event.type : null, event?.code, event?.detail, event?.error?.code, event?.error?.detail]
       .filter((x) => typeof x === "string" && x);
+    const errText = errParts.length ? errParts.join(" | ").slice(0, 300) : null;
+    if (FAILURE_EVENTS.has(name)) {
+      void reportPaymentFailure(attemptId, str(d?.transaction_id, 64), errText ? errText.slice(0, 200) : null);
+    }
     void supabase
       .rpc("log_checkout_event" as any, {
         _event: name,
@@ -57,7 +95,7 @@ export function handlePaddleEvent(event: any) {
         _transaction_id: str(d?.transaction_id, 64),
         _country: str(d?.customer?.address?.country_code, 2),
         _payment_method: str(d?.payment?.method_details?.type, 32),
-        _error: errParts.length ? errParts.join(" | ").slice(0, 300) : null,
+        _error: errText,
       } as any)
       .then(({ error }) => {
         if (error) console.warn("checkout event log failed", error.message);

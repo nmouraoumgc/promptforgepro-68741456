@@ -101,7 +101,7 @@ export default function Pricing() {
     name: 'Premium',
     description: isEnglish ? 'Full access to Prompt Packs' : 'Acesso completo aos Prompt Packs',
     price: '19€',
-    priceDetail: isEnglish ? '— one-time payment' : '— pagamento único',
+    priceDetail: isEnglish ? 'one-time payment' : 'pagamento único',
     features: isEnglish
       ? ['All premium Prompt Packs', 'Hooks, scripts, structures and CTAs', 'Professional templates', 'All Learn lessons', 'Future updates included']
       : ['Todos os Prompt Packs premium', 'Hooks, scripts, estruturas e CTAs', 'Templates profissionais', 'Todas as lições do Aprender', 'Atualizações futuras incluídas'],
@@ -202,53 +202,29 @@ export default function Pricing() {
       const intent = 'pro_normal';
       const code = (proAppliedPromo?.code || proPromoInput.trim() || urlCode || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); // Paddle codes are alphanumeric (EARLY-A1 -> EARLYA1)
       const { initializePaddle, getPaddlePriceId, getPaddleEnvironment, setCheckoutAttemptId } = await import('@/lib/paddle');
+      const { runPreCheckoutCheck, checkoutBlockMessage, checkoutRetryMessage } = await import('@/lib/checkoutGuard');
       const attribution = campaignAttribution();
-      let attemptId: string | undefined;
-      let transactionId: string | undefined;
-      const reasonMap: Record<string, string> = {
-        disposable_email: isEnglish
-          ? 'Disposable email addresses are not allowed. Please use a permanent email.'
-          : 'Emails temporários não são permitidos. Usa um email permanente.',
-        too_many_attempts: isEnglish
-          ? 'Too many failed payment attempts. Please try again in 24 hours.'
-          : 'Demasiadas tentativas de pagamento falhadas. Tenta novamente dentro de 24 horas.',
-        too_many_attempts_ip: isEnglish
-          ? 'Too many checkout attempts from this network. Please try again later.'
-          : 'Demasiadas tentativas de checkout a partir desta rede. Tenta novamente mais tarde.',
-        email_not_confirmed: isEnglish
-          ? 'Please confirm your email address before using a discount code.'
-          : 'Confirma o teu email antes de usar um código de desconto.',
-        code_already_used: isEnglish
-          ? 'This discount code has already been used on your account.'
-          : 'Este código de desconto já foi usado na tua conta.',
-        invalid_code: isEnglish ? 'Invalid discount code.' : 'Código de desconto inválido.',
-        code_expired: isEnglish ? 'This discount code has expired.' : 'Este código de desconto expirou.',
-        code_limit_reached: isEnglish ? 'This discount code has reached its usage limit.' : 'Este código atingiu o limite de utilizações.',
-        code_not_applicable: isEnglish ? 'This code is not valid for this plan.' : 'Este código não é válido para este plano.',
-        checkout_unavailable: isEnglish ? 'Checkout is temporarily unavailable. Please try again.' : 'O checkout está temporariamente indisponível. Tenta novamente.',
-      };
-      try {
-        const { data: check, error: checkErr } = await supabase.functions.invoke('pre-checkout-check', {
-          body: { intent, ...(code ? { discountCode: code, environment: getPaddleEnvironment(), ...attribution } : {}) },
+      // Fail closed: the checkout only opens on an explicit allowed=true from pre-checkout-check.
+      const check = await runPreCheckoutCheck({
+        intent, environment: getPaddleEnvironment(), ...(code ? { discountCode: code, ...attribution } : {}),
+      });
+      if (check.status === 'blocked') {
+        toast({
+          title: isEnglish ? 'Checkout blocked' : 'Checkout bloqueado',
+          description: checkoutBlockMessage(check.reason, isEnglish),
+          variant: 'destructive',
         });
-        if (check && check.allowed === false) {
-          toast({
-            title: isEnglish ? 'Checkout blocked' : 'Checkout bloqueado',
-            description: reasonMap[check.reason as string] ?? (isEnglish ? 'Unable to proceed.' : 'Não foi possível prosseguir.'),
-            variant: 'destructive',
-          });
-          setIsLoadingPro(false);
-          return;
-        }
-        if (checkErr && code) throw checkErr; // codes need the server-created transaction
-        if (typeof check?.attemptId === 'string') attemptId = check.attemptId;
-        if (typeof check?.transactionId === 'string') transactionId = check.transactionId;
-      } catch (e) {
-        if (code) throw e;
-        // Fail open (no code) — pre-check should not block checkout on internal errors.
-        console.warn('pre-checkout-check failed, continuing', e);
+        return;
       }
-      if (code && !transactionId) throw new Error('No transaction for discount code');
+      if (check.status === 'error') {
+        toast({ ...checkoutRetryMessage(isEnglish), variant: 'destructive' });
+        return;
+      }
+      const { attemptId, transactionId } = check;
+      if (code && !transactionId) {
+        toast({ ...checkoutRetryMessage(isEnglish), variant: 'destructive' });
+        return;
+      }
 
       await initializePaddle();
       setCheckoutAttemptId(attemptId);
@@ -316,7 +292,7 @@ export default function Pricing() {
               <p className="text-sm text-muted-foreground leading-relaxed">
                 {isEnglish ? 'Most creators start with ' : 'A maioria dos criadores começa pelos '}
                 <span className="font-medium text-foreground">Prompt Packs</span>
-                {isEnglish ? ' — ready to use, with fast results.' : ' — prontos a usar, com resultados rápidos.'}
+                {isEnglish ? ', ready to use, with fast results.' : ', prontos a usar, com resultados rápidos.'}
                 <br />
                 {isEnglish
                   ? 'Plans are ideal for ongoing professional workflows.'
@@ -358,7 +334,7 @@ export default function Pricing() {
                   </div>
                   {plan.id === 'pro' && (
                     <p className="text-xs text-muted-foreground mt-1.5">
-                      {isEnglish ? 'Then 9€/month — cancel anytime.' : 'Depois 9€/mês — cancela quando quiseres.'}
+                      {isEnglish ? 'Then 9€/month, cancel anytime.' : 'Depois 9€/mês, cancela quando quiseres.'}
                     </p>
                   )}
                 </div>
@@ -423,7 +399,7 @@ export default function Pricing() {
                 <div className="flex items-baseline gap-1">
                   <span className="text-xl font-bold">19€</span>
                   <span className="text-muted-foreground text-sm">
-                    {isEnglish ? '— lifetime access' : '— acesso vitalício'}
+                    {isEnglish ? '· lifetime access' : '· acesso vitalício'}
                   </span>
                 </div>
               </div>
@@ -467,8 +443,8 @@ export default function Pricing() {
       <footer className="text-center mt-12 md:mt-16 max-w-lg mx-auto">
         <p className="text-sm text-muted-foreground leading-relaxed">
           {isEnglish
-            ? 'Questions? The Free plan never expires — use it as long as you need.'
-            : 'Dúvidas? O plano Free não expira — usa o tempo que precisares.'}
+            ? 'Questions? The Free plan never expires, so use it as long as you need.'
+            : 'Dúvidas? O plano Free não expira: usa o tempo que precisares.'}
         </p>
       </footer>
 
@@ -479,8 +455,8 @@ export default function Pricing() {
             <DialogTitle>{isEnglish ? 'Subscribe to Pro' : 'Subscrever o Pro'}</DialogTitle>
             <DialogDescription>
               {isEnglish
-                ? '9€/month — cancel anytime in your account.'
-                : '9€/mês — cancela quando quiseres na tua conta.'}
+                ? '9€/month, cancel anytime in your account.'
+                : '9€/mês, cancela quando quiseres na tua conta.'}
             </DialogDescription>
           </DialogHeader>
 
@@ -507,8 +483,8 @@ export default function Pricing() {
                   </span>
                   <span className="text-xs text-primary font-medium">
                     {isEnglish
-                      ? `Then ${BASE_PRO_PRICE}€/month — cancel anytime`
-                      : `Depois ${BASE_PRO_PRICE}€/mês — cancela quando quiseres`}
+                      ? `Then ${BASE_PRO_PRICE}€/month, cancel anytime`
+                      : `Depois ${BASE_PRO_PRICE}€/mês, cancela quando quiseres`}
                   </span>
                 </div>
               ) : (

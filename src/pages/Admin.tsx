@@ -6,6 +6,7 @@ import {
   ToggleLeft, ToggleRight, Search, Ticket, Copy,
   CheckCircle, XCircle, LayoutDashboard
 } from 'lucide-react';
+import { AdminFraudFlags } from '@/components/admin/AdminFraudFlags';
 import { AdminOverview, fmtCur, fmtMoney, type AdminMetrics, type UserCounts } from '@/components/admin/AdminOverview';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -392,6 +393,7 @@ export default function Admin() {
             <TabsTrigger value="users">{isEnglish ? 'Users' : 'Utilizadores'}</TabsTrigger>
             <TabsTrigger value="purchases">{isEnglish ? 'Purchases' : 'Compras'}</TabsTrigger>
             <TabsTrigger value="promo">{isEnglish ? 'Promo codes' : 'Códigos de Promoção'}</TabsTrigger>
+            <TabsTrigger value="alerts">{isEnglish ? 'Alerts' : 'Alertas'}</TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
@@ -831,6 +833,11 @@ export default function Admin() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Anti-fraud alerts */}
+          <TabsContent value="alerts">
+            <AdminFraudFlags isEnglish={isEnglish} />
           </TabsContent>
         </Tabs>
 

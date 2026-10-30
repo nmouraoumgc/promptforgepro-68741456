@@ -146,22 +146,50 @@ const Checkout = () => {
 
     setIsLoading(true);
     try {
-      const { initializePaddle, getPaddlePriceId } = await import("@/lib/paddle");
-      await initializePaddle();
-      const paddlePriceId = await getPaddlePriceId("premium_one_time");
-
-      window.Paddle.Checkout.open({
-        items: [{ priceId: paddlePriceId, quantity: 1 }],
-        customer: { email },
-        customData: user ? { userId: user.id } : undefined,
-        discountCode: appliedPromo?.code,
-        settings: {
-          displayMode: "overlay",
-          successUrl: `${window.location.origin}/purchase-success`,
-          allowLogout: false,
-          variant: "one-page",
-        },
+      const { initializePaddle, getPaddlePriceId, getPaddleEnvironment, setCheckoutAttemptId } = await import("@/lib/paddle");
+      const { runPreCheckoutCheck, checkoutBlockMessage, checkoutRetryMessage } = await import("@/lib/checkoutGuard");
+      // Same server-side gate as the Pro subscription: disposable email, account/IP failure and attempt
+      // limits, and discount codes validated server-side (confirmed email, once per account) with the
+      // Paddle transaction created there. Fails closed: checkout opens only on an explicit allowed=true.
+      const code = (appliedPromo?.code || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+      const check = await runPreCheckoutCheck({
+        intent: "premium",
+        environment: getPaddleEnvironment(),
+        ...(code ? { discountCode: code } : {}),
       });
+      if (check.status === "blocked") {
+        toast({
+          title: isEnglish ? "Checkout blocked" : "Checkout bloqueado",
+          description: checkoutBlockMessage(check.reason, isEnglish),
+          variant: "destructive",
+        });
+        return;
+      }
+      if (check.status === "error" || (code && !check.transactionId)) {
+        toast({ ...checkoutRetryMessage(isEnglish), variant: "destructive" });
+        return;
+      }
+
+      await initializePaddle();
+      setCheckoutAttemptId(check.attemptId);
+      const settings = {
+        displayMode: "overlay",
+        successUrl: `${window.location.origin}/purchase-success`,
+        allowLogout: false,
+        variant: "one-page",
+      };
+      if (check.transactionId) {
+        // Discount flow: transaction (price + discount + customer + customData) created server-side.
+        window.Paddle.Checkout.open({ transactionId: check.transactionId, settings });
+      } else {
+        const paddlePriceId = await getPaddlePriceId("premium_one_time");
+        window.Paddle.Checkout.open({
+          items: [{ priceId: paddlePriceId, quantity: 1 }],
+          customer: { email: user.email ?? email },
+          customData: { userId: user.id, ...(check.attemptId ? { attemptId: check.attemptId } : {}) },
+          settings,
+        });
+      }
     } catch (error) {
       console.error("Checkout error:", error);
       toast({
@@ -222,7 +250,7 @@ const Checkout = () => {
                 <span className="text-sm text-muted-foreground line-through">{BASE_PRICE}€</span>
                 <div className="inline-flex items-baseline gap-1">
                   <span className="text-4xl font-bold text-primary">{finalPrice.toFixed(2)}€</span>
-                  <span className="text-muted-foreground">{isEnglish ? "— one-time payment" : "— pagamento único"}</span>
+                  <span className="text-muted-foreground">{isEnglish ? "one-time payment" : "pagamento único"}</span>
                 </div>
                 <span className="text-xs text-primary font-medium">
                   {isEnglish ? `You save ${discount.toFixed(2)}€ with ${appliedPromo.code}` : `Poupas ${discount.toFixed(2)}€ com ${appliedPromo.code}`}
@@ -231,7 +259,7 @@ const Checkout = () => {
             ) : (
               <div className="inline-flex items-baseline gap-1">
                 <span className="text-4xl font-bold text-foreground">{BASE_PRICE}€</span>
-                <span className="text-muted-foreground">{isEnglish ? "— one-time payment" : "— pagamento único"}</span>
+                <span className="text-muted-foreground">{isEnglish ? "one-time payment" : "pagamento único"}</span>
               </div>
             )}
           </div>

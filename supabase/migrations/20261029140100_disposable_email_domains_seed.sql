@@ -14,6 +14,8 @@ INSERT INTO public.disposable_email_domains(domain, source) VALUES
 ('getnada.com','manual'),
 ('getairmail.com','manual'),
 ('dispostable.com','manual'),
+('crackone.org','manual'),
+('wibucrypto.pro','manual'),
 ('trashmail.com','manual'),
 ('throwawaymail.com','manual'),
 ('maildrop.cc','manual'),

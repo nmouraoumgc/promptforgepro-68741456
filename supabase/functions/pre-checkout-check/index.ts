@@ -10,13 +10,48 @@ const corsHeaders = {
 const DISPOSABLE_FALLBACK = new Set([
   'mailinator.com','tempmail.com','temp-mail.org','10minutemail.com','guerrillamail.com',
   'sharklasers.com','yopmail.com','getnada.com','dispostable.com','trashmail.com','maildrop.cc',
+  'crackone.org','wibucrypto.pro',
 ]);
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const MAX_FAILED_PER_ACCOUNT = 3;   // failed payments (webhook) or failed payment events (Paddle.js) in 24h
 const MAX_ATTEMPTS_PER_IP = 5;      // checkout attempts from the same IP (hashed) in 24h
+const MAX_FAILED_PER_IP = 5;        // failed payments from the same IP (hashed) in 24h
 const CODE_RE = /^[A-Z0-9]{3,32}$/;
-const PRICE_FOR_INTENT: Record<string, string> = { pro_normal: 'pro_monthly' };
+const TXN_RE = /^txn_[a-z0-9]{26}$/;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+// Intents that accept a discount code (validated here, transaction created here).
+const PRICE_FOR_INTENT: Record<string, string> = { pro_normal: 'pro_monthly', premium: 'premium_one_time' };
+
+// deno-lint-ignore no-explicit-any
+type Admin = any;
+
+// Failed payments in the last 24h for an account and for an IP hash. Sources: webhook-confirmed
+// failed attempts (checkout_attempts.status=failed), Paddle.js failure events (checkout_events) and
+// per-payment failures (payment_failures: browser-reported via action=payment_failed, and one row per
+// Paddle payment attempt from the transaction.payment_failed webhook). Sources overlap (the same
+// failure can be reported by the browser and the webhook), so each scope takes the max per source.
+async function failureCounts(admin: Admin, userId: string, hash: string | null, since: string) {
+  const cnt = (q: any) => q.then((r: any) => r.count ?? 0);
+  const pf = () => admin.from('payment_failures').select('id', { count: 'exact', head: true }).gte('created_at', since);
+  const [att, ev, pfClient, pfHook, ipClient, ipHook] = await Promise.all([
+    cnt(admin.from('checkout_attempts').select('id', { count: 'exact', head: true })
+      .eq('user_id', userId).eq('status', 'failed').gte('created_at', since)),
+    cnt(admin.from('checkout_events').select('id', { count: 'exact', head: true })
+      .eq('user_id', userId).in('event_name', ['checkout.payment.failed', 'checkout.payment.error']).gte('created_at', since)),
+    cnt(pf().eq('user_id', userId).eq('source', 'client')),
+    cnt(pf().eq('user_id', userId).eq('source', 'webhook')),
+    hash ? cnt(pf().eq('ip_hash', hash).eq('source', 'client')) : Promise.resolve(0),
+    hash ? cnt(pf().eq('ip_hash', hash).eq('source', 'webhook')) : Promise.resolve(0),
+  ]);
+  return { account: Math.max(att, ev, pfClient, pfHook), ip: Math.max(ipClient, ipHook) };
+}
+
+function failureBlockReason(c: { account: number; ip: number }): string | null {
+  if (c.account >= MAX_FAILED_PER_ACCOUNT) return 'too_many_attempts';
+  if (c.ip >= MAX_FAILED_PER_IP) return 'too_many_attempts_ip';
+  return null;
+}
 
 async function ipHash(req: Request): Promise<string | null> {
   const raw = (req.headers.get('cf-connecting-ip') || req.headers.get('x-forwarded-for')?.split(',')[0] ||
@@ -57,6 +92,7 @@ Deno.serve(async (req) => {
     const email = (claims.claims.email as string | undefined) ?? '';
 
     const body = await req.json().catch(() => ({}));
+    const action = typeof body?.action === 'string' ? body.action : 'check';
     const intent = typeof body?.intent === 'string' ? body.intent.slice(0, 40) : undefined; // 'pro_trial' | 'pro_normal' | 'premium'
     const rawCode = typeof body?.discountCode === 'string' ? body.discountCode.trim().toUpperCase().replace(/[^A-Z0-9]/g, '') : '';
     const discountCode = rawCode || null;
@@ -70,6 +106,33 @@ Deno.serve(async (req) => {
     );
     const hash = await ipHash(req);
     const since = new Date(Date.now() - DAY_MS).toISOString();
+
+    // In-checkout enforcement: the browser reports every Paddle.js checkout.payment.failed here while the
+    // overlay is open. We record it (with the keyed IP hash) and tell the client to close the checkout
+    // once the account or the IP reaches its limit, so cards cannot be retried inside one checkout.
+    if (action === 'payment_failed') {
+      const txn = typeof body?.transactionId === 'string' && TXN_RE.test(body.transactionId) ? body.transactionId : null;
+      let attemptId: string | null = null;
+      if (typeof body?.attemptId === 'string' && UUID_RE.test(body.attemptId)) {
+        const { data: a } = await admin.from('checkout_attempts').select('id').eq('id', body.attemptId).eq('user_id', userId).maybeSingle();
+        attemptId = (a?.id as string | undefined) ?? null;
+      }
+      const err = typeof body?.error === 'string' ? body.error.replace(/[^\w .:|-]/g, '').slice(0, 200) || null : null;
+      // Spam guard: a client can only ever hurt its own account, but keep the table bounded.
+      const { count: recent } = await admin.from('payment_failures').select('id', { count: 'exact', head: true })
+        .eq('user_id', userId).eq('source', 'client').gte('created_at', new Date(Date.now() - 60 * 60 * 1000).toISOString());
+      if ((recent ?? 0) < 100) {
+        await admin.from('payment_failures').insert({
+          user_id: userId, attempt_id: attemptId, ip_hash: hash, transaction_id: txn, source: 'client', error: err, environment,
+        });
+      }
+      const reason = failureBlockReason(await failureCounts(admin, userId, hash, since));
+      if (reason && attemptId) {
+        await admin.from('checkout_attempts').update({ reason: `closed_${reason}`, updated_at: new Date().toISOString() }).eq('id', attemptId);
+      }
+      return json({ close: !!reason, reason });
+    }
+    if (action !== 'check') return json({ allowed: false, reason: 'invalid_request' }, 400);
 
     const block = async (reason: string) => {
       await admin.from('checkout_attempts').insert({
@@ -96,17 +159,10 @@ Deno.serve(async (req) => {
       if (red) return json({ allowed: false, reason: 'trial_already_used' });
     }
 
-    // 3. Velocity: same account >= 3 failed payments in 24h (webhook-confirmed failed attempts or
-    //    Paddle.js payment failure events), or same IP (hashed) >= 5 checkout attempts in 24h.
-    const [{ count: failedAttempts }, { count: failedEvents }] = await Promise.all([
-      admin.from('checkout_attempts').select('id', { count: 'exact', head: true })
-        .eq('user_id', userId).eq('status', 'failed').gte('created_at', since),
-      admin.from('checkout_events').select('id', { count: 'exact', head: true })
-        .eq('user_id', userId).in('event_name', ['checkout.payment.failed', 'checkout.payment.error']).gte('created_at', since),
-    ]);
-    if (Math.max(failedAttempts ?? 0, failedEvents ?? 0) >= MAX_FAILED_PER_ACCOUNT) {
-      return await block('too_many_attempts');
-    }
+    // 3. Velocity: same account >= 3 failed payments in 24h, same IP (hashed) >= 5 failed payments
+    //    in 24h, or same IP >= 5 checkout attempts in 24h.
+    const failReason = failureBlockReason(await failureCounts(admin, userId, hash, since));
+    if (failReason) return await block(failReason);
     if (hash) {
       const { count: ipAttempts } = await admin.from('checkout_attempts').select('id', { count: 'exact', head: true })
         .eq('ip_hash', hash).neq('status', 'blocked').gte('created_at', since);

@@ -141,43 +141,128 @@ function lastPaymentErrorCode(data: any): string | undefined {
 // ---------- Discount enforcement ----------
 // Discount codes are only valid on transactions created server-side by pre-checkout-check (which checks
 // confirmed email + once per account and records a checkout_attempts row with discount_code + txn id).
-// Paddle.js can still be driven by hand with a code/discount id, so a subscription whose first transaction
-// carries a discount that we did not issue (or a second redemption on the same account) is cancelled
-// immediately when nothing was charged, and flagged for review otherwise. Returns true if it was blocked.
+// Paddle.js can still be driven by hand with a code/discount id (codes with enabled_for_checkout=true),
+// so every checkout transaction carrying a discount is checked here:
+//  * discount_not_issued_by_server: no server-issued attempt for this transaction/account
+//  * discount_mismatch: the transaction carries a different discount than the one we issued
+//  * discount_already_used: the same code already completed on this account
+// Findings are logged to public.discount_flags (Admin > Alertas) for review. Paddle is read-only from
+// here except for the pre-existing cancel of 0-charge subscriptions; charged transactions are never
+// refunded or cancelled automatically.
+type DiscountCheck = {
+  reason: 'discount_not_issued_by_server' | 'discount_already_used' | 'discount_mismatch';
+  txn: any; code: string | null; issuedCode: string | null; email: string | null;
+};
+
+async function getTxn(env: PaddleEnv, txnId: string): Promise<any | null> {
+  const r = await gatewayFetch(env, `/transactions/${encodeURIComponent(txnId)}?include=discount`);
+  if (!r.ok) return null;
+  return (await r.json())?.data ?? null;
+}
+
+async function checkDiscount(env: PaddleEnv, txnId: string, userId: string): Promise<DiscountCheck | null> {
+  const txn = await getTxn(env, txnId);
+  if (!txn?.discount_id) return null;
+  const code: string | null = typeof txn?.discount?.code === 'string' ? txn.discount.code.toUpperCase() : null;
+  const sb = getSupabase();
+  const { data: attempt } = await sb.from('checkout_attempts')
+    .select('id, user_id, email, discount_code').eq('paddle_transaction_id', txnId)
+    .not('discount_code', 'is', null).order('created_at', { ascending: false }).limit(1).maybeSingle();
+  const base = { txn, code, issuedCode: (attempt?.discount_code as string | undefined) ?? null, email: (attempt?.email as string | undefined) ?? null };
+  if (!attempt || attempt.user_id !== userId) return { reason: 'discount_not_issued_by_server', ...base };
+  if (code && code !== attempt.discount_code) return { reason: 'discount_mismatch', ...base };
+  const { count } = await sb.from('checkout_attempts').select('id', { count: 'exact', head: true })
+    .eq('user_id', userId).eq('discount_code', attempt.discount_code).eq('status', 'completed').neq('id', attempt.id);
+  if ((count ?? 0) > 0) return { reason: 'discount_already_used', ...base };
+  return null;
+}
+
+function chargedMinor(txn: any): number {
+  const t = txn?.details?.totals;
+  const v = Number(t?.grand_total ?? t?.total);
+  return Number.isFinite(v) ? v : 1; // unknown -> treat as charged
+}
+
+async function flagDiscount(env: PaddleEnv, userId: string, c: DiscountCheck,
+  action: 'flagged' | 'subscription_cancelled' | 'access_withheld') {
+  try {
+    const sb = getSupabase();
+    const txn = c.txn;
+    let email = c.email;
+    if (!email && UUID_RE.test(userId)) {
+      const { data: p } = await sb.from('profiles').select('email').eq('id', userId).maybeSingle();
+      email = (p?.email as string | undefined) ?? null;
+    }
+    const item = txn?.items?.[0];
+    const currency = typeof txn?.currency_code === 'string' && /^[A-Z]{3}$/.test(txn.currency_code) ? txn.currency_code : null;
+    const row = {
+      environment: env,
+      user_id: UUID_RE.test(userId) ? userId : null,
+      email,
+      transaction_id: txn.id,
+      subscription_id: txn.subscription_id ?? null,
+      kind: txn.subscription_id ? 'subscription' : (item ? 'one_time' : 'other'),
+      price_external_id: item?.price?.import_meta?.external_id ?? item?.price?.custom_data?.external_id ?? item?.price?.id ?? null,
+      discount_id: txn.discount_id ?? null,
+      discount_code: c.code,
+      issued_code: c.issuedCode,
+      reason: c.reason,
+      charged_minor: chargedMinor(txn),
+      currency,
+      action_taken: action,
+    };
+    const { error } = await sb.from('discount_flags').upsert(row, { onConflict: 'transaction_id,reason', ignoreDuplicates: true });
+    if (error) console.warn('discount flag insert failed', error.message);
+    if (action !== 'flagged') {
+      await sb.from('discount_flags').update({ action_taken: action }).eq('transaction_id', txn.id).eq('reason', c.reason);
+    }
+    console.warn('DISCOUNT FLAG', { txn: txn.id, reason: c.reason, charged: row.charged_minor, currency, action });
+  } catch (e) {
+    console.warn('flagDiscount failed', e instanceof Error ? e.message : String(e));
+  }
+}
+
+// subscription.created: cancel when nothing was charged (pre-existing behaviour), flag otherwise.
+// Returns true if the subscription was blocked.
 async function enforceDiscount(data: any, env: PaddleEnv, userId: string): Promise<boolean> {
   try {
     const txnId: string | undefined = data?.transactionId ?? data?.transaction_id;
     if (!txnId) return false;
-    const r = await gatewayFetch(env, `/transactions/${encodeURIComponent(txnId)}`);
-    if (!r.ok) return false;
-    const txn = (await r.json())?.data;
-    if (!txn?.discount_id) return false;
-    const sb = getSupabase();
-    const { data: attempt } = await sb.from('checkout_attempts')
-      .select('id, user_id, discount_code').eq('paddle_transaction_id', txnId)
-      .not('discount_code', 'is', null).maybeSingle();
-    let reason: string | null = null;
-    if (!attempt || attempt.user_id !== userId) {
-      reason = 'discount_not_issued_by_server';
-    } else {
-      const { count } = await sb.from('checkout_attempts').select('id', { count: 'exact', head: true })
-        .eq('user_id', userId).eq('discount_code', attempt.discount_code).eq('status', 'completed').neq('id', attempt.id);
-      if ((count ?? 0) > 0) reason = 'discount_already_used';
-    }
-    if (!reason) return false;
-    const charged = Number(txn?.details?.totals?.grand_total ?? txn?.details?.totals?.total ?? '1');
-    if (charged === 0) {
-      const c = await gatewayFetch(env, `/subscriptions/${encodeURIComponent(data.id)}/cancel`, {
+    const c = await checkDiscount(env, txnId, userId);
+    if (!c) return false;
+    if (chargedMinor(c.txn) === 0) {
+      const r = await gatewayFetch(env, `/subscriptions/${encodeURIComponent(data.id)}/cancel`, {
         method: 'POST', body: JSON.stringify({ effective_from: 'immediately' }),
       });
-      console.warn('discount enforcement: cancelled subscription', { sub: data.id, txn: txnId, reason, status: c.status });
-      if (attempt?.id) await sb.from('checkout_attempts').update({ status: 'blocked', reason, updated_at: new Date().toISOString() }).eq('id', attempt.id);
-      return true;
+      console.warn('discount enforcement: cancelled subscription', { sub: data.id, txn: txnId, reason: c.reason, status: r.status });
+      await flagDiscount(env, userId, c, r.ok ? 'subscription_cancelled' : 'flagged');
+      await getSupabase().from('checkout_attempts').update({ status: 'blocked', reason: c.reason, updated_at: new Date().toISOString() })
+        .eq('paddle_transaction_id', txnId);
+      return r.ok;
     }
-    console.warn('discount enforcement: paid transaction with unverified discount, review manually', { sub: data.id, txn: txnId, reason });
+    await flagDiscount(env, userId, c, 'flagged');
     return false;
   } catch (e) {
     console.warn('enforceDiscount failed', e instanceof Error ? e.message : String(e));
+    return false;
+  }
+}
+
+// transaction.completed (one-time purchases and first subscription payments). Returns true when access
+// must be withheld (a one-time purchase that cost 0 because of a discount we did not issue).
+async function checkCompletedTransactionDiscount(data: any, env: PaddleEnv, userId: string): Promise<boolean> {
+  try {
+    const hasDiscount = !!(data?.discountId ?? data?.discount?.id ?? data?.discount_id);
+    if (!hasDiscount || !data?.id) return false;
+    const apiAttempt = data?.origin === 'api' && typeof data?.customData?.attemptId === 'string';
+    if (data?.origin && data.origin !== 'web' && !apiAttempt) return false; // renewals inherit the subscription discount
+    const c = await checkDiscount(env, data.id, userId);
+    if (!c) return false;
+    const withhold = !c.txn?.subscription_id && chargedMinor(c.txn) === 0;
+    await flagDiscount(env, userId, c, withhold ? 'access_withheld' : 'flagged');
+    return withhold;
+  } catch (e) {
+    console.warn('checkCompletedTransactionDiscount failed', e instanceof Error ? e.message : String(e));
     return false;
   }
 }
@@ -284,6 +369,9 @@ async function handleTransactionCompleted(data: any, env: PaddleEnv) {
     return;
   }
 
+  // First payments of Pro subscriptions: flag unverified discounts (subscription.created handles cancel).
+  if (priceExternalId !== 'premium_one_time') await checkCompletedTransactionDiscount(data, env, userId);
+
   // Record trial redemption on the €2 one-time access transaction.
   if (priceExternalId === 'pro_trial_access_7d') {
     await recordTrialRedemption(userId, undefined, id);
@@ -302,6 +390,11 @@ async function handleTransactionCompleted(data: any, env: PaddleEnv) {
     return;
   }
 
+  if (await checkCompletedTransactionDiscount(data, env, userId)) {
+    console.warn('Premium access withheld: 0-charge transaction with a discount not issued by the server', { txn: id });
+    return;
+  }
+
   const amountCents = Number(item?.price?.unitPrice?.amount ?? 0) || 1900;
   await getSupabase().from('purchases').insert({
     user_id: userId,
@@ -317,11 +410,41 @@ async function handleTransactionCompleted(data: any, env: PaddleEnv) {
   console.log('Premium purchase recorded', { userId, txn: id, env });
 }
 
+const FAILED_PAYMENT_STATUSES = new Set(['error', 'canceled', 'dropped']);
+
 async function handleTransactionPaymentFailed(data: any, env: PaddleEnv) {
-  // Subscription.updated also fires with status=past_due, so the DB trigger
-  // already keeps the user as Pro during the grace window. Here we just log
-  // for observability; the frontend reads `status='past_due'` from subscriptions.
-  console.log('payment_failed', { txn: data?.id, sub: data?.subscriptionId, env });
+  // Renewals: subscription.updated also fires with status=past_due, so the DB trigger keeps the user as
+  // Pro during the grace window. Checkout transactions: every failed payment attempt is recorded in
+  // payment_failures (deduped by Paddle payment_attempt_id) so pre-checkout-check can enforce the
+  // per-account / per-IP failure limits, also while a checkout is still open.
+  console.log('payment_failed', { txn: data?.id, sub: data?.subscriptionId, origin: data?.origin, env });
+  try {
+    const apiAttempt = data?.origin === 'api' && typeof data?.customData?.attemptId === 'string';
+    if (data?.origin && data.origin !== 'web' && !apiAttempt) return;
+    const sb = getSupabase();
+    const attemptId = await findAttemptId(data);
+    let attempt: any = null;
+    if (attemptId) {
+      ({ data: attempt } = await sb.from('checkout_attempts').select('id, user_id, ip_hash').eq('id', attemptId).maybeSingle());
+    }
+    const cdUser = typeof data?.customData?.userId === 'string' && UUID_RE.test(data.customData.userId) ? data.customData.userId : null;
+    const userId: string | null = attempt?.user_id ?? cdUser;
+    if (!userId) return;
+    const txnId = typeof data?.id === 'string' && /^txn_[a-z0-9]{26}$/.test(data.id) ? data.id : null;
+    const payments: any[] = Array.isArray(data?.payments) ? data.payments : [];
+    let failed = payments.filter((p) => p?.errorCode || FAILED_PAYMENT_STATUSES.has(p?.status));
+    if (!failed.length) failed = [{ paymentAttemptId: null, errorCode: lastPaymentErrorCode(data) }];
+    for (const p of failed) {
+      const ref = typeof p?.paymentAttemptId === 'string' ? p.paymentAttemptId.slice(0, 80) : (txnId ? `${txnId}:${p?.createdAt ?? 'na'}` : null);
+      const { error } = await sb.from('payment_failures').insert({
+        user_id: userId, attempt_id: attempt?.id ?? null, ip_hash: attempt?.ip_hash ?? null, transaction_id: txnId,
+        source: 'webhook', ref, error: [p?.errorCode, p?.status].filter(Boolean).join(' | ').slice(0, 200) || null, environment: env,
+      });
+      if (error && error.code !== '23505') console.warn('payment_failures insert failed', error.message);
+    }
+  } catch (e) {
+    console.warn('record payment failure failed', e instanceof Error ? e.message : String(e));
+  }
 }
 
 async function handleWebhook(req: Request, env: PaddleEnv) {
