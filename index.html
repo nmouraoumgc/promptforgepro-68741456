@@ -13,6 +13,23 @@
     <link rel="preconnect" href="https://cwrxbxxfaemcvliasycz.supabase.co" crossorigin />
     <link rel="preconnect" href="https://eu.i.posthog.com" crossorigin />
     <link rel="dns-prefetch" href="https://eu-assets.i.posthog.com" />
+    <script>
+      // Apply the saved theme (or the system default) before first paint, so no page flashes white.
+      (function () {
+        var dark = true;
+        try {
+          var st = JSON.parse(localStorage.getItem('promptforge-storage') || 'null');
+          if (st && st.state && typeof st.state.darkMode === 'boolean') dark = st.state.darkMode;
+          else if (window.matchMedia) dark = !window.matchMedia('(prefers-color-scheme: light)').matches;
+        } catch (e) {}
+        var r = document.documentElement;
+        if (dark) r.classList.add('dark'); else r.classList.remove('dark');
+        r.style.colorScheme = dark ? 'dark' : 'light';
+        var m = document.querySelector('meta[name="theme-color"]');
+        if (m) m.setAttribute('content', dark ? '#0f121a' : '#f5f6f8');
+      })();
+    </script>
+    <style>html{background:#f5f6f8}html.dark{background:#0f121a}</style>
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="icon" href="/favicon.ico" sizes="48x48" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />

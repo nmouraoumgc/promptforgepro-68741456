@@ -1,7 +1,7 @@
 import { Wordmark } from '@/components/brand/Wordmark';
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Flame, Mail, MailCheck, Lock, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,8 @@ import { postAuthPath } from '@/lib/campaignCode';
 import { track } from '@/lib/analytics';
 
 export default function Signup() {
+  const [searchParams] = useSearchParams();
+  const redirectParam = searchParams.get('redirect');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -81,7 +83,7 @@ export default function Signup() {
         title: isEnglish ? 'Account created!' : 'Conta criada!',
         description: isEnglish ? 'Welcome to PromptForge Pro.' : 'Bem-vindo ao PromptForge Pro.',
       });
-      navigate(postAuthPath(null));
+      navigate(postAuthPath(redirectParam));
     }
 
     setIsLoading(false);
@@ -209,7 +211,7 @@ export default function Signup() {
 
             <div className="mt-6 text-center text-sm">
               <span className="text-muted-foreground">{isEnglish ? 'Already have an account? ' : 'Já tens conta? '}</span>
-              <Link to="/login" className="text-primary hover:underline font-medium">
+              <Link to={redirectParam ? `/login?redirect=${encodeURIComponent(redirectParam)}` : "/login"} className="text-primary hover:underline font-medium">
                 {isEnglish ? 'Sign in' : 'Entrar'}
               </Link>
             </div>

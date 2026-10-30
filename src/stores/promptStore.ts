@@ -85,7 +85,8 @@ export const usePromptStore = create<PromptStore>()(
       setLibrary: (prompts, syncUserId, libraryStatus) => set({ prompts, syncUserId, libraryStatus }),
       builderState: initialBuilderState,
       userProfile: 'beginner',
-      darkMode: true,
+      // No stored choice yet: follow the system setting (dark when unknown).
+      darkMode: typeof window === 'undefined' || !window.matchMedia ? true : !window.matchMedia('(prefers-color-scheme: light)').matches,
 
       // Prompt actions
       addPrompt: (promptData) => {

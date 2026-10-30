@@ -10,6 +10,7 @@ import { RouteMeta } from '@/lib/pageMeta';
 import { lazy, Suspense } from 'react';
 import Home from "@/pages/Home";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { ThemeSync } from "@/components/layout/ThemeSync";
 
 // Route-level code splitting: only the landing page (and the shell) ship in the main bundle.
 const Dashboard = lazy(() => import("@/pages/Dashboard"));
@@ -47,6 +48,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <RouteMeta />
+        <ThemeSync />
         <Suspense fallback={<RouteFallback />}>
         <Routes>
           {/* Auth routes (no layout) */}
@@ -63,8 +65,13 @@ const App = () => (
           <Route path="/" element={<Home />} />
           <Route path="/planos" element={<Navigate to="/pricing" replace />} />
           
-          {/* App routes */}
+          {/* Public page inside the app shell: logged-out visitors can see prices; checkout CTAs send them to login/signup */}
           <Route element={<AppLayout />}>
+            <Route path="/pricing" element={<Pricing />} />
+          </Route>
+
+          {/* App routes: every screen in the app layout requires sign-in (redirects to /login?redirect=<path>) */}
+          <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
             <Route path="/app" element={<Dashboard />} />
             <Route path="/create" element={<Create />} />
             <Route path="/library" element={<PromptLibrary />} />
@@ -81,11 +88,10 @@ const App = () => (
             <Route path="/packs" element={<PromptPacks />} />
             <Route path="/packs/:slug" element={<PackDetail />} />
             <Route path="/settings" element={<Settings />} />
-            <Route path="/pricing" element={<Pricing />} />
-            <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
-            <Route path="/purchase-success" element={<ProtectedRoute><PurchaseSuccess /></ProtectedRoute>} />
-            <Route path="/subscription-success" element={<ProtectedRoute><SubscriptionSuccess /></ProtectedRoute>} />
-            <Route path="/account" element={<ProtectedRoute><Account /></ProtectedRoute>} />
+            <Route path="/checkout" element={<Checkout />} />
+            <Route path="/purchase-success" element={<PurchaseSuccess />} />
+            <Route path="/subscription-success" element={<SubscriptionSuccess />} />
+            <Route path="/account" element={<Account />} />
             <Route path="/admin" element={<ProtectedRoute requireAdmin><Admin /></ProtectedRoute>} />
           </Route>
           <Route path="*" element={<NotFound />} />

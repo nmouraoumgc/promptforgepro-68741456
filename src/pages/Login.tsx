@@ -189,7 +189,7 @@ export default function Login() {
 
             <div className="mt-6 text-center text-sm">
               <span className="text-muted-foreground">{isEnglish ? "Don't have an account? " : 'Não tens conta? '}</span>
-              <Link to="/signup" className="text-primary hover:underline font-medium">
+              <Link to={searchParams.get('redirect') ? `/signup?redirect=${encodeURIComponent(searchParams.get('redirect') as string)}` : "/signup"} className="text-primary hover:underline font-medium">
                 {isEnglish ? 'Create account' : 'Criar conta'}
               </Link>
             </div>

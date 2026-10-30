@@ -1,25 +1,15 @@
 import { Outlet, useLocation, Link } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
-import { useEffect, Suspense } from 'react';
-import { usePromptStore } from '@/stores/promptStore';
+import { Suspense } from 'react';
 import { PaymentTestModeBanner } from '@/components/PaymentTestModeBanner';
 import { PastDueBanner } from '@/components/PastDueBanner';
 import { useIsEnglish } from '@/i18n/lang';
 import { LibrarySync } from '@/components/library/LibrarySync';
 
 export function AppLayout() {
-  const { darkMode } = usePromptStore();
   const isEnglish = useIsEnglish();
   const location = useLocation();
-
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [darkMode]);
 
   return (
     <div className="flex h-screen flex-col bg-background">
