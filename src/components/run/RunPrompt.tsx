@@ -27,12 +27,13 @@ export async function invokeRun(body: Record<string, unknown>) {
   return data as { result?: string; error?: string; used?: number; limit?: number; code?: string };
 }
 
-export function RunPrompt({ prompt, compact = false, className, withBrand = false, autoRun = false }: { prompt: string; compact?: boolean; className?: string; withBrand?: boolean; autoRun?: boolean }) {
+export function RunPrompt({ prompt, compact = false, className, withBrand = false, autoRun = false, initialResult = '', onResult }: { prompt: string; compact?: boolean; className?: string; withBrand?: boolean; autoRun?: boolean; initialResult?: string; onResult?: (result: string) => void }) {
   const isEnglish = useIsEnglish();
   const user = useAuthStore((s) => s.user);
   const plan = useAuthStore((s) => s.profile?.current_plan ?? 'free');
   const { toast } = useToast();
-  const [result, setResult] = useState('');
+  const [result, setResultState] = useState(initialResult);
+  const setResult = (r: string) => { setResultState(r); onResult?.(r); };
   const [running, setRunning] = useState(false);
   const [quota, setQuota] = useState<Quota>(null);
   const [limitHit, setLimitHit] = useState(false);

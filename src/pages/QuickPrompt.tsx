@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { toPlainText } from '@/lib/plainText';
 import { useTranslation } from 'react-i18next';
 import { Zap, Mic, MicOff, Copy, Sparkles, Loader2, RotateCcw, BookmarkPlus } from 'lucide-react';
@@ -15,6 +15,11 @@ import { AuthGate } from '@/components/gating/FeatureGate';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { localizeApiError } from '@/i18n/lang';
+import { clearDraft, useDraftAutosave, useInitialDraft } from '@/lib/draft';
+import { DraftNotice } from '@/components/optimizer/DraftNotice';
+
+interface QuickDraft { request: string; generatedPrompt: string; runResult: string }
+const SCOPE = 'create-quick';
 
 export default function QuickPrompt({ embedded = false, initialRequest = '' }: { embedded?: boolean; initialRequest?: string } = {}) {
   const { user } = useAuthStore();
@@ -25,8 +30,15 @@ export default function QuickPrompt({ embedded = false, initialRequest = '' }: {
   const language = (i18n.resolvedLanguage || i18n.language || 'pt').slice(0, 2);
   const isEn = language === 'en';
 
-  const [request, setRequest] = useState(initialRequest);
-  const [generatedPrompt, setGeneratedPrompt] = useState('');
+  // A prefill from the dashboard wins over an old draft.
+  const rawDraft = useInitialDraft<QuickDraft>(user?.id, SCOPE, !initialRequest);
+  const draft = rawDraft && (rawDraft.request || rawDraft.generatedPrompt) ? rawDraft : null;
+  const [request, setRequest] = useState(draft?.request ?? initialRequest);
+  const [generatedPrompt, setGeneratedPrompt] = useState(draft?.generatedPrompt ?? '');
+  const [runResult, setRunResult] = useState(draft?.runResult ?? '');
+  const [showRestored, setShowRestored] = useState(!!draft);
+  const draftData = useMemo<QuickDraft>(() => ({ request, generatedPrompt, runResult }), [request, generatedPrompt, runResult]);
+  useDraftAutosave(user?.id, SCOPE, draftData, !request.trim() && !generatedPrompt);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
@@ -128,6 +140,8 @@ export default function QuickPrompt({ embedded = false, initialRequest = '' }: {
         return;
       }
       setGeneratedPrompt(toPlainText(data.prompt));
+      setRunResult('');
+      setShowRestored(false);
       toast({ title: t('quickPrompt.generated'), description: t('quickPrompt.generatedDesc') });
     } catch (error) {
       console.error('Error generating prompt:', error);
@@ -146,12 +160,16 @@ export default function QuickPrompt({ embedded = false, initialRequest = '' }: {
     const title = request.trim().slice(0, 50) + (request.trim().length > 50 ? '...' : '');
     const id = addPrompt({ title: title || (isEn ? 'Quick prompt' : 'Prompt rápido'), content: generatedPrompt, description: request.trim(), category: 'other', tags: ['quick'], outputType: 'text', targetModel: 'generic', variables: [], isFavorite: false });
     toast({ title: isEn ? 'Saved!' : 'Guardado!', description: isEn ? 'Prompt saved to your library' : 'Prompt guardado na biblioteca' });
+    clearDraft(user.id, SCOPE);
     navigate(`/library/${id}`);
   };
 
   const reset = () => {
     setRequest('');
     setGeneratedPrompt('');
+    setRunResult('');
+    setShowRestored(false);
+    clearDraft(user.id, SCOPE);
   };
 
   return (
@@ -165,6 +183,8 @@ export default function QuickPrompt({ embedded = false, initialRequest = '' }: {
         <h1 className="text-2xl font-bold">{t('quickPrompt.title')}</h1>
         <p className="text-muted-foreground">{t('quickPrompt.description')}</p>
       </div>
+
+      {showRestored && <DraftNotice onClear={reset} onDismiss={() => setShowRestored(false)} />}
 
       {/* Input Card */}
       <Card>
@@ -266,7 +286,7 @@ export default function QuickPrompt({ embedded = false, initialRequest = '' }: {
               <Button variant="outline" onClick={saveToLibrary} className="gap-2" data-testid="save-library">
                 <BookmarkPlus className="h-4 w-4" />{isEn ? 'Save to library' : 'Guardar na biblioteca'}
               </Button>
-              <RunPrompt prompt={generatedPrompt} className="flex-1 min-w-[240px]" />
+              <RunPrompt key={generatedPrompt.length} prompt={generatedPrompt} initialResult={runResult} onResult={setRunResult} className="flex-1 min-w-[240px]" />
             </div>
           </CardContent>
         </Card>

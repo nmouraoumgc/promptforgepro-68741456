@@ -28,7 +28,7 @@ export default function PromptDetail() {
   const { toast } = useToast();
   const [params, setParams] = useSearchParams();
   const prompt = usePromptStore((s) => s.prompts.find((p) => p.id === id));
-  const { toggleFavorite, deletePrompt, addVersion, setActivePrompt } = usePromptStore();
+  const { toggleFavorite, deletePrompt, addVersion, updatePrompt, setActivePrompt } = usePromptStore();
   const libraryLoading = useLibraryLoading();
   const raw = params.get('tab');
   const tab: DetailTab = TABS.includes(raw as DetailTab) ? (raw as DetailTab) : 'run';
@@ -117,8 +117,9 @@ export default function PromptDetail() {
       <div role="tabpanel" data-testid={`detail-panel-${tab}`}>
         {tab === 'run' && <Card><CardContent className="p-4"><RunPrompt key={prompt.content} prompt={prompt.content} /></CardContent></Card>}
         {tab === 'optimize' && (
-          <PromptOptimizer key={`${prompt.id}-${optKey}`} embedded initialPrompt={prompt.content}
-            onSaveVersion={(content, lbl) => { addVersion(prompt.id, content, isEnglish ? `Optimised: ${lbl}` : `Otimizada: ${lbl}`); setOptKey((k) => k + 1); }} />
+          <PromptOptimizer key={`${prompt.id}-${optKey}`} embedded initialPrompt={prompt.content} draftScope={`detail-${prompt.id}`}
+            onScore={(score) => updatePrompt(prompt.id, { score })}
+            onSaveVersion={(content, lbl) => { addVersion(prompt.id, content, isEnglish ? `Optimised: ${lbl}` : `Otimizada: ${lbl}`); updatePrompt(prompt.id, { score: undefined }); setOptKey((k) => k + 1); }} />
         )}
         {tab === 'test' && <PromptTester key={prompt.id} embedded initialA={prompt.content} initialB={previous} />}
         {tab === 'versions' && <VersionHistory embedded promptId={prompt.id} />}

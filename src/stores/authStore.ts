@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { clearAllDrafts } from '@/lib/draft';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { PlanType } from '@/types/plans';
@@ -107,6 +108,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   },
   
   signOut: async () => {
+    clearAllDrafts();
     await supabase.auth.signOut();
     set({ user: null, session: null, profile: null, isAdmin: false });
   },

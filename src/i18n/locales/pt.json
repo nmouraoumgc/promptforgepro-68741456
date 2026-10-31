@@ -264,5 +264,52 @@
     "large": "Grande",
     "xlarge": "Muito grande",
     "desc": "Aumenta o texto em todo o site"
+  },
+  "optimizerFlow": {
+    "step1Title": "1. O teu prompt",
+    "step1Desc": "Cola ou escreve o prompt e carrega em Otimizar. Recebes versões melhoradas e uma pontuação.",
+    "placeholder": "Ex: Escreve um post para Instagram sobre sustentabilidade...",
+    "optimize": "Otimizar prompt",
+    "optimizeAgain": "Otimizar de novo",
+    "optimizing": "A analisar e otimizar...",
+    "step2Title": "2. Escolhe a versão a executar",
+    "step2Desc": "Toca numa versão para a escolheres. Podes copiar qualquer uma.",
+    "otherVersions": "Outras versões",
+    "selected": "Selecionada",
+    "choose": "Escolher",
+    "copy": "Copiar",
+    "step3Title": "3. Executar",
+    "step3Desc": "Vais executar a versão: {{name}}",
+    "analysisTitle": "O que foi melhorado",
+    "useDetailed": "Usar a versão Detalhado",
+    "draftRestored": "Rascunho recuperado",
+    "draftHint": "Guardado automaticamente neste dispositivo durante 24 horas.",
+    "draftClear": "Limpar",
+    "variants": {
+      "detailed": {
+        "label": "Detalhado",
+        "desc": "Estruturado e preciso: contexto, regras e formato definidos. Ideal para resultados consistentes."
+      },
+      "creative": {
+        "label": "Criativo",
+        "desc": "Mais aberto e inspirador: dá margem ao modelo para surpreender. Ideal para ideias e textos."
+      },
+      "shorter": {
+        "label": "Mais curto",
+        "desc": "Condensado e direto, para respostas rápidas."
+      },
+      "technical": {
+        "label": "Mais técnico",
+        "desc": "Linguagem precisa e termos específicos."
+      },
+      "restrictive": {
+        "label": "Mais controlado",
+        "desc": "Formato estrito e limites claros."
+      },
+      "original": {
+        "label": "O teu original",
+        "desc": "O prompt tal como o escreveste, sem alterações."
+      }
+    }
   }
 }

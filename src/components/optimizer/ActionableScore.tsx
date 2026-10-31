@@ -22,6 +22,7 @@ interface ScoreData {
 interface ActionableScoreProps {
   score: ScoreData;
   onAutoFix?: () => void;
+  autoFixLabel?: string;
 }
 
 const getScoreLabel = (score: number, en: boolean): { label: string; color: string } => {
@@ -101,7 +102,7 @@ const scoreLabelsPt: Record<string, string> = {
   genericResponseRisk: 'Risco de resposta genérica',
 };
 
-export default function ActionableScore({ score, onAutoFix }: ActionableScoreProps) {
+export default function ActionableScore({ score, onAutoFix, autoFixLabel }: ActionableScoreProps) {
   const isEnglish = useIsEnglish();
   const scoreLabels = isEnglish ? scoreLabelsEn : scoreLabelsPt;
   const { label, color } = getScoreLabel(score.overall, isEnglish);
@@ -193,9 +194,9 @@ export default function ActionableScore({ score, onAutoFix }: ActionableScorePro
             {/* Action buttons */}
             <div className="grid grid-cols-2 gap-2">
               {needsImprovement && onAutoFix && (
-                <Button onClick={onAutoFix} className="gap-2">
+                <Button onClick={onAutoFix} variant="outline" className="gap-2" data-testid="score-autofix">
                   <Wand2 className="h-4 w-4" />
-                  {isEnglish ? 'Auto-fix' : 'Corrigir automaticamente'}
+                  {autoFixLabel ?? (isEnglish ? 'Auto-fix' : 'Corrigir automaticamente')}
                 </Button>
               )}
               {learnLink(needsImprovement && onAutoFix ? '' : 'col-span-2')}

@@ -264,5 +264,52 @@
     "large": "Large",
     "xlarge": "Extra large",
     "desc": "Make text larger across the site"
+  },
+  "optimizerFlow": {
+    "step1Title": "1. Your prompt",
+    "step1Desc": "Paste or write your prompt and press Optimise. You get improved versions and a score.",
+    "placeholder": "Ex: Write an Instagram post about sustainability...",
+    "optimize": "Optimise prompt",
+    "optimizeAgain": "Optimise again",
+    "optimizing": "Analysing and optimising...",
+    "step2Title": "2. Choose the version to run",
+    "step2Desc": "Tap a version to choose it. You can copy any of them.",
+    "otherVersions": "Other versions",
+    "selected": "Selected",
+    "choose": "Choose",
+    "copy": "Copy",
+    "step3Title": "3. Run",
+    "step3Desc": "You will run the version: {{name}}",
+    "analysisTitle": "What was improved",
+    "useDetailed": "Use the Detailed version",
+    "draftRestored": "Draft restored",
+    "draftHint": "Saved automatically on this device for 24 hours.",
+    "draftClear": "Clear",
+    "variants": {
+      "detailed": {
+        "label": "Detailed",
+        "desc": "Structured and precise: context, rules and format defined. Best for consistent results."
+      },
+      "creative": {
+        "label": "Creative",
+        "desc": "More open and inspiring: gives the model room to surprise you. Best for ideas and writing."
+      },
+      "shorter": {
+        "label": "Shorter",
+        "desc": "Condensed and direct, for quick answers."
+      },
+      "technical": {
+        "label": "More technical",
+        "desc": "Precise language and specific terms."
+      },
+      "restrictive": {
+        "label": "More controlled",
+        "desc": "Strict format and clear limits."
+      },
+      "original": {
+        "label": "Your original",
+        "desc": "The prompt exactly as you wrote it."
+      }
+    }
   }
 }
