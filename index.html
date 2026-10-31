@@ -27,6 +27,11 @@
         var r = document.documentElement;
         if (dark) r.classList.add('dark'); else r.classList.remove('dark');
         r.style.colorScheme = dark ? 'dark' : 'light';
+        // Saved text size (A / A+ / A++), see src/lib/fontSize.ts.
+        try {
+          var fs = localStorage.getItem('pf_font_size');
+          if (fs === 'large' || fs === 'xlarge') r.setAttribute('data-fs', fs);
+        } catch (e) {}
         var m = document.querySelector('meta[name="theme-color"]');
         if (m) m.setAttribute('content', dark ? '#0f121a' : '#f5f6f8');
         // Web fonts load after the page has rendered (metric-matched fallback below avoids layout shift).

@@ -128,7 +128,7 @@ export default function PromptLibrary() {
                 <div className="grid grid-cols-4 gap-1 pt-3">
                   {([['run', Play, 'Executar', 'Run'], ['optimize', Sparkles, 'Otimizar', 'Optimise'], ['test', FlaskConical, 'Testar', 'Test'], ['versions', GitBranch, 'Versões', 'Versions']] as const).map(([tab, Icon, pt, en]) => (
                     <Link key={tab} to={`/library/${prompt.id}?tab=${tab}`} data-testid={`library-${tab}`}
-                      className="flex flex-col items-center gap-0.5 rounded-md py-1.5 text-[11px] text-muted-foreground hover:bg-muted hover:text-foreground">
+                      className="flex flex-col items-center gap-0.5 rounded-md py-1.5 text-[0.6875rem] text-muted-foreground hover:bg-muted hover:text-foreground">
                       <Icon className="h-3.5 w-3.5" />{isEnglishUi ? en : pt}
                     </Link>
                   ))}

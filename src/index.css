@@ -4,6 +4,13 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Base text size: slightly larger than the browser default (17px instead of 16px).
+   Optional user steps (A+ / A++) via <html data-fs>, set before first paint by index.html.
+   Everything in Tailwind is rem-based, so the whole UI scales with it. */
+html { font-size: 106.25%; }
+html[data-fs="large"] { font-size: 118.75%; }
+html[data-fs="xlarge"] { font-size: 131.25%; }
+
 /* PromptForge Design System
    A modern, forge-inspired theme with warm accents and industrial precision
    All colors MUST be HSL.

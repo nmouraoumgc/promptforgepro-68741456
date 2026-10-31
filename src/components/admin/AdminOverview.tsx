@@ -361,7 +361,7 @@ export function AdminOverview({ counts, metrics, metricsError }: Props) {
               </ul>
             )}
             {metrics && (
-              <p className="text-[11px] text-muted-foreground mt-3">
+              <p className="text-[0.6875rem] text-muted-foreground mt-3">
                 {isEnglish ? 'Source: Paddle (live), updated' : 'Fonte: Paddle (live), atualizado'}{' '}
                 {new Date(metrics.generated_at).toLocaleString(isEnglish ? 'en-GB' : 'pt-PT', { timeZone: 'Europe/Lisbon' })}
               </p>

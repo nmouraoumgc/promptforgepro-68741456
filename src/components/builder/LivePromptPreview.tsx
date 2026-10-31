@@ -130,7 +130,7 @@ export default function LivePromptPreview({ builderState }: LivePromptPreviewPro
                 className={`rounded-lg border p-3 transition-all ${getSectionStyles(section.type)}`}
               >
                 <div className="flex items-center gap-2 mb-1">
-                  <Badge variant="outline" className={`text-[10px] ${getSectionTextColor(section.type)} border-current`}>
+                  <Badge variant="outline" className={`text-[0.625rem] ${getSectionTextColor(section.type)} border-current`}>
                     {section.label}
                   </Badge>
                 </div>
@@ -156,7 +156,7 @@ export default function LivePromptPreview({ builderState }: LivePromptPreviewPro
                   );
                 })}
               </div>
-              <span className="text-[10px] text-muted-foreground">
+              <span className="text-[0.625rem] text-muted-foreground">
                 {previewSections.length}/4 {isEnglish ? 'sections defined' : 'secções definidas'}
               </span>
             </div>

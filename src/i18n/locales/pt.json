@@ -257,5 +257,12 @@
     "noBillingDesc": "Ainda não existe nenhum método de pagamento ou fatura associado à tua conta. A faturação aparece aqui após o primeiro pagamento.",
     "actions": "Ações",
     "signOut": "Terminar sessão"
+  },
+  "fontSize": {
+    "label": "Tamanho do texto",
+    "normal": "Normal",
+    "large": "Grande",
+    "xlarge": "Muito grande",
+    "desc": "Aumenta o texto em todo o site"
   }
 }

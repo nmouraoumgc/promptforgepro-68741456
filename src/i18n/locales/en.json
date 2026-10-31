@@ -257,5 +257,12 @@
     "noBillingDesc": "There is no payment method or invoice linked to your account yet. Billing will appear here after your first payment.",
     "actions": "Actions",
     "signOut": "Sign out"
+  },
+  "fontSize": {
+    "label": "Text size",
+    "normal": "Normal",
+    "large": "Large",
+    "xlarge": "Extra large",
+    "desc": "Make text larger across the site"
   }
 }

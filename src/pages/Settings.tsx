@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/select';
 import { usePromptStore } from '@/stores/promptStore';
 import { usePlanStore } from '@/stores/planStore';
+import { FontSizeSegmented } from '@/components/layout/FontSizeControl';
 import { PLAN_INFO } from '@/types/plans';
 
 export default function Settings() {
@@ -101,6 +102,13 @@ export default function Settings() {
               <p className="text-sm text-muted-foreground">{t('settings.darkModeDesc')}</p>
             </div>
             <Switch checked={darkMode} onCheckedChange={toggleDarkMode} />
+          </div>
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="font-medium">{t('fontSize.label')}</p>
+              <p className="text-sm text-muted-foreground">{t('fontSize.desc')}</p>
+            </div>
+            <FontSizeSegmented />
           </div>
         </CardContent>
       </Card>

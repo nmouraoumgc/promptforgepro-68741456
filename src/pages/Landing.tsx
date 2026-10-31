@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Check, Flame, Sparkles, Wand2, Library, Gauge, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher';
+import { FontSizeControl } from '@/components/layout/FontSizeControl';
 import { useIsEnglish } from '@/i18n/lang';
 import { Wordmark } from '@/components/brand/Wordmark';
 
@@ -86,16 +87,17 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="border-b border-border">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-2 px-3 sm:px-4">
           <Link to="/" className="flex items-center gap-2" aria-label="PromptForge Pro">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary"><Flame className="h-4 w-4 text-primary-foreground" aria-hidden="true" /></span>
-            <Wordmark className="text-lg" />
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary [html[data-fs]_&]:max-sm:hidden"><Flame className="h-4 w-4 text-primary-foreground" aria-hidden="true" /></span>
+            <Wordmark className="text-base sm:text-lg [html[data-fs=xlarge]_&]:max-sm:text-sm" />
           </Link>
-          <nav className="flex items-center gap-1 sm:gap-2" aria-label={L('Navegação principal', 'Main navigation')}>
+          <nav className="flex items-center gap-0.5 sm:gap-2" aria-label={L('Navegação principal', 'Main navigation')}>
             <Link to="/pricing" className="hidden px-2 text-sm text-muted-foreground hover:text-foreground sm:inline">{L('Preços', 'Pricing')}</Link>
             <Link to="/learn" className="hidden px-2 text-sm text-muted-foreground hover:text-foreground sm:inline">{L('Aprender', 'Learn')}</Link>
+            <FontSizeControl />
             <LanguageSwitcher />
-            <Button variant="ghost" size="sm" asChild><Link to="/login">{L('Entrar', 'Sign in')}</Link></Button>
+            <Button variant="ghost" size="sm" asChild className="px-2 sm:px-3"><Link to="/login">{L('Entrar', 'Sign in')}</Link></Button>
             <Button size="sm" asChild className="hidden sm:inline-flex"><Link to="/signup">{L('Começar grátis', 'Start free')}</Link></Button>
           </nav>
         </div>

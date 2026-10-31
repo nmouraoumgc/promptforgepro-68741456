@@ -118,7 +118,7 @@ export default function ActionableScore({ score, onAutoFix }: ActionableScorePro
       <Button variant="outline" className="w-full gap-2">
         <BookOpen className="h-4 w-4" />
         {isEnglish ? 'Learn how to improve' : 'Aprender a melhorar'}
-        {lessonLocked && <span className="inline-flex items-center gap-0.5 rounded border border-primary/40 px-1 text-[10px] font-semibold text-primary"><Lock className="h-2.5 w-2.5" />Pro</span>}
+        {lessonLocked && <span className="inline-flex items-center gap-0.5 rounded border border-primary/40 px-1 text-[0.625rem] font-semibold text-primary"><Lock className="h-2.5 w-2.5" />Pro</span>}
       </Button>
     </Link>
   );

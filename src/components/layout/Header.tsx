@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Search, User, LogOut, Settings, ShieldCheck, Palette, CreditCard } from 'lucide-react';
+import { Search, User, LogOut, Settings, ShieldCheck, Palette, CreditCard, Flame } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -14,6 +14,7 @@ import {
 import { useAuthStore } from '@/stores/authStore';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import { FontSizeControl } from './FontSizeControl';
 import { Wordmark } from '@/components/brand/Wordmark';
 
 export function Header() {
@@ -28,10 +29,14 @@ export function Header() {
   };
 
   return (
-    <header className="flex h-16 items-center justify-between border-b border-border bg-card px-4 md:px-6">
+    <header className="flex h-16 items-center justify-between gap-2 border-b border-border bg-card px-4 md:px-6">
       {/* Logo - clickable to Dashboard */}
-      <Link to="/app" aria-label="PromptForge Pro" className={`flex min-w-0 items-center gap-2 ${isMobile ? 'ml-12' : ''}`}>
-        <Wordmark className="text-base text-foreground sm:text-lg" />
+      <Link to="/app" aria-label="PromptForge Pro" className={`flex min-w-0 items-center gap-2 overflow-hidden ${isMobile ? 'ml-12' : ''}`}>
+        {/* Small screens with larger text (A+ / A++): show the compact logo so the header actions still fit. */}
+        <span className="hidden h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary [html[data-fs]_&]:max-sm:flex" aria-hidden="true">
+          <Flame className="h-4 w-4 text-primary-foreground" />
+        </span>
+        <Wordmark className="text-base text-foreground sm:text-lg [html[data-fs]_&]:max-sm:hidden" />
       </Link>
 
       {/* Actions */}
@@ -45,7 +50,8 @@ export function Header() {
           />
         </div>
 
-        {/* Language Switcher */}
+        {/* Text size + Language Switcher */}
+        <FontSizeControl />
         <LanguageSwitcher />
 
         {/* Auth Section */}
