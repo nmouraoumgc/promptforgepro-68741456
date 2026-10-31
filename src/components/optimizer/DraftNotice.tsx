@@ -11,7 +11,7 @@ export function DraftNotice({ onClear, onDismiss }: { onClear: () => void; onDis
       <span className="font-medium">{t('optimizerFlow.draftRestored')}</span>
       <span className="text-xs text-muted-foreground hidden sm:inline">{t('optimizerFlow.draftHint')}</span>
       <div className="ml-auto flex items-center gap-1">
-        <Button size="sm" variant="outline" className="h-7 text-xs" onClick={onClear} data-testid="draft-clear">{t('optimizerFlow.draftClear')}</Button>
+        <Button size="sm" variant="outline" className="h-auto min-h-7 whitespace-normal py-1 text-xs leading-snug" onClick={onClear} data-testid="draft-clear">{t('optimizerFlow.draftClear')}</Button>
         {onDismiss && (
           <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onDismiss} aria-label="OK"><X className="h-3.5 w-3.5" /></Button>
         )}

@@ -219,7 +219,7 @@ export default function PromptOptimizer({ embedded = false, initialPrompt, onSav
           </ul>
         ) : null}
         <div className="mt-3 flex flex-wrap gap-2 pt-1">
-          <Button size="sm" variant="ghost" className="h-8 gap-1.5 px-2 text-xs" data-testid={`variant-copy-${k}`}
+          <Button size="sm" variant="ghost" className="h-auto min-h-8 gap-1.5 whitespace-normal px-2 py-1 text-xs leading-snug" data-testid={`variant-copy-${k}`}
             onClick={(e) => { e.stopPropagation(); copyToClipboard(content); }}>
             <Copy className="h-3.5 w-3.5" />{t('optimizerFlow.copy')}
           </Button>
@@ -229,13 +229,13 @@ export default function PromptOptimizer({ embedded = false, initialPrompt, onSav
   };
 
   const saveButton = selected && selectedContent ? (onSaveVersion ? (
-    <Button variant="outline" className="gap-2" data-testid="optimizer-save-version" onClick={() => {
+    <Button variant="outline" className="h-auto min-h-10 w-full sm:w-auto gap-2 whitespace-normal py-2 text-center leading-snug" data-testid="optimizer-save-version" onClick={() => {
       clearDraft(userId, draftScope);
       onSaveVersion(selectedContent, labelOf(selected));
       toast({ title: isEnglish ? 'New version saved' : 'Nova versão guardada', description: isEnglish ? 'It is now the current version of this prompt.' : 'Passou a ser a versão atual deste prompt.' });
     }}><GitBranch className="h-4 w-4" />{isEnglish ? 'Save as new version' : 'Guardar como nova versão'}</Button>
   ) : (
-    <Button variant="outline" className="gap-2" data-testid="optimizer-save-library" onClick={() => {
+    <Button variant="outline" className="h-auto min-h-10 w-full sm:w-auto gap-2 whitespace-normal py-2 text-center leading-snug" data-testid="optimizer-save-library" onClick={() => {
       const source = analysedInput || inputPrompt;
       const base = source.trim().split('\n')[0].slice(0, 50);
       const isOriginal = selected === 'original';
@@ -269,7 +269,7 @@ export default function PromptOptimizer({ embedded = false, initialPrompt, onSav
             className="min-h-[160px]"
             data-testid="optimizer-input"
           />
-          <Button onClick={optimizePrompt} disabled={isOptimizing || !inputPrompt.trim()} className="w-full sm:w-auto gap-2" size="lg" variant={hasResults && !inputChanged ? 'outline' : 'default'} data-testid="optimizer-optimize">
+          <Button onClick={optimizePrompt} disabled={isOptimizing || !inputPrompt.trim()} className="h-auto min-h-11 w-full sm:w-auto gap-2 whitespace-normal py-2 text-center leading-snug" size="lg" variant={hasResults && !inputChanged ? 'outline' : 'default'} data-testid="optimizer-optimize">
             {isOptimizing ? <Zap className="h-4 w-4 animate-pulse" /> : <Sparkles className="h-4 w-4" />}
             {isOptimizing ? t('optimizerFlow.optimizing') : hasResults ? t('optimizerFlow.optimizeAgain') : t('optimizerFlow.optimize')}
           </Button>

@@ -1,3 +1,4 @@
+import { cn } from '@/lib/utils';
 import { TrendingUp, Wand2, BookOpen, AlertTriangle, CheckCircle2, Lock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -82,6 +83,9 @@ const getImprovementSuggestions = (score: ScoreData, en: boolean): string[] => {
   return suggestions.slice(0, 4);
 };
 
+// Buttons whose label may wrap (long PT labels, A+ / A++ text sizes): grow in height instead of clipping.
+const WRAP_BTN = 'h-auto min-h-10 whitespace-normal py-2 text-center leading-snug gap-2';
+
 const scoreLabelsEn: Record<string, string> = {
   clarity: 'Clarity',
   context: 'Context',
@@ -115,8 +119,8 @@ export default function ActionableScore({ score, onAutoFix, autoFixLabel }: Acti
   const lessonSlug = lessonForScore(score);
   const lessonLocked = !entitled && lessons.some((l) => l.slug === lessonSlug && !l.isFree);
   const learnLink = (className: string) => (
-    <Link to={`/learn/${lessonSlug}`} data-testid="learn-improve" data-locked={lessonLocked ? '1' : '0'} className={className}>
-      <Button variant="outline" className="w-full gap-2">
+    <Link to={`/learn/${lessonSlug}`} data-testid="learn-improve" data-locked={lessonLocked ? '1' : '0'} className={cn('flex min-w-0', className)}>
+      <Button variant="outline" className={cn(WRAP_BTN, 'w-full')}>
         <BookOpen className="h-4 w-4" />
         {isEnglish ? 'Learn how to improve' : 'Aprender a melhorar'}
         {lessonLocked && <span className="inline-flex items-center gap-0.5 rounded border border-primary/40 px-1 text-[0.625rem] font-semibold text-primary"><Lock className="h-2.5 w-2.5" />Pro</span>}
@@ -191,15 +195,15 @@ export default function ActionableScore({ score, onAutoFix, autoFixLabel }: Acti
               </ul>
             </div>
 
-            {/* Action buttons */}
-            <div className="grid grid-cols-2 gap-2">
+            {/* Action buttons: side by side only when both labels fit on one line, otherwise each wraps to its own full-width row */}
+            <div className="flex flex-wrap gap-2" data-testid="score-actions">
               {needsImprovement && onAutoFix && (
-                <Button onClick={onAutoFix} variant="outline" className="gap-2" data-testid="score-autofix">
+                <Button onClick={onAutoFix} variant="outline" className={cn(WRAP_BTN, 'flex-[1_1_auto]')} data-testid="score-autofix">
                   <Wand2 className="h-4 w-4" />
                   {autoFixLabel ?? (isEnglish ? 'Auto-fix' : 'Corrigir automaticamente')}
                 </Button>
               )}
-              {learnLink(needsImprovement && onAutoFix ? '' : 'col-span-2')}
+              {learnLink('flex-[1_1_auto]')}
             </div>
           </>
         ) : (
@@ -239,7 +243,7 @@ export default function ActionableScore({ score, onAutoFix, autoFixLabel }: Acti
                 {isEnglish ? 'Unlock' : 'Desbloquear'}
               </Button>
             </div>
-            {learnLink('block')}
+            {learnLink('w-full')}
           </div>
         )}
       </CardContent>

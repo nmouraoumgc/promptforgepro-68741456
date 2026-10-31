@@ -87,7 +87,7 @@ export function RunPrompt({ prompt, compact = false, className, withBrand = fals
   return (
     <div className={cn('space-y-3', className)} data-testid="run-prompt">
       <div className="flex flex-wrap items-center gap-3">
-        <Button onClick={run} disabled={running || !prompt.trim() || limitHit} size={compact ? 'sm' : 'default'} className="gap-2" data-testid="run-button">
+        <Button onClick={run} disabled={running || !prompt.trim() || limitHit} size={compact ? 'sm' : 'default'} className={cn('h-auto gap-2 whitespace-normal py-2 text-center leading-snug', compact ? 'min-h-9' : 'min-h-10')} data-testid="run-button">
           {running ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
           {running ? (isEnglish ? 'Running...' : 'A executar...') : (isEnglish ? 'Run' : 'Executar')}
         </Button>
@@ -108,9 +108,9 @@ export function RunPrompt({ prompt, compact = false, className, withBrand = fals
       {result && (
         <Card className="bg-muted/40" data-testid="run-result">
           <CardContent className="p-4 space-y-2">
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-sm font-medium">{isEnglish ? 'AI answer' : 'Resposta da IA'}{brandUsed && <span className="ml-2 text-xs font-normal text-muted-foreground" data-testid="run-brand">· {isEnglish ? 'brand' : 'marca'}: {brandUsed}</span>}</p>
-              <Button variant="outline" size="sm" onClick={copy} className="gap-1" data-testid="run-copy">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="min-w-0 text-sm font-medium">{isEnglish ? 'AI answer' : 'Resposta da IA'}{brandUsed && <span className="ml-2 text-xs font-normal text-muted-foreground" data-testid="run-brand">· {isEnglish ? 'brand' : 'marca'}: {brandUsed}</span>}</p>
+              <Button variant="outline" size="sm" onClick={copy} className="h-auto min-h-9 shrink-0 gap-1.5 whitespace-normal py-1.5 leading-snug" data-testid="run-copy">
                 {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}{isEnglish ? 'Copy' : 'Copiar'}
               </Button>
             </div>

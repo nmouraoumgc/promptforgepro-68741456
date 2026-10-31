@@ -87,10 +87,14 @@ export const usePlanStore = create<PlanStore>()(
 // update polled by success pages). Without this, planStore would be stuck at
 // whatever was last set client-side, including unauthenticated 'free'.
 let lastSyncedPlan: PlanType | null = null;
-useAuthStore.subscribe((state) => {
+const syncPlan = (state: ReturnType<typeof useAuthStore.getState>) => {
   const serverPlan = state.profile?.current_plan ?? 'free';
   if (serverPlan !== lastSyncedPlan) {
     lastSyncedPlan = serverPlan;
     usePlanStore.setState({ currentPlan: serverPlan });
   }
-});
+};
+useAuthStore.subscribe(syncPlan);
+// This module is in a lazy chunk: the profile may already be loaded when it first runs,
+// so mirror the current value now instead of waiting for the next auth store change.
+syncPlan(useAuthStore.getState());
