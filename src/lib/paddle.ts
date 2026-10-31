@@ -18,6 +18,12 @@ export function getPaddleEnvironment(): "sandbox" | "live" {
 
 let paddleInitialized = false;
 
+// Individual (B2C) checkout: hide Paddle's optional "Add tax number" (business purchase) toggle.
+// When a buyer opened it by mistake, Paddle made Company name + VAT number mandatory
+// ("front-end_error | validation | Company name is required / VAT number is required").
+// Paddle is merchant of record and computes tax from the buyer's country, so no business data is needed.
+export const CHECKOUT_TAX_SETTINGS = { showAddTaxId: false } as const;
+
 // ---------- Checkout event telemetry ----------
 // Records Paddle.js checkout lifecycle events (no PII: only event name, Paddle
 // transaction id, country, payment method type and error code) via the
@@ -153,6 +159,7 @@ export async function initializePaddle(): Promise<void> {
         window.Paddle.Initialize({
           token: clientToken,
           eventCallback: handlePaddleEvent,
+          checkout: { settings: { ...CHECKOUT_TAX_SETTINGS } },
           ...(retainCustomerId ? { pwCustomer: { id: retainCustomerId } } : {}),
         });
         paddleInitialized = true;

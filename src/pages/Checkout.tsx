@@ -198,6 +198,7 @@ const Checkout = () => {
         successUrl: `${window.location.origin}/purchase-success`,
         allowLogout: false,
         variant: "one-page",
+        showAddTaxId: false,
       };
       if (check.transactionId) {
         // Discount flow: transaction (price + discount + customer + customData) created server-side.

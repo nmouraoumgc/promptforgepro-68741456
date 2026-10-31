@@ -254,6 +254,7 @@ export default function Pricing() {
         successUrl: `${window.location.origin}/subscription-success`,
         allowLogout: false,
         variant: 'one-page',
+        showAddTaxId: false,
       };
 
       if (transactionId) {
