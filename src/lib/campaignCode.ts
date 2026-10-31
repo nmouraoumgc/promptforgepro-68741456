@@ -33,13 +33,13 @@ export function getCampaignCode(): string {
 }
 
 /** Campaign attribution ({c, r}) saved by trackCampaignLanding; same storage rules as the code. */
-export function saveCampaignAttribution(v: { c: string; r?: string }) {
+export function saveCampaignAttribution(v: { c: string; r?: string; s?: 'link' | 'referrer' }) {
   const s = JSON.stringify(v);
   try { sessionStorage.setItem(ATTR_KEY, s); } catch { /* ignore */ }
   try { localStorage.setItem(ATTR_KEY, JSON.stringify({ v, exp: Date.now() + TTL_MS })); } catch { /* ignore */ }
 }
 
-export function getCampaignAttribution(): { c?: string; r?: string } | null {
+export function getCampaignAttribution(): { c?: string; r?: string; s?: string } | null {
   try {
     const s = sessionStorage.getItem(ATTR_KEY);
     if (s) return JSON.parse(s);

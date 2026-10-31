@@ -3,6 +3,7 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { PlanType } from '@/types/plans';
 import { identifyUser, resetAnalytics, setUserPlan } from '@/lib/analytics';
+import { syncSignupChannel } from '@/lib/campaignLanding';
 
 interface Profile {
   id: string;
@@ -172,6 +173,7 @@ supabase.auth.onAuthStateChange((event, session) => {
       } finally {
         store.setIsLoading(false);
       }
+      syncSignupChannel();
     }, 0);
   } else {
     store.setProfile(null);
