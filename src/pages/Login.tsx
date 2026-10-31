@@ -156,6 +156,11 @@ export default function Login() {
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
+                <div className="text-right">
+                  <Link to={email.trim() ? `/forgot-password?email=${encodeURIComponent(email.trim())}` : '/forgot-password'} className="text-sm text-muted-foreground hover:text-foreground hover:underline">
+                    {isEnglish ? 'Forgot your password?' : 'Esqueci-me da password'}
+                  </Link>
+                </div>
               </div>
 
               <Button

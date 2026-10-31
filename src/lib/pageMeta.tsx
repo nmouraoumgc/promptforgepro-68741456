@@ -9,7 +9,7 @@ const BRAND = 'PromptForge Pro';
 const SITE = 'https://promptforgepro.me';
 const OG_IMAGE = `${SITE}/og-image.png`;
 // App-only screens: useful to members, not to search results.
-const NOINDEX = /^\/(app|create|library|brand|settings|checkout|purchase-success|subscription-success|account|admin|unsubscribe|builder|quick|optimizer|versions|tester)(\/|$)/;
+const NOINDEX = /^\/(app|create|library|brand|settings|checkout|purchase-success|subscription-success|account|admin|unsubscribe|forgot-password|reset-password|builder|quick|optimizer|versions|tester)(\/|$)/;
 
 const META: Record<string, { pt: Meta; en: Meta }> = {
   '/': {
@@ -95,6 +95,14 @@ const META: Record<string, { pt: Meta; en: Meta }> = {
   '/login': {
     pt: { title: 'Iniciar sessão', description: 'Entra na tua conta PromptForge Pro.' },
     en: { title: 'Sign in', description: 'Sign in to your PromptForge Pro account.' },
+  },
+  '/forgot-password': {
+    pt: { title: 'Recuperar password', description: 'Recebe um link para definir uma nova password.' },
+    en: { title: 'Recover password', description: 'Get a link to set a new password.' },
+  },
+  '/reset-password': {
+    pt: { title: 'Nova password', description: 'Define uma nova password para a tua conta.' },
+    en: { title: 'New password', description: 'Set a new password for your account.' },
   },
   '/signup': {
     pt: { title: 'Criar conta', description: 'Cria a tua conta grátis e começa a escrever prompts melhores.' },

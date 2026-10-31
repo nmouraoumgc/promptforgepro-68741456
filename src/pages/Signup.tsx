@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Flame, Mail, MailCheck, Lock, Eye, EyeOff } from 'lucide-react';
+import { Flame, Mail, MailCheck, Lock, Eye, EyeOff, UserCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -24,6 +24,7 @@ export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+  const [existingEmail, setExistingEmail] = useState<string | null>(null);
   
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -65,7 +66,7 @@ export default function Signup() {
       return;
     }
 
-    const { error, needsConfirmation } = await signUp(email, password);
+    const { error, needsConfirmation, alreadyRegistered } = await signUp(email, password);
 
     if (error) {
       toast({
@@ -73,6 +74,10 @@ export default function Signup() {
         description: /DISPOSABLE_EMAIL/.test(error.message || '') ? disposableMsg : (error.message || (isEnglish ? 'Try again.' : 'Tenta novamente.')),
         variant: 'destructive',
       });
+    } else if (alreadyRegistered) {
+      // Repeated signup of an existing email: Supabase sent nothing, so don't show "check your email".
+      track('signup_existing_email', { method: 'email' });
+      setExistingEmail(email.trim());
     } else if (needsConfirmation) {
       track('signup_completed', { method: 'email', needs_confirmation: true });
       // Email confirmation required: no session yet. Show the "check your email" state.
@@ -105,7 +110,32 @@ export default function Signup() {
           <Wordmark className="text-xl  text-foreground" />
         </Link>
 
-        {pendingEmail ? (
+        {existingEmail ? (
+        <Card data-testid="signup-existing-email">
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+              <UserCheck className="h-6 w-6 text-primary" />
+            </div>
+            <CardTitle className="text-2xl">{isEnglish ? 'Account already exists' : 'Conta já existente'}</CardTitle>
+            <CardDescription role="alert">
+              {isEnglish
+                ? 'This email already has an account. Sign in or recover your password.'
+                : 'Este email já tem conta. Inicie sessão ou recupere a password.'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Button asChild className="w-full h-11">
+              <Link to={redirectParam ? `/login?redirect=${encodeURIComponent(redirectParam)}` : "/login"}>{isEnglish ? 'Sign in' : 'Iniciar sessão'}</Link>
+            </Button>
+            <Button asChild variant="outline" className="w-full h-11">
+              <Link to={`/forgot-password?email=${encodeURIComponent(existingEmail)}`}>{isEnglish ? 'Recover password' : 'Recuperar password'}</Link>
+            </Button>
+            <button type="button" onClick={() => setExistingEmail(null)} className="w-full text-sm text-muted-foreground hover:text-foreground">
+              {isEnglish ? 'Use a different email' : 'Usar outro email'}
+            </button>
+          </CardContent>
+        </Card>
+        ) : pendingEmail ? (
         <Card>
           <CardHeader className="text-center">
             <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">

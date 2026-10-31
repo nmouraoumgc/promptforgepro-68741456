@@ -26,7 +26,8 @@ interface AuthStore {
   setIsLoading: (isLoading: boolean) => void;
   
   // Auth methods
-  signUp: (email: string, password: string) => Promise<{ error: Error | null; needsConfirmation: boolean }>;
+  signUp: (email: string, password: string) => Promise<{ error: Error | null; needsConfirmation: boolean; alreadyRegistered: boolean }>;
+  requestPasswordReset: (email: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null; emailNotConfirmed: boolean }>;
   resendConfirmation: (email: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -47,6 +48,12 @@ export const initialAuthUrlError: { code: string; description: string } | null =
 })();
 
 export const emailConfirmRedirect = () => `${window.location.origin}/login?confirmed=1`;
+export const PASSWORD_RESET_REDIRECT = 'https://promptforgepro.me/reset-password';
+export const RECOVERY_FLAG = 'pfp_password_recovery';
+// Captured at module load too: a recovery link lands with #...&type=recovery before supabase-js clears it.
+if (typeof window !== 'undefined' && /(^|[#&?])type=recovery(&|$)/.test(window.location.hash || window.location.search)) {
+  try { sessionStorage.setItem(RECOVERY_FLAG, '1'); } catch { /* ignore */ }
+}
 
 export const useAuthStore = create<AuthStore>((set, get) => ({
   user: null,
@@ -68,8 +75,15 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       options: { emailRedirectTo: emailConfirmRedirect() },
     });
     // With "Confirm email" enabled, signUp returns a user but no session until the link is clicked.
-    // (For an already-registered email Supabase also returns no session, and sends no new mail.)
-    return { error: error as Error | null, needsConfirmation: !error && !data.session };
+    // For an already-registered email Supabase returns an obfuscated user with an empty `identities`
+    // array, no session, and sends no mail: report it so the UI doesn't claim a link was sent.
+    const alreadyRegistered = !error && !!data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0;
+    return { error: error as Error | null, needsConfirmation: !error && !alreadyRegistered && !data.session, alreadyRegistered };
+  },
+
+  requestPasswordReset: async (email) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: PASSWORD_RESET_REDIRECT });
+    return { error: error as Error | null };
   },
   
   signIn: async (email, password) => {
@@ -143,6 +157,12 @@ supabase.auth.onAuthStateChange((event, session) => {
 
   if (session?.user) identifyUser(session.user.id);
   else if (event === 'SIGNED_OUT') resetAnalytics();
+
+  // Recovery link landed anywhere (e.g. Site URL fallback): send the user to set a new password.
+  if (event === 'PASSWORD_RECOVERY') {
+    try { sessionStorage.setItem(RECOVERY_FLAG, '1'); } catch { /* ignore */ }
+    if (window.location.pathname !== '/reset-password') window.location.replace('/reset-password');
+  }
 
   // Defer async operations with setTimeout to prevent deadlock
   if (session?.user) {

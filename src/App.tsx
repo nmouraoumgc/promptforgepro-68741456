@@ -30,6 +30,8 @@ const PurchaseSuccess = lazy(() => import("@/pages/PurchaseSuccess"));
 const SubscriptionSuccess = lazy(() => import("@/pages/SubscriptionSuccess"));
 const Login = lazy(() => import("@/pages/Login"));
 const Signup = lazy(() => import("@/pages/Signup"));
+const ForgotPassword = lazy(() => import("@/pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
 const Account = lazy(() => import("@/pages/Account"));
 const Admin = lazy(() => import("@/pages/Admin"));
 const Terms = lazy(() => import("@/pages/legal/Terms"));
@@ -56,6 +58,8 @@ const App = () => (
           {/* Auth routes (no layout) */}
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
 
           {/* Public legal pages (no auth required) */}
           <Route path="/terms" element={<Terms />} />
