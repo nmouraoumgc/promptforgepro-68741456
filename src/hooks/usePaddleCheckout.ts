@@ -29,6 +29,7 @@ export function usePaddleCheckout() {
             options.successUrl || `${window.location.origin}/purchase-success`,
           allowLogout: false,
           variant: "one-page",
+          showAddTaxId: false,
         },
       });
     } finally {
