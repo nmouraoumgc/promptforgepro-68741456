@@ -7,6 +7,9 @@
 // Campaign 'welcome100' (code WELCOME100, any batch) uses its own template and needs no expires_at.
 // Campaign 'ACTIVATION1' (any batch, e.g. TEST, PILOT) uses the activation template (no code, no expires_at); before each
 // send it re-checks the user is still free with 0 runs, otherwise the row stays pending and counts as skipped_ineligible.
+// Campaign 'ONEHACK_REMIND' (code ONEHACK100, batch 'main' | 'failed'; QA rows: ONEHACK_REMIND_QA1/_QA2) needs no expires_at.
+// Codes left are re-read from Paddle (GET) on every preview/send, which stops if none are left; before each send it
+// re-checks the user is still free (no active sub/override) and has not completed ONEHACK100 (else skipped_ineligible).
 // Callers: an admin user JWT, or an internal caller (service role / Vault cron secret via pg_net, as dunning-cron).
 // Sends one email per pending row via Resend with ~4 req/s throttling, idempotency keys,
 // List-Unsubscribe headers, and stops on quota/rate errors. Never logs addresses or keys.
@@ -14,6 +17,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 import { gatewayFetch } from '../_shared/paddle.ts';
 import { renderA1, BATCH_CODES } from '../_shared/campaignA1.ts';
 import { renderWelcome100, WELCOME100_CODE } from '../_shared/campaignWelcome100.ts';
+import { renderOnehackRemind, ONEHACK_REMIND_CAMPAIGN, ONEHACK_REMIND_BATCHES, ONEHACK100_CODE, ONEHACK100_DISCOUNT_ID } from '../_shared/campaignOnehackRemind.ts';
 import { isInternalCaller } from '../_shared/internalAuth.ts';
 import { renderActivation, ACTIVATION_KEY } from '../_shared/campaignActivation.ts';
 
@@ -73,10 +77,21 @@ Deno.serve(async (req) => {
     if (b.action === 'preview' || b.action === 'send') {
       const isWelcome = campaign === 'welcome100';
       const isActivation = campaign === ACTIVATION_KEY;
-      if (!isWelcome && !isActivation && isNaN(Date.parse(b.expires_at))) return json({ error: 'expires_at required' }, 400);
-      const code = isActivation ? '' : isWelcome ? WELCOME100_CODE : BATCH_CODES[batch];
+      const isOhRemind = campaign === ONEHACK_REMIND_CAMPAIGN || /^ONEHACK_REMIND_QA[12]$/.test(campaign);
+      if (isOhRemind && !ONEHACK_REMIND_BATCHES.includes(batch)) return json({ error: `unknown batch ${batch}` }, 400);
+      let usesLeft = 0;
+      if (isOhRemind) {
+        const dr = await gatewayFetch('live', `/discounts/${ONEHACK100_DISCOUNT_ID}`, { method: 'GET' });
+        const dd = await dr.json().catch(() => ({}));
+        const d = dd?.data;
+        if (!dr.ok || d?.status !== 'active' || (d?.expires_at && Date.parse(d.expires_at) <= Date.now())) return json({ error: 'ONEHACK100 not active' }, 409);
+        usesLeft = Number(d.usage_limit ?? 0) - Number(d.times_used ?? 0);
+        if (!(usesLeft > 0)) return json({ error: 'ONEHACK100 has no uses left', usesLeft }, 409);
+      }
+      if (!isWelcome && !isActivation && !isOhRemind && isNaN(Date.parse(b.expires_at))) return json({ error: 'expires_at required' }, 400);
+      const code = isActivation ? '' : isOhRemind ? ONEHACK100_CODE : isWelcome ? WELCOME100_CODE : BATCH_CODES[batch];
       if (!code && !isActivation) return json({ error: `no discount code configured for batch ${batch}` }, 400);
-      const expiresLisbon = isWelcome || isActivation ? '' : lisbon(b.expires_at);
+      const expiresLisbon = isWelcome || isActivation || isOhRemind ? '' : lisbon(b.expires_at);
       const max = Math.min(Number(b.max ?? 100), 100);
       const { data: rows, error } = await admin.from('campaign_sends')
         .select('id, user_id, email, first_name').eq('campaign', campaign).eq('batch', batch).eq('status', 'pending').order('created_at').limit(max);
@@ -101,16 +116,34 @@ Deno.serve(async (req) => {
         for (const x of su.data ?? []) ineligible.add(x.user_id);
         for (const x of ov.data ?? []) if (!x.expires_at || Date.parse(x.expires_at) > Date.now()) ineligible.add(x.user_id);
       }
+      // ONEHACK_REMIND eligibility, re-checked at send time: Free plan, no active subscription / override, ONEHACK100 not completed.
+      if (isOhRemind && ids.length) {
+        const [pr, su, ov, ca] = await Promise.all([
+          admin.from('profiles').select('id, current_plan').in('id', ids),
+          admin.from('subscriptions').select('user_id').in('user_id', ids).in('status', ['active', 'trialing', 'past_due']),
+          admin.from('plan_overrides').select('user_id, expires_at').in('user_id', ids),
+          admin.from('checkout_attempts').select('user_id').in('user_id', ids).eq('discount_code', ONEHACK100_CODE).eq('status', 'completed'),
+        ]);
+        if (pr.error || su.error || ov.error || ca.error) throw new Error('eligibility check failed');
+        const plan = new Map((pr.data ?? []).map((x) => [x.id, x.current_plan]));
+        for (const id of ids) if ((plan.get(id) ?? 'free') !== 'free') ineligible.add(id);
+        for (const x of su.data ?? []) ineligible.add(x.user_id);
+        for (const x of ov.data ?? []) if (!x.expires_at || Date.parse(x.expires_at) > Date.now()) ineligible.add(x.user_id);
+        for (const x of ca.data ?? []) ineligible.add(x.user_id);
+      }
       const build = (r: { id: string; user_id: string; first_name: string | null }) => {
         const t = pref.get(r.user_id)!.unsubscribe_token;
-        const claimUrl = `${SITE}/pricing?code=${code}&c=${encodeURIComponent(batch)}&r=${r.id}`;
+        const claimUrl = isOhRemind
+          ? `${SITE}/pricing?code=${code}&lang=en&c=${campaign}&r=${r.id}`
+          : `${SITE}/pricing?code=${code}&c=${encodeURIComponent(batch)}&r=${r.id}`;
         const unsubscribeUrl = `${SITE}/unsubscribe?t=${t}`;
         const rendered = isActivation ? renderActivation({ sendId: r.id, unsubscribeUrl })
+          : isOhRemind ? renderOnehackRemind({ variant: batch, claimUrl, unsubscribeUrl, usesLeft })
           : isWelcome ? renderWelcome100({ claimUrl, unsubscribeUrl }) : renderA1({ firstName: r.first_name, expiresLisbon, code, claimUrl, unsubscribeUrl });
         return { ...rendered,
           oneClick: `${Deno.env.get('SUPABASE_URL')}/functions/v1/unsubscribe?t=${t}` };
       };
-      if (b.action === 'preview') return json({ pending: rows?.length ?? 0, expiresLisbon, code, ineligible: ineligible.size, subject: rows?.[0] ? build(rows[0]).subject : null, sample: rows?.[0] ? build(rows[0]).html : null });
+      if (b.action === 'preview') return json({ pending: rows?.length ?? 0, expiresLisbon, code, ...(isOhRemind ? { usesLeft } : {}), ineligible: ineligible.size, subject: rows?.[0] ? build(rows[0]).subject : null, sample: rows?.[0] ? build(rows[0]).html : null });
 
       const dry = b.dry_run !== false;
       const key = Deno.env.get('RESEND_API_KEY');
