@@ -22,7 +22,8 @@ import ActionableScore from '@/components/optimizer/ActionableScore';
 import { DraftNotice } from '@/components/optimizer/DraftNotice';
 import { supabase } from '@/integrations/supabase/client';
 import { localizeApiError } from '@/i18n/lang';
-import { clearDraft, useDraftAutosave, useInitialDraft } from '@/lib/draft';
+import { clearDraft, saveDraft, useDraftAutosave, useInitialDraft } from '@/lib/draft';
+import { readUrlPrompt, searchWithoutPrompt } from '@/lib/urlPrefill';
 import { cn } from '@/lib/utils';
 
 type VariantKey = OptimizationVariant['type'] | 'original';
@@ -55,19 +56,18 @@ export default function PromptOptimizer({ embedded = false, initialPrompt, onSav
   const location = useLocation();
   const navigate = useNavigate();
   const addPrompt = usePromptStore((s) => s.addPrompt);
-  const prefill = (location.state as { prefill?: string } | null)?.prefill;
+  const statePrefill = (location.state as { prefill?: string } | null)?.prefill;
+  // ?prompt= (e.g. an email CTA): plain text, max 2000 chars, only fills the box (never runs). Create screen only.
+  const hasUrlPrompt = initialPrompt === undefined && new URLSearchParams(location.search).has('prompt');
+  const [urlPrompt] = useState(() => (initialPrompt === undefined ? readUrlPrompt(location.search) : ''));
+  const prefill = statePrefill || urlPrompt || undefined;
   const { user } = useAuthStore();
   const userId = user?.id;
-  // A prefill from a Learn lesson wins over an old draft; a library draft only applies to the same content.
+  // A prefill (Learn lesson or ?prompt= link) wins over an old draft; a library draft only applies to the same content.
   const rawDraft = useInitialDraft<OptimizerDraft>(userId, draftScope, !prefill);
   const draft = rawDraft && rawDraft.input && (initialPrompt === undefined || rawDraft.base === initialPrompt) ? rawDraft : null;
 
   const [inputPrompt, setInputPrompt] = useState(draft?.input ?? initialPrompt ?? prefill ?? '');
-  // Prefill from a Learn lesson ("Experimenta já"), then clear the history state so a reload starts clean.
-  useEffect(() => {
-    if (prefill) navigate({ pathname: location.pathname, search: location.search }, { replace: true, state: null });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
   const [optimizations, setOptimizations] = useState<OptimizationVariant[]>(draft?.optimizations ?? []);
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [score, setScore] = useState<PromptScore | null>(draft?.score ?? null);
@@ -78,6 +78,14 @@ export default function PromptOptimizer({ embedded = false, initialPrompt, onSav
   const [showRestored, setShowRestored] = useState(!!draft && (draft.input !== (initialPrompt ?? '') || (draft.optimizations?.length ?? 0) > 0));
   // Per-prompt optimisation counter key (Free/Packs limit); kept in the draft so a reload does not reset it.
   const [currentPromptId, setCurrentPromptId] = useState(() => draft?.promptKey ?? `prompt-${Date.now()}`);
+  // Prefill from a Learn lesson ("Experimenta já") or ?prompt=, then clear the history state and drop ?prompt=
+  // from the URL (replace) so a reload or a shared URL starts clean.
+  useEffect(() => {
+    // The prefilled text replaces any older draft right away, so a reload keeps it.
+    if (prefill && userId) saveDraft(userId, draftScope, { input: prefill, base: initialPrompt, promptKey: currentPromptId, optimizations: [], improvements: [], score: null, selected: null, analysedInput: '', runResults: {} } as OptimizerDraft);
+    if (statePrefill || hasUrlPrompt) navigate({ pathname: location.pathname, search: hasUrlPrompt ? searchWithoutPrompt(location.search) : location.search, hash: location.hash }, { replace: true, state: null });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const runRef = useRef<HTMLDivElement>(null);
 
   const { toast } = useToast();

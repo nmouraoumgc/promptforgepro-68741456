@@ -5,6 +5,8 @@
 //  send            {campaign, batch, expires_at, dry_run=true, max=100}
 //  events          {campaign, batch}                        -> Resend last_event counts for sent rows (no addresses returned)
 // Campaign 'welcome100' (code WELCOME100, any batch) uses its own template and needs no expires_at.
+// Campaign 'ACTIVATION1' (any batch, e.g. TEST, PILOT) uses the activation template (no code, no expires_at); before each
+// send it re-checks the user is still free with 0 runs, otherwise the row stays pending and counts as skipped_ineligible.
 // Callers: an admin user JWT, or an internal caller (service role / Vault cron secret via pg_net, as dunning-cron).
 // Sends one email per pending row via Resend with ~4 req/s throttling, idempotency keys,
 // List-Unsubscribe headers, and stops on quota/rate errors. Never logs addresses or keys.
@@ -13,6 +15,7 @@ import { gatewayFetch } from '../_shared/paddle.ts';
 import { renderA1, BATCH_CODES } from '../_shared/campaignA1.ts';
 import { renderWelcome100, WELCOME100_CODE } from '../_shared/campaignWelcome100.ts';
 import { isInternalCaller } from '../_shared/internalAuth.ts';
+import { renderActivation, ACTIVATION_KEY } from '../_shared/campaignActivation.ts';
 
 const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type' };
 const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { ...cors, 'Content-Type': 'application/json' } });
@@ -69,10 +72,11 @@ Deno.serve(async (req) => {
 
     if (b.action === 'preview' || b.action === 'send') {
       const isWelcome = campaign === 'welcome100';
-      if (!isWelcome && isNaN(Date.parse(b.expires_at))) return json({ error: 'expires_at required' }, 400);
-      const code = isWelcome ? WELCOME100_CODE : BATCH_CODES[batch];
-      if (!code) return json({ error: `no discount code configured for batch ${batch}` }, 400);
-      const expiresLisbon = isWelcome ? '' : lisbon(b.expires_at);
+      const isActivation = campaign === ACTIVATION_KEY;
+      if (!isWelcome && !isActivation && isNaN(Date.parse(b.expires_at))) return json({ error: 'expires_at required' }, 400);
+      const code = isActivation ? '' : isWelcome ? WELCOME100_CODE : BATCH_CODES[batch];
+      if (!code && !isActivation) return json({ error: `no discount code configured for batch ${batch}` }, 400);
+      const expiresLisbon = isWelcome || isActivation ? '' : lisbon(b.expires_at);
       const max = Math.min(Number(b.max ?? 100), 100);
       const { data: rows, error } = await admin.from('campaign_sends')
         .select('id, user_id, email, first_name').eq('campaign', campaign).eq('batch', batch).eq('status', 'pending').order('created_at').limit(max);
@@ -81,26 +85,44 @@ Deno.serve(async (req) => {
       await admin.rpc('ensure_email_preferences', { _user_ids: ids });
       const { data: prefs } = await admin.from('email_preferences').select('user_id, marketing_unsubscribed, unsubscribe_token').in('user_id', ids.length ? ids : ['00000000-0000-0000-0000-000000000000']);
       const pref = new Map((prefs ?? []).map((p) => [p.user_id, p]));
+      // ACTIVATION1 eligibility, re-checked at send time: Free plan, no active subscription / override, 0 runs.
+      const ineligible = new Set<string>();
+      if (isActivation && ids.length) {
+        const [pr, us, su, ov] = await Promise.all([
+          admin.from('profiles').select('id, current_plan').in('id', ids),
+          admin.from('prompt_run_usage').select('user_id').in('user_id', ids).gt('runs', 0),
+          admin.from('subscriptions').select('user_id').in('user_id', ids).in('status', ['active', 'trialing', 'past_due']),
+          admin.from('plan_overrides').select('user_id, expires_at').in('user_id', ids),
+        ]);
+        if (pr.error || us.error || su.error || ov.error) throw new Error('eligibility check failed');
+        const plan = new Map((pr.data ?? []).map((x) => [x.id, x.current_plan]));
+        for (const id of ids) if ((plan.get(id) ?? 'free') !== 'free') ineligible.add(id);
+        for (const x of us.data ?? []) ineligible.add(x.user_id);
+        for (const x of su.data ?? []) ineligible.add(x.user_id);
+        for (const x of ov.data ?? []) if (!x.expires_at || Date.parse(x.expires_at) > Date.now()) ineligible.add(x.user_id);
+      }
       const build = (r: { id: string; user_id: string; first_name: string | null }) => {
         const t = pref.get(r.user_id)!.unsubscribe_token;
         const claimUrl = `${SITE}/pricing?code=${code}&c=${encodeURIComponent(batch)}&r=${r.id}`;
         const unsubscribeUrl = `${SITE}/unsubscribe?t=${t}`;
-        const rendered = isWelcome ? renderWelcome100({ claimUrl, unsubscribeUrl }) : renderA1({ firstName: r.first_name, expiresLisbon, code, claimUrl, unsubscribeUrl });
+        const rendered = isActivation ? renderActivation({ sendId: r.id, unsubscribeUrl })
+          : isWelcome ? renderWelcome100({ claimUrl, unsubscribeUrl }) : renderA1({ firstName: r.first_name, expiresLisbon, code, claimUrl, unsubscribeUrl });
         return { ...rendered,
           oneClick: `${Deno.env.get('SUPABASE_URL')}/functions/v1/unsubscribe?t=${t}` };
       };
-      if (b.action === 'preview') return json({ pending: rows?.length ?? 0, expiresLisbon, code, sample: rows?.[0] ? build(rows[0]).html : null });
+      if (b.action === 'preview') return json({ pending: rows?.length ?? 0, expiresLisbon, code, ineligible: ineligible.size, subject: rows?.[0] ? build(rows[0]).subject : null, sample: rows?.[0] ? build(rows[0]).html : null });
 
       const dry = b.dry_run !== false;
       const key = Deno.env.get('RESEND_API_KEY');
       if (!dry && !key) return json({ error: 'RESEND_API_KEY missing' }, 500);
-      const out = { dry_run: dry, attempted: 0, sent: 0, skipped_unsubscribed: 0, failed: 0, stopped: null as null | string, quota: {} as Record<string, string | null> };
+      const out = { dry_run: dry, attempted: 0, sent: 0, skipped_unsubscribed: 0, skipped_ineligible: 0, failed: 0, stopped: null as null | string, quota: {} as Record<string, string | null> };
       for (const r of rows ?? []) {
         const p = pref.get(r.user_id);
         if (!p || p.marketing_unsubscribed) {
           if (!dry) await admin.from('campaign_sends').update({ status: 'skipped_unsubscribed' }).eq('id', r.id);
           out.skipped_unsubscribed++; continue;
         }
+        if (ineligible.has(r.user_id)) { out.skipped_ineligible++; continue; }
         out.attempted++;
         if (dry) continue;
         // Claim the row first so a parallel/retried run can't double-send.
