@@ -167,7 +167,7 @@ Formato da resposta:
     if (!response.ok) {
       if (response.status === 429) {
         return new Response(
-          JSON.stringify({ error: 'Limite de pedidos excedido. Tenta novamente mais tarde.' }),
+          JSON.stringify({ error: 'O fornecedor de IA limitou temporariamente os pedidos. Tenta novamente mais tarde. / The AI provider temporarily rate-limited requests. Please try again later.', code: 'AI_RATE_LIMIT' }),
           { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }

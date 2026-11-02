@@ -90,6 +90,16 @@ test('actual optimize-prompt handler checks quota, validates AI and only then co
   assert.equal((await unavailable(request({prompt:'QA prompt'}))).status,503);
 });
 
+test('actual Pro optimizer distinguishes provider rate limits and releases quota without a charge',async()=>{
+  await reset('pro');
+  const handler=await loadEdge('supabase/functions/optimize-prompt/index.ts',{auth:auth(true),rpc,fetch:async()=>new Response(null,{status:429})});
+  const response=await handler(request({prompt:'QA provider rate limit',brandId:null}));
+  assert.equal(response.status,429);assert.equal((await response.json()).code,'AI_RATE_LIMIT');
+  const row=(await database.query('select successes,pending_token from prompt_optimization_usage')).rows[0];
+  assert.equal(row.successes,0);assert.equal(row.pending_token,null);
+  assert.equal((await database.query('select successes from prompt_optimization_daily_usage')).rows[0].successes,0);
+});
+
 
 test('integrated optimizer preserves task brand selection and server quota together',async()=>{
   await reset('free');let providerCalls=0;const selections=[];
@@ -157,10 +167,10 @@ test('daily renewal does not reset the lifetime per-prompt limit',async()=>{
 });
 
 
-function entitlementClient({plan='free',override=null,roles=[],fail=false}={}) {
+function entitlementClient({plan='free',override=null,roles=[],subscriptions=[],purchases=[],fail=false,failPaid=false}={}) {
   return () => ({rpc,auth:{getUser:async()=>({data:{user:{id:UID,email:QA}},error:null})},from:(table)=>{
     const filters={};
-    const result=()=>({data:table==='profiles'?{current_plan:plan}:table==='user_roles'?roles:override,error:fail?new Error('lookup unavailable'):null});
+    const result=()=>({data:table==='profiles'?{current_plan:plan}:table==='user_roles'?roles:table==='subscriptions'?subscriptions:table==='purchases'?purchases:override,error:fail||(failPaid&&['subscriptions','purchases'].includes(table))?new Error('lookup unavailable'):null});
     const builder={select:()=>builder,eq:(key,value)=>{filters[key]=value;assert.equal(value,UID);return builder;},maybeSingle:async()=>result(),then:(ok,no)=>Promise.resolve(result()).then(ok,no)};
     return builder;
   }});
@@ -173,6 +183,31 @@ test('real auth helper honors active Pro/Premium overrides, ignores expired over
   }
   const unavailable=await loadEdge('supabase/functions/_shared/auth.ts',{realAuth:true,exportedModule:true,clientFactory:entitlementClient({fail:true})});
   assert.equal((await unavailable.authenticateRequest(new Request('https://qa.invalid',{headers:{Authorization:'Bearer LOCAL_QA_FAKE'}}))).status,503);
+});
+test('expired Pro override must not keep Pro through a stale profiles.current_plan cache',async()=>{
+  const exports=await loadEdge('supabase/functions/_shared/auth.ts',{realAuth:true,exportedModule:true,clientFactory:entitlementClient({plan:'pro',override:{plan:'pro',expires_at:'2000-01-01T00:00:00Z'}})});
+  const result=await exports.authenticateRequest(new Request('https://qa.invalid',{headers:{Authorization:'Bearer LOCAL_QA_FAKE'}}));
+  assert.equal(result.isPremium,false);
+});
+test('expired override preserves paid rights, rejects expired subscriptions, and fails closed on paid-source errors',async()=>{
+  const expired={plan:'pro',expires_at:'2000-01-01T00:00:00Z'};
+  const cases=[
+    {subscriptions:[{price_id:'pro_annual',status:'active',current_period_end:'2099-01-01T00:00:00Z'}],premium:true,packs:true},
+    {subscriptions:[{price_id:'pro_monthly',status:'canceled',current_period_end:'2099-01-01T00:00:00Z'}],premium:true,packs:true},
+    {subscriptions:[{price_id:'pro_monthly',status:'active',current_period_end:'2000-01-01T00:00:00Z'}],premium:false,packs:false},
+    {subscriptions:[{price_id:'pro_monthly',status:'canceled',current_period_end:null}],premium:false,packs:false},
+    {purchases:[{plan:'premium',status:'completed'}],premium:true,packs:true},
+    {purchases:[{plan:'packs',status:'completed'}],premium:false,packs:true},
+    {purchases:[{plan:'premium',status:'pending'}],premium:false,packs:false},
+    {roles:[{role:'admin'}],premium:true,packs:true},
+  ];
+  for(const c of cases){
+    const exports=await loadEdge('supabase/functions/_shared/auth.ts',{realAuth:true,exportedModule:true,clientFactory:entitlementClient({plan:'pro',override:expired,...c})});
+    const result=await exports.authenticateRequest(new Request('https://qa.invalid',{headers:{Authorization:'Bearer LOCAL_QA_FAKE'}}));
+    assert.equal(result.isPremium,c.premium);assert.equal(result.canAccessPacks,c.packs);
+  }
+  const exports=await loadEdge('supabase/functions/_shared/auth.ts',{realAuth:true,exportedModule:true,clientFactory:entitlementClient({plan:'pro',override:expired,failPaid:true})});
+  assert.equal((await exports.authenticateRequest(new Request('https://qa.invalid',{headers:{Authorization:'Bearer LOCAL_QA_FAKE'}}))).status,503);
 });
 test('override Pro passes real auth through optimizer into SQL, with no prompt/day cap and no client-supplied entitlement',async()=>{
   await reset('free');const transmitted=[];

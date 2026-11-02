@@ -67,7 +67,31 @@ export async function authenticateRequest(req: Request): Promise<AuthResult | Re
   const override = overrideResult.data;
   const overrideActive = !!override && (override.expires_at === null || Date.parse(override.expires_at) > Date.now());
   const overridePlan = overrideActive ? override.plan : null;
-  const plan = profile?.current_plan ?? "free";
+  let plan = profile?.current_plan ?? "free";
+  // The existing override trigger copies the effective plan into profiles.
+  // Time passing does not run that trigger: an expired grant can leave a
+  // stale Pro/Premium/Packs cache. Resolve surviving paid rights instead of
+  // treating that cached value as a second, permanent grant.
+  if (override && !overrideActive) {
+    const [subscriptions, purchases] = await Promise.all([
+      adminClient.from("subscriptions").select("price_id, status, current_period_end").eq("user_id", userId),
+      adminClient.from("purchases").select("plan, status").eq("user_id", userId),
+    ]);
+    if (subscriptions.error || purchases.error) {
+      return new Response(JSON.stringify({ error: "Não foi possível verificar os direitos. / Could not verify entitlements." }),
+        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    const now = Date.now();
+    const paid = (purchases.data ?? []) as { plan: string; status: string }[];
+    const hasPurchase = (paidPlan: string) => paid.some(p => p.plan === paidPlan && p.status === "completed");
+    const hasProSubscription = (subscriptions.data ?? []).some((s: { price_id: string; status: string; current_period_end: string | null }) => {
+      if (!["pro_monthly", "pro_monthly_trial_7d", "pro_annual"].includes(s.price_id)) return false;
+      const futureEnd = s.current_period_end !== null && Date.parse(s.current_period_end) > now;
+      return (["active", "trialing", "past_due"].includes(s.status) && (s.current_period_end === null || futureEnd))
+        || (s.status === "canceled" && futureEnd);
+    });
+    plan = hasPurchase("premium") ? "premium" : hasProSubscription ? "pro" : hasPurchase("packs") ? "packs" : "free";
+  }
   const isAdmin = (roles ?? []).some((r: { role: string }) => r.role === "admin");
   const isPremium = isAdmin || plan === "pro" || plan === "premium" || overridePlan === "pro" || overridePlan === "premium";
   const canAccessPacks = isPremium || plan === "packs" || overridePlan === "packs";
