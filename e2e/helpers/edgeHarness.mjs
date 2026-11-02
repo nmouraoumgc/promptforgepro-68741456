@@ -4,7 +4,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import ts from 'typescript';
 import { webcrypto } from 'node:crypto';
-export async function loadEdge(file, { auth, rpc, fetch: transport, resolveBrand = async () => null } = {}) {
+export async function loadEdge(file, { auth, rpc, fetch: transport, resolveBrand = async () => null, realAuth = false, clientFactory, exportedModule = false } = {}) {
   let handler;
   const context = vm.createContext({ Request, Response, Headers, AbortSignal, TextEncoder, crypto: webcrypto,
     console: { log() {}, error() {} }, fetch: transport || (() => { throw new Error('Unexpected network request'); }),
@@ -16,8 +16,8 @@ export async function loadEdge(file, { auth, rpc, fetch: transport, resolveBrand
     let mod;
     if (id.startsWith('https://deno.land/x/xhr')) mod = synthetic(id, {});
     else if (id.startsWith('https://deno.land/std')) mod = synthetic(id, { serve: fn => { handler = fn; } });
-    else if (id.startsWith('https://esm.sh/@supabase/')) mod = synthetic(id, { createClient: () => ({ rpc }) });
-    else if (id.endsWith('/_shared/auth.ts')) mod = synthetic(id, { corsHeaders: {}, authenticateRequest: async () => auth });
+    else if (id.startsWith('https://esm.sh/@supabase/')) mod = synthetic(id, { createClient: clientFactory ?? (() => ({ rpc })) });
+    else if (id.endsWith('/_shared/auth.ts') && !realAuth) mod = synthetic(id, { corsHeaders: {}, authenticateRequest: async () => auth });
     else if (id.endsWith('/_shared/brand.ts')) mod = synthetic(id, { resolveTaskBrand: resolveBrand, BrandSelectionError: class BrandSelectionError extends Error {}, loadActiveBrand: async () => null, brandInstructions: () => '' });
     else {
       const source = await fs.readFile(id, 'utf8');
@@ -29,5 +29,5 @@ export async function loadEdge(file, { auth, rpc, fetch: transport, resolveBrand
     return mod;
   }
   const mod = await load(path.resolve(file)); await mod.evaluate();
-  return handler;
+  return exportedModule ? mod.namespace : handler;
 }

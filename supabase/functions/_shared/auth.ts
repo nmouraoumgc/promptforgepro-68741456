@@ -51,15 +51,26 @@ export async function authenticateRequest(req: Request): Promise<AuthResult | Re
   // Resolve plan + admin role using service role (bypass RLS for trusted server lookup)
   const adminClient = createClient(SUPABASE_URL, SERVICE_ROLE);
 
-  const [{ data: profile }, { data: roles }] = await Promise.all([
+  const [profileResult, rolesResult, overrideResult] = await Promise.all([
     adminClient.from("profiles").select("current_plan").eq("id", userId).maybeSingle(),
     adminClient.from("user_roles").select("role").eq("user_id", userId),
+    adminClient.from("plan_overrides").select("plan, expires_at").eq("user_id", userId).maybeSingle(),
   ]);
 
+  // An unavailable entitlement source must not silently turn a comp Pro into Free.
+  if (profileResult.error || rolesResult.error || overrideResult.error) {
+    return new Response(JSON.stringify({ error: "Não foi possível verificar os direitos. / Could not verify entitlements." }),
+      { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  }
+  const profile = profileResult.data;
+  const roles = rolesResult.data;
+  const override = overrideResult.data;
+  const overrideActive = !!override && (override.expires_at === null || Date.parse(override.expires_at) > Date.now());
+  const overridePlan = overrideActive ? override.plan : null;
   const plan = profile?.current_plan ?? "free";
   const isAdmin = (roles ?? []).some((r: { role: string }) => r.role === "admin");
-  const isPremium = isAdmin || plan === "pro" || plan === "premium";
-  const canAccessPacks = isPremium || plan === "packs";
+  const isPremium = isAdmin || plan === "pro" || plan === "premium" || overridePlan === "pro" || overridePlan === "premium";
+  const canAccessPacks = isPremium || plan === "packs" || overridePlan === "packs";
 
   return {
     userId,

@@ -38,3 +38,8 @@ Build passou. ESLint passou nos cinco ficheiros TS/TSX alterados. Avisos de buil
 4. Sem merge/deploy/migração em produção nesta entrega. Sem preview Vercel criado: o pedido exige OK antes de deploy. Nenhum email ou escrita Paddle.
 
 Os contadores locais antigos não são importados: não são dados confiáveis. A contagem verificada começa no servidor após ativação. Não recuperar a versão insegura da função como rollback: corrigir em frente ou suspender a operação enquanto a falha é resolvida.
+
+
+## Correção posterior em release/p0-p1 (base remota ee8dc18)
+
+A edge transmite auth.isPremium, já resolvido pelo helper incluindo overrides Pro/Premium ativos, para reserve_prompt_optimization(uuid,text,boolean). O SQL deixa de decidir direitos a partir de tabelas de plano. RPC apenas service_role; o corpo HTTP não pode forjar o flag. Teste com perfil Free e override Pro permanente passa 21 sucessos; overrides expirados/Packs não concedem Pro. Testes locais: 12 grupos backend/SQL e 7 UI. Por instrução do Nuno, sem ambiente Supabase de teste, preparar aplicação direta em produção do SQL aditivo apenas depois de validar preview e dar OK explícito, seguida de QA. Não foi aplicada migração nesta correção.

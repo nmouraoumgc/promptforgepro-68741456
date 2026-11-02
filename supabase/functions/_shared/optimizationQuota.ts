@@ -6,11 +6,12 @@ export async function promptFingerprint(prompt: string): Promise<string> {
   const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(normalized));
   return [...new Uint8Array(bytes)].map((n) => n.toString(16).padStart(2, '0')).join('');
 }
-export async function withOptimizationQuota(options: { userId: string; prompt: string; rpc: Rpc; headers: Record<string, string> }, operation: () => Promise<Response>): Promise<Response> {
-  const { userId, prompt, rpc, headers } = options;
+export async function withOptimizationQuota(options: { userId: string; prompt: string; isPremium: boolean; rpc: Rpc; headers: Record<string, string> }, operation: () => Promise<Response>): Promise<Response> {
+  const { userId, prompt, isPremium, rpc, headers } = options;
+  if (typeof isPremium !== 'boolean') return Response.json({ error: 'Entitlements unavailable', code: 'QUOTA_UNAVAILABLE' }, { status: 503, headers });
   const hash = await promptFingerprint(prompt);
   const reply = (body: unknown, status: number) => Response.json(body, { status, headers });
-  const { data, error } = await rpc('reserve_prompt_optimization', { _user_id: userId, _prompt_hash: hash });
+  const { data, error } = await rpc('reserve_prompt_optimization', { _user_id: userId, _prompt_hash: hash, _is_premium: isPremium });
   const row = (Array.isArray(data) ? data[0] : null) as QuotaRow | null;
   if (error || !row) return reply({ error: 'Não foi possível verificar o limite. Tenta novamente. / Could not verify usage.', code: 'QUOTA_UNAVAILABLE' }, 503);
   const usage = { used: row.used, limit: row.optimization_limit, dailyUsed: row.daily_used, dailyLimit: row.daily_limit, day: row.quota_day, resetsAt: row.resets_at };

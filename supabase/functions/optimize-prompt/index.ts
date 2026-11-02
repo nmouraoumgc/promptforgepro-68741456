@@ -37,7 +37,7 @@ serve(async (req) => {
     }
 
     const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
-    return await withOptimizationQuota({ userId: auth.userId, prompt, rpc: (name, args) => admin.rpc(name, args), headers: { ...corsHeaders, 'Content-Type': 'application/json' } }, async () => {
+    return await withOptimizationQuota({ userId: auth.userId, prompt, isPremium: auth.isPremium, rpc: (name, args) => admin.rpc(name, args), headers: { ...corsHeaders, 'Content-Type': 'application/json' } }, async () => {
     const isEnglish = language === 'en';
     const systemPrompt = isEnglish
       ? `You are an expert prompt engineer. Your task is to analyze and optimize AI prompts.

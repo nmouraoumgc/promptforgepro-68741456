@@ -1,5 +1,6 @@
 -- UNAPPLIED review draft, updated 2/11/2026: Free/Packs 3 per prompt AND 20/account/Lisbon day.
--- Apply in a test environment before production. Only successful operations count.
+-- No Supabase test environment: review first; production application requires explicit approval.
+-- Local SQL tests use PGlite. Only successful operations count.
 create table public.prompt_optimization_daily_usage (
   user_id uuid not null references auth.users(id) on delete cascade,
   day date not null,
@@ -27,9 +28,10 @@ create policy "Read own optimization usage" on public.prompt_optimization_usage
 create policy "Read own daily optimization usage" on public.prompt_optimization_daily_usage
   for select to authenticated using ((select auth.uid()) = user_id);
 
--- Only the trusted Edge Function can reserve. Plan/identity/caps are never supplied by the browser.
+-- Only service_role can reserve. The Edge Function supplies auth.isPremium, including active overrides.
+-- SQL applies numeric limits only: it does NOT resolve plans, roles or overrides.
 -- Lock order in BOTH functions: account/day first, then prompt. Locks end before provider calls.
-create function public.reserve_prompt_optimization(_user_id uuid, _prompt_hash text)
+create function public.reserve_prompt_optimization(_user_id uuid, _prompt_hash text, _is_premium boolean)
 returns table(allowed boolean, used integer, optimization_limit integer, token uuid, reason text,
   daily_used integer, daily_limit integer, quota_day date, resets_at timestamptz)
 language plpgsql security invoker set search_path = '' as $$
@@ -44,9 +46,8 @@ declare
   lease uuid;
 begin
   if _prompt_hash is null or _prompt_hash !~ '^[0-9a-f]{64}$' then raise exception 'Invalid prompt hash'; end if;
-  select case when exists(select 1 from public.user_roles where user_id = _user_id and role::text = 'admin')
-    or exists(select 1 from public.profiles where id = _user_id and current_plan::text in ('pro','premium'))
-    then null::integer else 3 end into lim;
+  if _is_premium is null then raise exception 'Resolved entitlement is required'; end if;
+  lim := case when _is_premium then null::integer else 3 end;
   daily_lim := case when lim is null then null::integer else 20 end;
   insert into public.prompt_optimization_daily_usage(user_id,day) values (_user_id,d) on conflict do nothing;
   select successes into day_used from public.prompt_optimization_daily_usage where user_id = _user_id and day = d for update;
@@ -99,5 +100,5 @@ begin
   end if;
   return query select true,cur.successes,day_used,d;
 end $$;
-revoke all on function public.reserve_prompt_optimization(uuid,text), public.finish_prompt_optimization(uuid,text,uuid,boolean) from public,anon,authenticated;
-grant execute on function public.reserve_prompt_optimization(uuid,text), public.finish_prompt_optimization(uuid,text,uuid,boolean) to service_role;
+revoke all on function public.reserve_prompt_optimization(uuid,text,boolean), public.finish_prompt_optimization(uuid,text,uuid,boolean) from public,anon,authenticated;
+grant execute on function public.reserve_prompt_optimization(uuid,text,boolean), public.finish_prompt_optimization(uuid,text,uuid,boolean) to service_role;
