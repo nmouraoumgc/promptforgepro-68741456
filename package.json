@@ -11,7 +11,8 @@
     "preview": "vite preview",
     "test:p0": "node --experimental-vm-modules --test e2e/p0_entitlements.test.mjs",
     "test:p1": "vitest run --config vitest.config.ts",
-    "test": "npm run test:p0 && npm run test:p1"
+    "test:override-cron": "node --test e2e/expired_override_cron.test.mjs",
+    "test": "npm run test:p0 && npm run test:p1 && npm run test:override-cron"
   },
   "dependencies": {
     "@capacitor/android": "^8.0.0",
