@@ -1,3 +1,4 @@
+import { useAuthStore } from '@/stores/authStore';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BookOpen, CheckCircle2, Clock, GraduationCap, Lock, Sparkles } from 'lucide-react';
@@ -45,6 +46,7 @@ function LessonCard({ lesson, done, locked, isEnglish }: { lesson: Lesson; done:
 }
 
 export default function Learn() {
+  const user = useAuthStore(s => s.user);
   const isEnglish = useIsEnglish();
   const entitled = useLearnEntitled();
   const { lessons, isLoading } = useLessons(isEnglish);
@@ -73,7 +75,7 @@ export default function Learn() {
             ? 'Short, practical lessons with before-and-after examples and a ready template to try straight away.'
             : 'Lições curtas e práticas, com exemplos de antes e depois e um template pronto a experimentar.'}
         </p>
-        {total > 0 && (
+        {user && total > 0 && (
           <div className="max-w-sm space-y-1" data-testid="learn-progress">
             <div className="flex justify-between text-xs text-muted-foreground">
               <span>{isEnglish ? 'Your progress' : 'O teu progresso'}</span>
@@ -84,6 +86,7 @@ export default function Learn() {
         )}
       </header>
 
+      {!user && <p className="text-sm text-muted-foreground"><Link to="/login?redirect=%2Flearn" className="text-primary underline">{isEnglish ? 'Sign in to save your progress' : 'Inicia sessão para guardar o teu progresso'}</Link></p>}
       <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0" role="tablist">
         {TRACKS.map((t) => (
           <Button

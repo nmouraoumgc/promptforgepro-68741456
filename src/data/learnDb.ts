@@ -1,6 +1,6 @@
 // Aprender / Learn: lessons live in the DB (learn_lessons + learn_lesson_content), never in the bundle.
 // RLS returns every lesson's title/summary, but the body only for free lessons or entitled users
-// (pro, packs, premium or admin). Progress is per user in learn_progress (localStorage for visitors).
+// (pro, packs, premium or admin). Progress requires a signed-in user.
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthStore } from '@/stores/authStore';
@@ -81,36 +81,32 @@ export function useLesson(slug: string | undefined, isEnglish: boolean) {
   };
 }
 
-const LOCAL_KEY = 'pf_learn_done_v1';
-const readLocal = (): string[] => { try { return JSON.parse(localStorage.getItem(LOCAL_KEY) || '[]'); } catch { return []; } };
-
 /** First Fundamentos lesson; completing it ticks the dashboard onboarding step. */
 export const FIRST_LESSON_SLUG = 'anatomia-prompt';
 function tickOnboarding(slug: string) {
   if (slug === FIRST_LESSON_SLUG) markOnboardingStep('learn');
 }
 
-/** Completed lesson ids (DB for signed-in users, localStorage for visitors) + toggle. */
+/** Completed lesson ids and toggle; only signed-in users can save progress. */
 export function useLessonProgress(lessons: Lesson[]) {
   const qc = useQueryClient();
   const userId = useAuthStore((s) => s.user?.id ?? null);
   const q = useQuery({
     queryKey: ['learn-progress', userId],
+    enabled: !!userId,
     queryFn: async () => {
-      if (!userId) return readLocal();
+      if (!userId) return [];
       const { data, error } = await db.from('learn_progress').select('lesson_id');
       if (error) throw error;
       return (data || []).map((r: Row) => r.lesson_id as string);
     },
   });
-  const done = new Set<string>(q.data || []);
+  const done = new Set<string>(userId ? q.data || [] : []);
   const toggle = useMutation({
     mutationFn: async (lesson: Lesson) => {
       const isDone = done.has(lesson.id);
-      if (!userId) {
-        const cur = readLocal();
-        localStorage.setItem(LOCAL_KEY, JSON.stringify(isDone ? cur.filter((x) => x !== lesson.id) : [...cur, lesson.id]));
-      } else if (isDone) {
+      if (!userId) throw new Error('Sign-in required');
+      if (isDone) {
         const { error } = await db.from('learn_progress').delete().eq('lesson_id', lesson.id).eq('user_id', userId);
         if (error) throw error;
       } else {

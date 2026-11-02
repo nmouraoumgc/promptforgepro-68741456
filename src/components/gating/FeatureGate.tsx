@@ -142,47 +142,16 @@ export function UpgradePrompt({
   );
 }
 
-interface OptimizationLimitProps {
-  promptId: string;
-  onUpgrade?: () => void;
-}
-
-export function OptimizationLimitNotice({ promptId }: OptimizationLimitProps) {
-  const { currentPlan, getOptimizationCount } = usePlanStore();
-  const navigate = useNavigate();
+interface OptimizationLimitProps { usage: { used: number; limit: number | null; dailyUsed: number; dailyLimit: number | null } | null }
+export function OptimizationLimitNotice({ usage }: OptimizationLimitProps) {
+  const { currentPlan } = usePlanStore();
   const isEnglish = useIsEnglish();
-  
   if (PLAN_LIMITS[currentPlan].maxOptimizationsPerPrompt === Infinity) return null;
-  
-  const count = getOptimizationCount(promptId);
-  const remaining = 3 - count;
-  
-  if (remaining > 1) return null;
-  
-  const handleUpgrade = () => {
-    navigate('/pricing');
-  };
-  
-  return (
-    <div className="flex items-center justify-between gap-4 p-3 rounded-lg bg-muted/50 border border-border text-sm">
-      <div className="flex items-center gap-2">
-        <Zap className="h-4 w-4 text-muted-foreground" />
-        <span className="text-muted-foreground">
-          {remaining <= 0 
-            ? (isEnglish ? 'Optimization limit reached' : 'Limite de otimizações atingido')
-            : (isEnglish ? `${remaining} optimization left for this prompt` : `${remaining} otimização restante para este prompt`)
-          }
-        </span>
-      </div>
-      <Button 
-        size="sm" 
-        className="text-xs h-7"
-        onClick={handleUpgrade}
-      >
-        {isEnglish ? 'Unlock more' : 'Desbloquear mais'}
-      </Button>
-    </div>
-  );
+  return <p className="rounded-lg border bg-muted/50 p-3 text-sm text-muted-foreground" role="status">
+    {usage
+      ? (isEnglish ? `${usage.used} of ${usage.limit} successful optimizations for this prompt; ${usage.dailyUsed} of ${usage.dailyLimit} for your account today. Daily allowance resets at midnight Lisbon time.` : `${usage.used} de ${usage.limit} otimizações concluídas para este prompt; ${usage.dailyUsed} de ${usage.dailyLimit} na conta hoje. O teto diário renova à meia-noite de Lisboa.`)
+      : (isEnglish ? 'Up to 3 successful optimizations per prompt and 20 per account/day, resetting at midnight Lisbon time. Usage is checked on the server; failures do not count.' : 'Até 3 otimizações concluídas por prompt e 20 por conta/dia, com renovação à meia-noite de Lisboa. Os limites são verificados no servidor; falhas não contam.')}
+  </p>;
 }
 
 // Contextual upsell for Pro tools (A/B, version history, export): directs to Pro

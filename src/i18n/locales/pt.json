@@ -157,7 +157,8 @@
       "Restrições bem definidas (formato, tom, limites)",
       "Output esperado explícito",
       "Hook emocional definido para retenção"
-    ]
+    ],
+    "illustrative": "Exemplo ilustrativo"
   },
   "library": {
     "searchPlaceholder": "Pesquisar prompts...",

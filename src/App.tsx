@@ -74,6 +74,8 @@ const App = () => (
           {/* Public page inside the app shell: logged-out visitors can see prices; checkout CTAs send them to login/signup */}
           <Route element={<AppLayout />}>
             <Route path="/pricing" element={<Pricing />} />
+            <Route path="/learn" element={<Learn />} />
+            <Route path="/learn/:slug" element={<LessonDetail />} />
           </Route>
 
           {/* App routes: every screen in the app layout requires sign-in (redirects to /login?redirect=<path>) */}
@@ -89,8 +91,7 @@ const App = () => (
             <Route path="/optimizer" element={<RedirectToCreate mode="optimize" />} />
             <Route path="/versions" element={<RedirectToPromptTab tab="versions" />} />
             <Route path="/tester" element={<RedirectToPromptTab tab="test" />} />
-            <Route path="/learn" element={<Learn />} />
-            <Route path="/learn/:slug" element={<LessonDetail />} />
+
             <Route path="/packs" element={<PromptPacks />} />
             <Route path="/packs/:slug" element={<PackDetail />} />
             <Route path="/settings" element={<Settings />} />

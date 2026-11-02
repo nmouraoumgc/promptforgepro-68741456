@@ -4,6 +4,7 @@ import { useLocation, useSearchParams } from 'react-router-dom';
 import { Sparkles, Wand2, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsEnglish } from '@/i18n/lang';
+import { TaskBrandProvider } from '@/components/brand/TaskBrandSelector';
 import QuickPrompt from './QuickPrompt';
 import GuidedBuilder from './GuidedBuilder';
 import PromptOptimizer from './PromptOptimizer';
@@ -25,7 +26,7 @@ export default function Create() {
   } as const;
 
   return (
-    <div className="p-4 sm:p-6 space-y-6 animate-fade-in">
+    <TaskBrandProvider><div className="p-4 sm:p-6 space-y-6 animate-fade-in">
       <header className="space-y-1">
         <h1 className="text-2xl font-bold">{isEnglish ? 'Create' : 'Criar'}</h1>
         <p className="text-sm text-muted-foreground">{isEnglish ? label[mode].den : label[mode].dpt}</p>
@@ -50,6 +51,6 @@ export default function Create() {
         {mode === 'guided' && <GuidedBuilder embedded />}
         {mode === 'optimize' && <PromptOptimizer embedded />}
       </div>
-    </div>
+    </div></TaskBrandProvider>
   );
 }

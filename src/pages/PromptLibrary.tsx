@@ -19,11 +19,12 @@ export default function PromptLibrary() {
   const { t, i18n } = useTranslation();
   const isEnglish = (i18n.resolvedLanguage || i18n.language || 'pt').startsWith('en');
   const { prompts, toggleFavorite, deletePrompt, duplicatePrompt } = usePromptStore();
-  const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<Category | 'all'>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const { toast } = useToast();
-  const [params] = useSearchParams();
+  const [params, setParams] = useSearchParams();
+  const searchQuery = params.get('q') || '';
+  const setSearchQuery = (value: string) => setParams(previous => { const next = new URLSearchParams(previous); if (value) next.set('q', value); else next.delete('q'); return next; }, { replace: true });
   const hint = params.get('hint');
 
   const filteredPrompts = prompts.filter(p => {
@@ -45,10 +46,11 @@ export default function PromptLibrary() {
 
   return (
     <div className="p-6 space-y-6 animate-fade-in">
+      <h1 className="text-2xl font-bold">{isEnglish ? 'Library' : 'Biblioteca'}</h1>
       <div className="flex flex-col md:flex-row gap-4 justify-between">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder={t('library.searchPlaceholder')} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9" />
+          <Input placeholder={t('library.searchPlaceholder')} value={searchQuery} aria-label={t('library.searchPlaceholder')} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9" />
         </div>
         <div className="flex gap-2">
           <Button variant={viewMode === 'grid' ? 'default' : 'outline'} size="icon" aria-label={isEnglishUi ? 'Grid view' : 'Vista em grelha'} onClick={() => setViewMode('grid')}><Grid className="h-4 w-4" /></Button>
@@ -91,10 +93,12 @@ export default function PromptLibrary() {
         ))}
       </div>
 
+      {searchQuery && <p role="status" className="text-sm text-muted-foreground">{isEnglish ? `${filteredPrompts.length} results for “${searchQuery}”` : `${filteredPrompts.length} resultados para “${searchQuery}”`}</p>}
       {filteredPrompts.length === 0 ? (
         <Card className="py-12">
           <CardContent className="text-center">
-            <p className="text-muted-foreground mb-4">{t('library.empty')}</p>
+            <p className="text-muted-foreground mb-4">{prompts.length > 0 ? (isEnglish ? 'No prompts match this search or category.' : 'Nenhum prompt corresponde a esta pesquisa ou categoria.') : t('library.empty')}</p>
+            {searchQuery && <Button variant="outline" className="mr-2" onClick={() => setSearchQuery('')}>{isEnglish ? 'Clear search' : 'Limpar pesquisa'}</Button>}
             <Link to="/create"><Button>{t('library.createNew')}</Button></Link>
           </CardContent>
         </Card>

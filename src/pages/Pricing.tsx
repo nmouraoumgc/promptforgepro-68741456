@@ -1,3 +1,4 @@
+import { UsageLimits } from '@/components/UsageLimits';
 import { useEffect, useState } from 'react';
 import { Check, Sparkles, Zap, Lightbulb, Loader2, Ticket, X } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -42,7 +43,7 @@ const PRO_MONTHLY_PRICE = 9;
 const PRO_ANNUAL_PRICE = 90;
 
 export default function Pricing() {
-  const { currentPlan, setPlan } = usePlanStore();
+  const { currentPlan } = usePlanStore();
   const { user, isLoading: authLoading } = useAuthStore();
   const navigate = useNavigate();
   const { i18n } = useTranslation();
@@ -92,8 +93,8 @@ export default function Pricing() {
       price: '0€',
       priceDetail: isEnglish ? 'forever' : 'para sempre',
       features: isEnglish
-        ? ['3 optimizations per prompt', 'Prompt library', 'Basic guided builder', 'Pack previews', '4 free Learn lessons']
-        : ['3 otimizações por prompt', 'Biblioteca de prompts', 'Criador guiado básico', 'Pré-visualização de packs', '4 lições grátis do Aprender'],
+        ? ['3 optimizations per prompt, up to 20 per day', 'Prompt library', 'Basic guided builder', 'Pack previews', '4 free Learn lessons']
+        : ['3 otimizações por prompt, até 20 por dia', 'Biblioteca de prompts', 'Criador guiado básico', 'Pré-visualização de packs', '4 lições grátis do Aprender'],
       cta: isEnglish ? 'Start free' : 'Começar grátis',
     },
     {
@@ -151,7 +152,8 @@ export default function Pricing() {
       return;
     }
 
-    setPlan(planId);
+    if (!user) { navigate('/signup'); return; }
+    navigate('/app');
   };
 
   const removeProPromo = () => {
@@ -355,12 +357,13 @@ export default function Pricing() {
         </div>
       </div>
 
+      <div className="mb-8"><UsageLimits /></div>
       <div className="flex justify-center mb-8">{billingToggle('billing')}</div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
         {[mainPlans[0], premiumPlan, mainPlans[1]].map((plan) => {
           const isPacks = plan.id === 'packs';
-          const isActive = isPacks ? ownsPacksProduct : currentPlan === plan.id;
+          const isActive = !!user && (isPacks ? ownsPacksProduct : currentPlan === plan.id);
           const includedInPro = isPacks && !ownsPacksProduct && currentPlan === 'pro';
           return (
             <Card

@@ -42,7 +42,18 @@ const ROUTES = ['/', '/pricing', '/terms', '/privacy', '/refunds', '/signup', '/
 const CHROME = process.env.CHROME_PATH || ['/usr/bin/google-chrome', '/usr/bin/chromium', '/usr/bin/chromium-browser'].find((p) => fs.existsSync(p));
 let puppeteer;
 try { puppeteer = (await import('puppeteer-core')).default; } catch { /* optional */ }
-if (!CHROME || !puppeteer) { console.warn('postbuild: no Chrome/puppeteer-core, prerender skipped'); process.exit(0); }
+if (!CHROME || !puppeteer) {
+  // Public rewrites target /<route>/index.html even when the builder has no browser.
+  // Keep these routes usable as SPAs; do not pretend this is a prerendered page.
+  for (const route of ROUTES.filter((r) => r !== '/')) {
+    const out = path.join(DIST, route.slice(1), 'index.html');
+    fs.mkdirSync(path.dirname(out), { recursive: true });
+    fs.writeFileSync(out, shell);
+  }
+  console.warn('postbuild: no Chrome; public routes use SPA fallback');
+  checkCspHashes();
+  process.exit(0);
+}
 
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon', '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.xml': 'application/xml', '.txt': 'text/plain' };
 const server = http.createServer((req, res) => {

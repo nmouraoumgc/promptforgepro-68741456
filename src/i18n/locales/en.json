@@ -157,7 +157,8 @@
       "Well-defined constraints (format, tone, limits)",
       "Explicit expected output",
       "Emotional hook defined for retention"
-    ]
+    ],
+    "illustrative": "Illustrative example"
   },
   "library": {
     "searchPlaceholder": "Search prompts...",

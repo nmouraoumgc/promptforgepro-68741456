@@ -7,7 +7,8 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { toPlainText } from '@/lib/plainText';
 import { useTranslation } from 'react-i18next';
 import { Sparkles, Zap, Copy, BookmarkPlus, GitBranch, Play, Lightbulb, CheckCircle2, Circle } from 'lucide-react';
-import { BrandSelector } from '@/components/brand/BrandSelector';
+import { TaskBrandSelector } from '@/components/brand/TaskBrandSelector';
+import { useTaskBrand } from '@/components/brand/taskBrandContext';
 import { RunPrompt } from '@/components/run/RunPrompt';
 import { usePromptStore } from '@/stores/promptStore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,7 +16,6 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { OptimizationVariant, PromptScore } from '@/types/prompt';
-import { usePlanStore } from '@/stores/planStore';
 import { useAuthStore } from '@/stores/authStore';
 import { OptimizationLimitNotice, AuthGate } from '@/components/gating/FeatureGate';
 import ActionableScore from '@/components/optimizer/ActionableScore';
@@ -53,6 +53,7 @@ interface PromptOptimizerProps {
 }
 
 export default function PromptOptimizer({ embedded = false, initialPrompt, onSaveVersion, onScore, draftScope = 'create-optimize' }: PromptOptimizerProps = {}) {
+  const { requestBrand, isLoading: brandLoading } = useTaskBrand();
   const location = useLocation();
   const navigate = useNavigate();
   const addPrompt = usePromptStore((s) => s.addPrompt);
@@ -92,9 +93,9 @@ export default function PromptOptimizer({ embedded = false, initialPrompt, onSav
   const { t, i18n } = useTranslation();
   const isEnglish = (i18n.resolvedLanguage || i18n.language || 'pt').startsWith('en');
   const language = (i18n.resolvedLanguage || i18n.language || 'pt').slice(0, 2);
-  const { currentPlan, canOptimize, incrementOptimizationCount } = usePlanStore();
+  const [optimizationUsage, setOptimizationUsage] = useState<{ used: number; limit: number | null; dailyUsed: number; dailyLimit: number | null; resetsAt: string; prompt: string } | null>(null);
   // Free and Prompt Packs ('packs') keep the Free per-prompt optimization limit; Pro/Premium are unlimited.
-  const isLimitedPlan = currentPlan === 'free' || currentPlan === 'packs';
+
 
   const draftData = useMemo<OptimizerDraft>(() => ({
     input: inputPrompt, base: initialPrompt, promptKey: currentPromptId, optimizations, score, improvements, selected, analysedInput, runResults,
@@ -130,27 +131,22 @@ export default function PromptOptimizer({ embedded = false, initialPrompt, onSav
       return;
     }
 
-    // Check optimization limit for free users
-    if (isLimitedPlan && !canOptimize(currentPromptId)) {
-      toast({ title: isEnglish ? 'Limit reached' : 'Limite atingido', description: isEnglish ? 'Upgrade to Pro for unlimited optimizations' : 'Muda para o Pro e tem otimizações ilimitadas', variant: 'destructive' });
-      return;
-    }
-
     setIsOptimizing(true);
     setShowRestored(false);
-
-    // Increment optimization count for free users
-    if (isLimitedPlan) {
-      incrementOptimizationCount(currentPromptId);
-    }
 
     const analysed = inputPrompt;
     try {
       const { data, error } = await supabase.functions.invoke('optimize-prompt', {
-        body: { prompt: analysed, language }
+        body: { prompt: analysed, language, ...requestBrand }
       });
 
-      if (error) throw error;
+      if (error) {
+        let failure: { error?: string; optimizationUsage?: { used: number; limit: number | null; dailyUsed: number; dailyLimit: number | null; resetsAt: string } } | null = null;
+        try { const context = (error as unknown as { context?: Response }).context; failure = context ? await context.json() : null; } catch { /* generic message below */ }
+        if (failure?.optimizationUsage) setOptimizationUsage({ ...failure.optimizationUsage, prompt: analysed });
+        throw new Error(failure?.error || 'Não foi possível otimizar. / Could not optimize.');
+      }
+      if (data.optimizationUsage) setOptimizationUsage({ ...data.optimizationUsage, prompt: analysed });
 
       if (data.error) {
         toast({ title: isEnglish ? 'Error' : 'Erro', description: localizeApiError(data.error, isEnglish), variant: 'destructive' });
@@ -172,7 +168,7 @@ export default function PromptOptimizer({ embedded = false, initialPrompt, onSav
       markOnboardingStep('optimize');
     } catch (error) {
       console.error('Error optimizing prompt:', error);
-      toast({ title: isEnglish ? 'Error' : 'Erro', description: isEnglish ? 'Could not optimize the prompt. Try again.' : 'Não foi possível otimizar o prompt. Tenta novamente.', variant: 'destructive' });
+      toast({ title: isEnglish ? 'Error' : 'Erro', description: error instanceof Error ? error.message : (isEnglish ? 'Could not optimize the prompt. Try again.' : 'Não foi possível otimizar o prompt. Tenta novamente.'), variant: 'destructive' });
     } finally {
       setIsOptimizing(false);
     }
@@ -260,14 +256,14 @@ export default function PromptOptimizer({ embedded = false, initialPrompt, onSav
       {showRestored && <DraftNotice onClear={clearAll} onDismiss={() => setShowRestored(false)} />}
 
       {/* Optimization limit notice for free users */}
-      <OptimizationLimitNotice promptId={currentPromptId} />
+      <OptimizationLimitNotice usage={optimizationUsage?.prompt === inputPrompt ? optimizationUsage : null} />
 
       {/* Step 1: the prompt */}
       <Card data-testid="opt-step-1">
         <CardHeader className="pb-3">
           <CardTitle className="text-lg">{t('optimizerFlow.step1Title')}</CardTitle>
           <CardDescription>{t('optimizerFlow.step1Desc')}</CardDescription>
-          <BrandSelector className="pt-2" />
+          <TaskBrandSelector className="pt-2" request={inputPrompt} />
         </CardHeader>
         <CardContent className="space-y-3">
           <Textarea
@@ -277,7 +273,7 @@ export default function PromptOptimizer({ embedded = false, initialPrompt, onSav
             className="min-h-[160px]"
             data-testid="optimizer-input"
           />
-          <Button onClick={optimizePrompt} disabled={isOptimizing || !inputPrompt.trim()} className="h-auto min-h-11 w-full sm:w-auto gap-2 whitespace-normal py-2 text-center leading-snug" size="lg" variant={hasResults && !inputChanged ? 'outline' : 'default'} data-testid="optimizer-optimize">
+          <Button onClick={optimizePrompt} disabled={brandLoading || isOptimizing || !inputPrompt.trim()} className="h-auto min-h-11 w-full sm:w-auto gap-2 whitespace-normal py-2 text-center leading-snug" size="lg" variant={hasResults && !inputChanged ? 'outline' : 'default'} data-testid="optimizer-optimize">
             {isOptimizing ? <Zap className="h-4 w-4 animate-pulse" /> : <Sparkles className="h-4 w-4" />}
             {isOptimizing ? t('optimizerFlow.optimizing') : hasResults ? t('optimizerFlow.optimizeAgain') : t('optimizerFlow.optimize')}
           </Button>

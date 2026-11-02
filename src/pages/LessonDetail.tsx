@@ -35,6 +35,7 @@ export default function LessonDetail() {
   }, [lessons, lesson]);
 
   const openIn = (target: 'builder' | 'optimizer', text: string) => {
+    if (!user) { navigate(`/login?redirect=${encodeURIComponent(`/learn/${slug}`)}`); return; }
     if (target === 'builder') {
       const st = usePromptStore.getState();
       st.resetBuilderState();
@@ -222,14 +223,14 @@ export default function LessonDetail() {
           <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between border-t border-border pt-4">
             <Button
               variant={isDone ? 'secondary' : 'default'}
-              onClick={() => toggle(lesson)}
+              onClick={() => user ? toggle(lesson) : navigate(`/login?redirect=${encodeURIComponent(`/learn/${slug}`)}`)}
               disabled={isSaving}
               data-testid="lesson-complete"
               data-done={isDone ? '1' : '0'}
               className="w-full sm:w-auto"
             >
               <CheckCircle2 className="h-4 w-4 mr-2" />
-              {isDone ? (isEnglish ? 'Completed' : 'Concluída') : (isEnglish ? 'Mark as completed' : 'Marcar como concluída')}
+              {!user ? (isEnglish ? 'Sign in to save progress' : 'Entrar para guardar progresso') : isDone ? (isEnglish ? 'Completed' : 'Concluída') : (isEnglish ? 'Mark as completed' : 'Marcar como concluída')}
             </Button>
             {next && (
               <Button asChild variant="outline" className="w-full sm:w-auto">

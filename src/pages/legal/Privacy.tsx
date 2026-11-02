@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { useIsEnglish } from "@/i18n/lang";
 
 const SELLER = "Prompt Forge Pro";
-const SUPPORT_EMAIL = "support@promptforgepro.me";
+const SUPPORT_EMAIL = "geral@promptforgepro.me";
 
 function PrivacyPt() {
   return (
