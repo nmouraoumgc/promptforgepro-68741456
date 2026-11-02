@@ -1,0 +1,27 @@
+{
+ "id": "dsc_01m63wcnrqefjr1v8dx98vtgsn",
+ "status": "active",
+ "description": "OneHack community - 100% off first month of Pro (monthly)",
+ "enabled_for_checkout": false,
+ "code": "ONEHACK100",
+ "type": "percentage",
+ "amount": "100",
+ "currency_code": null,
+ "recur": false,
+ "maximum_recurring_intervals": null,
+ "usage_limit": 50,
+ "restrict_to": [
+  "pri_01kqer6fqxq35eqdw7v61pyt4c"
+ ],
+ "expires_at": "2026-11-28T13:00:00Z",
+ "mode": "standard",
+ "times_used": 23,
+ "custom_data": {
+  "channel": "onehack.st",
+  "campaign": "onehack"
+ },
+ "import_meta": null,
+ "discount_group_id": null,
+ "created_at": "2026-10-29T13:08:05.015Z",
+ "updated_at": "2026-10-29T13:18:29.4Z"
+}

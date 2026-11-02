@@ -1,7 +1,9 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { isInternalCaller } from '../_shared/internalAuth.ts';
 
 // Runs daily. Sends day3 and day6 dunning reminders for past_due subscriptions.
-Deno.serve(async () => {
+Deno.serve(async (req) => {
+  if (!(await isInternalCaller(req))) return new Response(JSON.stringify({ error: 'unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
   try {
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,

@@ -3,7 +3,8 @@ import { Video, TrendingUp, Zap, Lightbulb, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { PackCard } from '@/components/packs';
-import { PACKS, getLocalizedPacksByCategory } from '@/data/packs';
+import { usePacks } from '@/data/packsDb';
+import type { Pack } from '@/types/packs';
 import { OUTCOME_CATEGORIES, OutcomeCategory } from '@/types/packs';
 import { usePlanStore } from '@/stores/planStore';
 import { useNavigate } from 'react-router-dom';
@@ -25,13 +26,14 @@ export default function PromptPacks() {
 
   // Group packs by outcome category
   const categories = Object.keys(OUTCOME_CATEGORIES) as OutcomeCategory[];
+  const { packs: allPacks, isLoading } = usePacks(isEnglish);
   const packsByCategory = categories.reduce((acc, cat) => {
-    const packs = getLocalizedPacksByCategory(cat, isEnglish);
+    const packs = allPacks.filter((p) => p.outcomeCategory === cat);
     if (packs.length > 0) {
       acc[cat] = packs;
     }
     return acc;
-  }, {} as Record<OutcomeCategory, typeof PACKS>);
+  }, {} as Record<OutcomeCategory, Pack[]>);
 
   return (
     <div className="p-6 space-y-10 animate-fade-in">
@@ -50,7 +52,7 @@ export default function PromptPacks() {
         <p className="text-lg text-muted-foreground">
           {isEnglish
             ? 'Sell outcomes, not prompts. Pick packs built for your profession and the real result you want.'
-            : 'Venda resultados, não prompts. Escolha packs criados para a sua profissão e para o resultado real que você quer.'}
+            : 'Vende resultados, não prompts. Escolhe packs criados para a tua profissão e para o resultado real que queres.'}
         </p>
       </motion.div>
 
@@ -64,7 +66,7 @@ export default function PromptPacks() {
         {[
           { icon: Zap, label: isEnglish ? 'Real Cases' : 'Casos Reais', desc: isEnglish ? 'Use-cases from each profession' : 'Casos de uso por profissão' },
           { icon: TrendingUp, label: isEnglish ? 'Result Promise' : 'Promessa de Resultado', desc: isEnglish ? 'Each pack leads to a business outcome' : 'Cada pack aponta para um resultado de negócio' },
-          { icon: Lightbulb, label: isEnglish ? 'Action-Ready' : 'Pronto para Ação', desc: isEnglish ? 'Use today with minimal adaptation' : 'Use hoje com pouca adaptação' },
+          { icon: Lightbulb, label: isEnglish ? 'Action-Ready' : 'Pronto a usar', desc: isEnglish ? 'Use today with minimal adaptation' : 'Usa já, com pouca adaptação' },
         ].map(({ icon: Icon, label, desc }, i) => (
           <div
             key={i}
@@ -82,6 +84,9 @@ export default function PromptPacks() {
       </motion.div>
 
       {/* Packs by Category */}
+      {isLoading && (
+        <p className="text-center text-muted-foreground">{isEnglish ? 'Loading packs…' : 'A carregar packs…'}</p>
+      )}
       {Object.entries(packsByCategory).map(([category, packs], categoryIndex) => {
         const cat = category as OutcomeCategory;
         const catInfo = OUTCOME_CATEGORIES[cat];
@@ -134,7 +139,7 @@ export default function PromptPacks() {
         );
       })}
 
-      {/* Bottom CTA for non-premium users */}
+      {/* Bottom CTA for users without pack access (Free) */}
       {!hasAccess && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -146,14 +151,14 @@ export default function PromptPacks() {
             {isEnglish ? 'Unlock all Packs' : 'Desbloqueia todos os Packs'}
           </h3>
           <p className="text-muted-foreground mb-4">
-            {isEnglish ? 'Lifetime access to all templates and future updates.' : 'Acesso vitalício a todos os templates e futuras atualizações.'}
+            {isEnglish ? 'Prompt Packs (19€ one-time): lifetime access to all templates and future pack updates. Also included in Pro.' : 'Prompt Packs (19€, pagamento único): acesso vitalício a todos os templates e futuras atualizações dos packs. Também incluído no Pro.'}
           </p>
           <Button
             size="lg"
             onClick={() => navigate('/pricing')}
             className="bg-primary hover:bg-primary/90"
           >
-            {isEnglish ? 'View Premium Plan' : 'Ver Plano Premium'}
+            {isEnglish ? 'See Prompt Packs and Pro' : 'Ver Prompt Packs e Pro'}
             <ChevronRight className="h-4 w-4 ml-1" />
           </Button>
         </motion.div>

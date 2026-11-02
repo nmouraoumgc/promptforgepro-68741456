@@ -1,6 +1,9 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { authenticateRequest, corsHeaders } from "../_shared/auth.ts";
+import { loadActiveBrand, brandInstructions } from "../_shared/brand.ts";
+import { PT_PT_RULES } from '../_shared/ptpt.ts';
+import { plainTextRules, toPlainText } from '../_shared/plaintext.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -11,7 +14,9 @@ serve(async (req) => {
     const auth = await authenticateRequest(req);
     if (auth instanceof Response) return auth;
 
-    const { request: promptRequest, language } = await req.json();
+    const { request: promptRequest, language: reqLanguage, useBrand } = await req.json();
+    const brand = useBrand === false ? null : await loadActiveBrand(auth.userId);
+    const language = brand?.language ?? reqLanguage;
     const request = promptRequest;
 
     if (!request || request.trim().length === 0) {
@@ -21,9 +26,9 @@ serve(async (req) => {
       );
     }
 
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) {
-      console.error('LOVABLE_API_KEY not configured');
+    const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY');
+    if (!GROQ_API_KEY) {
+      console.error('GROQ_API_KEY not configured');
       return new Response(
         JSON.stringify({ error: 'API key não configurada' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -41,9 +46,9 @@ serve(async (req) => {
 
 Given a user's request, generate a professional, well-structured prompt that:
 - Is clear and specific
-- Has well-defined sections (context, instructions, expected output)
+- Has well-defined sections (context, instructions, expected output), with section titles as plain lines in CAPITALS
 - Is optimized for getting the best results from AI models
-- Is formatted in a readable way
+- Is plain text that can be copy-pasted anywhere (no Markdown)
 
 CRITICAL LANGUAGE RULE:
 - The ENTIRE generated prompt MUST be written in ${outputLanguage}.
@@ -53,18 +58,19 @@ CRITICAL LANGUAGE RULE:
 
     const userRequest = `Create a prompt based on this request:\n\n"${request}"`;
 
-    console.log('Generating quick prompt with Lovable AI...');
+    console.log('Generating quick prompt with Groq API...');
 
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'Authorization': `Bearer ${GROQ_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: Deno.env.get('AI_MODEL') ?? 'openai/gpt-oss-120b',
+        ...(Deno.env.get('AI_REASONING_EFFORT') ? { reasoning_effort: Deno.env.get('AI_REASONING_EFFORT') } : {}),
         messages: [
-          { role: 'system', content: systemPrompt },
+          { role: 'system', content: (isEnglish ? systemPrompt : systemPrompt + PT_PT_RULES) + brandInstructions(brand, isEnglish) + plainTextRules(isEnglish ? 'en' : 'pt') },
           { role: 'user', content: userRequest }
         ],
       }),
@@ -106,7 +112,8 @@ CRITICAL LANGUAGE RULE:
 
     return new Response(
       JSON.stringify({ 
-        prompt: generatedPrompt.trim(),
+        prompt: toPlainText(generatedPrompt),
+        brand: brand ? { id: brand.id, name: brand.name } : null,
         language: isEnglish ? 'en' : 'pt'
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

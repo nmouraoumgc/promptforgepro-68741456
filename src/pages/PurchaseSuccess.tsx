@@ -30,7 +30,7 @@ const PurchaseSuccess = () => {
       while (!cancelled && Date.now() - start < 15000) {
         await fetchProfile();
         const plan = useAuthStore.getState().profile?.current_plan;
-        if (plan === 'premium') break;
+        if (plan === 'packs' || plan === 'premium' || plan === 'pro') break;
         await new Promise((r) => setTimeout(r, 1500));
       }
       if (!cancelled) setIsVerifying(false);

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { toPlainText } from '@/lib/plainText';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -40,13 +41,16 @@ import {
 } from '@/types/prompt';
 import { cn } from '@/lib/utils';
 import LivePromptPreview from '@/components/builder/LivePromptPreview';
+import { BrandSelector } from '@/components/brand/BrandSelector';
+import { RunPrompt } from '@/components/run/RunPrompt';
 import { supabase } from '@/integrations/supabase/client';
+import { localizeApiError } from '@/i18n/lang';
 
 const stepIcons = {
   Target, Layers, Cpu, Palette, Users, Lock, Sparkles, CheckCircle
 };
 
-export default function GuidedBuilder() {
+export default function GuidedBuilder({ embedded = false }: { embedded?: boolean } = {}) {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuthStore();
@@ -119,6 +123,7 @@ export default function GuidedBuilder() {
     if (!isEnglish) return label;
     return ({
       'Genérico (qualquer IA)': 'Generic (any AI)',
+      'Imagens do ChatGPT': 'ChatGPT images',
     } as Record<string, string>)[label] || label;
   };
   const toneLabel = (label: string) => {
@@ -175,12 +180,12 @@ export default function GuidedBuilder() {
       if (error) throw error;
 
       if (data.error) {
-        toast({ title: isEnglish ? 'Error' : 'Erro', description: data.error, variant: 'destructive' });
+        toast({ title: isEnglish ? 'Error' : 'Erro', description: localizeApiError(data.error, isEnglish), variant: 'destructive' });
         setIsGenerating(false);
         return;
       }
 
-      setGeneratedPrompt(data.prompt);
+      setGeneratedPrompt(toPlainText(data.prompt));
     } catch (error) {
       console.error('Error generating prompt:', error);
       toast({ title: isEnglish ? 'Error' : 'Erro', description: isEnglish ? 'Could not generate the prompt. Try again.' : 'Não foi possível gerar o prompt. Tenta novamente.', variant: 'destructive' });
@@ -210,7 +215,7 @@ export default function GuidedBuilder() {
 
     toast({ title: isEnglish ? 'Success!' : 'Sucesso!', description: isEnglish ? 'Prompt saved to library' : 'Prompt guardado na biblioteca' });
     resetBuilderState();
-    navigate('/library');
+    navigate(`/library/${promptId}`);
   };
 
   const mapOutputToCategory = (output: OutputType | null): Category => {
@@ -225,7 +230,7 @@ export default function GuidedBuilder() {
   };
 
   const copyToClipboard = () => {
-    navigator.clipboard.writeText(generatedPrompt);
+    navigator.clipboard.writeText(toPlainText(generatedPrompt));
     toast({ title: isEnglish ? 'Copied!' : 'Copiado!', description: isEnglish ? 'Prompt copied to clipboard' : 'Prompt copiado para a área de transferência' });
   };
 
@@ -491,7 +496,7 @@ export default function GuidedBuilder() {
                   </div>
                   <div>
                     <span className="text-muted-foreground">{isEnglish ? 'Tone:' : 'Tom:'}</span>
-                    <p className="font-medium">{TONE_STYLES.find(t => t.value === builderState.tone)?.label}</p>
+                    <p className="font-medium">{toneLabel(TONE_STYLES.find(t => t.value === builderState.tone)?.label || '')}</p>
                   </div>
                   <div>
                     <span className="text-muted-foreground">{isEnglish ? 'Creativity:' : 'Criatividade:'}</span>
@@ -500,6 +505,8 @@ export default function GuidedBuilder() {
                 </div>
               </CardContent>
             </Card>
+
+            <BrandSelector />
 
             {/* Generate Button */}
             {!generatedPrompt && (
@@ -532,9 +539,10 @@ export default function GuidedBuilder() {
                   </Button>
                 </CardHeader>
                 <CardContent>
-                  <pre className="whitespace-pre-wrap font-mono text-sm bg-muted p-4 rounded-lg">
+                  <pre className="whitespace-pre-wrap font-mono text-sm bg-muted p-4 rounded-lg" data-testid="generated-prompt">
                     {generatedPrompt}
                   </pre>
+                  <RunPrompt prompt={generatedPrompt} className="pt-4" />
                 </CardContent>
               </Card>
             )}
@@ -566,7 +574,7 @@ export default function GuidedBuilder() {
   }
 
   return (
-    <div className="p-6 animate-fade-in">
+    <div className={embedded ? '' : 'p-6 animate-fade-in'}>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Builder */}
         <div className="lg:col-span-2 space-y-6">

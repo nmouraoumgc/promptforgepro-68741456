@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "PromptForge",
+    "appName": "PromptForge Pro",
     "tagline": "Better prompts, better results.",
     "loading": "Loading...",
     "save": "Save",
@@ -57,7 +57,12 @@
     "main": "Main",
     "more": "More",
     "newPrompt": "New Prompt",
-    "searchPrompts": "Search prompts..."
+    "searchPrompts": "Search prompts...",
+    "create": "Create",
+    "createDesc": "Quick, detailed or optimise",
+    "brand": "Brand Kit",
+    "brandDesc": "Your brand",
+    "plansPricing": "Plans and pricing"
   },
   "header": {
     "myAccount": "My Account",
@@ -66,7 +71,9 @@
     "signOut": "Sign Out",
     "login": "Login",
     "signup": "Sign Up",
-    "plan": "{{plan}} plan"
+    "plan": "{{plan}} plan",
+    "plans": "Plans",
+    "brand": "Brand Kit"
   },
   "dashboard": {
     "greeting": "Hi, Prompt Master!",
@@ -74,12 +81,8 @@
     "actions": {
       "create": "Create Prompt",
       "createDesc": "From scratch to excellence",
-      "quick": "Quick Prompt",
-      "quickDesc": "Fast and to the point",
       "optimize": "Optimize",
-      "optimizeDesc": "Stronger versions",
-      "test": "A/B Test",
-      "testDesc": "Find the best one"
+      "optimizeDesc": "Stronger versions"
     },
     "stats": {
       "prompts": "{{count}} prompts",
@@ -128,15 +131,9 @@
     "language": "Language",
     "languageDesc": "Choose the interface language"
   },
-  "learn": {
-    "tipsTitle": "Quick Tips",
-    "tipsDesc": "Improve your prompts with these techniques",
-    "lessonsTitle": "Lessons",
-    "lessonsDesc": "Learn to create professional prompts"
-  },
   "showcase": {
     "cardTitle": "High-Quality Prompt Example",
-    "viewDetails": "View details",
+    "viewDetails": "Why it works",
     "modalTitle": "Anatomy of an Effective Prompt",
     "modalDesc": "Understand the structure that ensures consistent results",
     "objectiveTitle": "1. Clear Objective",
@@ -230,7 +227,9 @@
       "proPeriod": "/month",
       "proDesc": "For daily professional use",
       "premiumPeriod": "one-time",
-      "premiumDesc": "Full access to Packs"
+      "premiumDesc": "Full access (legacy plan)",
+      "packsPeriod": "one-time payment",
+      "packsDesc": "All Prompt Packs and Learn lessons"
     }
   },
   "account": {
@@ -240,8 +239,9 @@
     "email": "Email",
     "currentPlan": "Current plan",
     "freeDesc": "Basic access to features",
-    "proDesc": "Professional tools active",
-    "premiumDesc": "Full access to all Packs",
+    "proDesc": "Professional tools and all Prompt Packs",
+    "premiumDesc": "Full access to every feature (legacy plan)",
+    "packsDesc": "All Prompt Packs and all Learn lessons",
     "viewPlans": "View plans",
     "upgrade": "Upgrade",
     "billingTitle": "Billing portal",
@@ -253,22 +253,63 @@
     "openingPortal": "Opening portal...",
     "billingErrorTitle": "Could not open billing portal",
     "billingErrorDesc": "Please try again in a moment.",
+    "noBillingTitle": "No billing on file yet",
+    "noBillingDesc": "There is no payment method or invoice linked to your account yet. Billing will appear here after your first payment.",
     "actions": "Actions",
     "signOut": "Sign out"
   },
-  "proTrial": {
-    "badge": "Limited offer",
-    "title": "Try Pro for just 2€",
-    "subtitle": "Unlock everything for 7 days. Then 9€/month — cancel anytime.",
-    "firstMonth": "for 7 days",
-    "thenPrice": "Then 9€/month — cancel anytime.",
-    "features": {
-      "unlimited": "Unlimited optimizations",
-      "abTesting": "Advanced A/B testing",
-      "history": "Full version history",
-      "export": "Prompt export"
-    },
-    "cta": "Start for 2€",
-    "dismiss": "Maybe later"
+  "fontSize": {
+    "label": "Text size",
+    "normal": "Normal",
+    "large": "Large",
+    "xlarge": "Extra large",
+    "desc": "Make text larger across the site"
+  },
+  "optimizerFlow": {
+    "step1Title": "1. Your prompt",
+    "step1Desc": "Paste or write your prompt and press Optimise. You get improved versions and a score.",
+    "placeholder": "Ex: Write an Instagram post about sustainability...",
+    "optimize": "Optimise prompt",
+    "optimizeAgain": "Optimise again",
+    "optimizing": "Analysing and optimising...",
+    "step2Title": "2. Choose the version to run",
+    "step2Desc": "Tap a version to choose it. You can copy any of them.",
+    "otherVersions": "Other versions",
+    "selected": "Selected",
+    "choose": "Choose",
+    "copy": "Copy",
+    "step3Title": "3. Run",
+    "step3Desc": "You will run the version: {{name}}",
+    "analysisTitle": "What was improved",
+    "useDetailed": "Use the Detailed version",
+    "draftRestored": "Draft restored",
+    "draftHint": "Saved automatically on this device for 24 hours.",
+    "draftClear": "Clear",
+    "variants": {
+      "detailed": {
+        "label": "Detailed",
+        "desc": "Structured and precise: context, rules and format defined. Best for consistent results."
+      },
+      "creative": {
+        "label": "Creative",
+        "desc": "More open and inspiring: gives the model room to surprise you. Best for ideas and writing."
+      },
+      "shorter": {
+        "label": "Shorter",
+        "desc": "Condensed and direct, for quick answers."
+      },
+      "technical": {
+        "label": "More technical",
+        "desc": "Precise language and specific terms."
+      },
+      "restrictive": {
+        "label": "More controlled",
+        "desc": "Strict format and clear limits."
+      },
+      "original": {
+        "label": "Your original",
+        "desc": "The prompt exactly as you wrote it."
+      }
+    }
   }
 }

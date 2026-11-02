@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="pt-PT">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sem conexão | PromptForge Pro</title>
+    <title>Sem ligação | PromptForge Pro</title>
     <style>
       body {
         margin: 0;
@@ -16,19 +16,36 @@
       }
       .card {
         max-width: 420px;
+        margin: 16px;
         padding: 24px;
         border-radius: 12px;
         background: #111827;
         text-align: center;
       }
-      h1 { margin-top: 0; }
-      p { opacity: 0.9; }
+      h1 { margin-top: 0; font-size: 1.4rem; }
+      p { opacity: 0.9; line-height: 1.5; }
+      button { margin-top: 8px; padding: 10px 18px; border: 0; border-radius: 8px; background: #f97316; color: #fff; font-weight: 600; cursor: pointer; }
     </style>
   </head>
   <body>
     <main class="card">
-      <h1>Você está offline</h1>
-      <p>Reconecte-se à internet para continuar usando todos os recursos do PromptForge Pro.</p>
+      <h1 id="t">Estás sem ligação à internet</h1>
+      <p id="m">Volta a ligar-te à internet para continuares a usar todas as funcionalidades do PromptForge Pro.</p>
+      <button id="b" type="button" onclick="location.reload()">Tentar novamente</button>
     </main>
+    <script>
+      (function () {
+        var lang = '';
+        try { lang = localStorage.getItem('pf_lang') || ''; } catch (e) {}
+        if (!lang) lang = (navigator.language || 'pt').slice(0, 2);
+        if (lang === 'en') {
+          document.documentElement.lang = 'en';
+          document.title = 'Offline | PromptForge Pro';
+          document.getElementById('t').textContent = "You're offline";
+          document.getElementById('m').textContent = 'Reconnect to the internet to keep using all PromptForge Pro features.';
+          document.getElementById('b').textContent = 'Try again';
+        }
+      })();
+    </script>
   </body>
 </html>

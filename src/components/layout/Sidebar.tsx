@@ -1,3 +1,4 @@
+import { Wordmark } from '@/components/brand/Wordmark';
 import { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -27,6 +28,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuthStore } from '@/stores/authStore';
+import { useIsEnglish } from '@/i18n/lang';
 
 interface NavItem {
   to: string;
@@ -36,23 +38,24 @@ interface NavItem {
   adminOnly?: boolean;
 }
 
+// 5 items. Account items (Cofre de marca, Planos, Definições, Admin) live in the header user menu.
 const mainNavItems: NavItem[] = [
-  { to: '/', icon: Home, labelKey: 'nav.dashboard', descriptionKey: 'nav.dashboardDesc' },
-  { to: '/quick', icon: Zap, labelKey: 'nav.quickPrompt', descriptionKey: 'nav.quickPromptDesc' },
-  { to: '/builder', icon: Wand2, labelKey: 'nav.createPrompt', descriptionKey: 'nav.createPromptDesc' },
+  { to: '/app', icon: Home, labelKey: 'nav.dashboard', descriptionKey: 'nav.dashboardDesc' },
+  { to: '/create', icon: Wand2, labelKey: 'nav.create', descriptionKey: 'nav.createDesc' },
   { to: '/library', icon: Library, labelKey: 'nav.library', descriptionKey: 'nav.libraryDesc' },
-  { to: '/optimizer', icon: Sparkles, labelKey: 'nav.optimizer', descriptionKey: 'nav.optimizerDesc' },
-  { to: '/versions', icon: GitBranch, labelKey: 'nav.versions', descriptionKey: 'nav.versionsDesc' },
-  { to: '/tester', icon: FlaskConical, labelKey: 'nav.tester', descriptionKey: 'nav.testerDesc' },
+  { to: '/packs', icon: Package, labelKey: 'nav.packs', descriptionKey: 'nav.packsDesc' },
+  { to: '/learn', icon: GraduationCap, labelKey: 'nav.learn', descriptionKey: 'nav.learnDesc' },
 ];
 
-const secondaryNavItems: NavItem[] = [
-  { to: '/learn', icon: GraduationCap, labelKey: 'nav.learn', descriptionKey: 'nav.learnDesc' },
-  { to: '/packs', icon: Package, labelKey: 'nav.packs', descriptionKey: 'nav.packsDesc' },
-  { to: '/planos', icon: CreditCard, labelKey: 'nav.plans', descriptionKey: 'nav.plansDesc' },
-  { to: '/settings', icon: Settings, labelKey: 'nav.settings', descriptionKey: 'nav.settingsDesc' },
-  { to: '/admin', icon: ShieldCheck, labelKey: 'nav.admin', descriptionKey: 'nav.adminDesc', adminOnly: true },
-];
+/** Which nav item a path belongs to (old routes map to their new home). */
+const sectionOf = (path: string): string => {
+  if (path === '/app') return '/app';
+  if (/^\/(create|quick|builder|optimizer)(\/|$)/.test(path)) return '/create';
+  if (/^\/(library|tester|versions)(\/|$)/.test(path)) return '/library';
+  if (path.startsWith('/packs')) return '/packs';
+  if (path.startsWith('/learn')) return '/learn';
+  return '';
+};
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
@@ -61,24 +64,20 @@ export function Sidebar() {
   const isMobile = useIsMobile();
   const { isAdmin } = useAuthStore();
   const { t } = useTranslation();
+  const isEnglish = useIsEnglish();
 
-  // Filter items based on admin status
-  const filteredSecondaryItems = secondaryNavItems.filter(
-    (item) => !item.adminOnly || isAdmin
-  );
+  const section = sectionOf(location.pathname);
 
   const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => (
     <>
       {/* Logo */}
       <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-4">
-        <NavLink to="/" className="flex items-center gap-2" onClick={onNavigate}>
+        <NavLink to="/app" className="flex items-center gap-2" onClick={onNavigate}>
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
             <Flame className="h-5 w-5 text-primary-foreground" />
           </div>
           {(!collapsed || isMobile) && (
-            <span className="text-lg font-bold text-sidebar-foreground">
-              Prompt<span className="text-primary">Forge</span>
-            </span>
+            <Wordmark className="text-lg  text-sidebar-foreground" />
           )}
         </NavLink>
         {!isMobile && (
@@ -86,6 +85,7 @@ export function Sidebar() {
             variant="ghost"
             size="icon"
             className="h-8 w-8 text-sidebar-foreground hover:bg-sidebar-accent"
+            aria-label={collapsed ? (isEnglish ? 'Expand menu' : 'Expandir menu') : (isEnglish ? 'Collapse menu' : 'Recolher menu')}
             onClick={() => setCollapsed(!collapsed)}
           >
             {collapsed ? (
@@ -99,7 +99,7 @@ export function Sidebar() {
 
       {/* Quick Action */}
       <div className="p-3">
-        <NavLink to="/builder" onClick={onNavigate}>
+        <NavLink to="/create" onClick={onNavigate}>
           <Button
             className={cn(
               'w-full gap-2 bg-primary hover:bg-primary/90',
@@ -126,39 +126,24 @@ export function Sidebar() {
                 key={item.to}
                 item={item}
                 collapsed={collapsed && !isMobile}
-                isActive={location.pathname === item.to}
+                isActive={section === item.to}
                 onNavigate={onNavigate}
               />
             ))}
           </div>
         </div>
 
-        <div className="py-2">
-          {(!collapsed || isMobile) && (
-            <span className="px-3 text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/50">
-              {t('nav.more')}
-            </span>
-          )}
-          <div className="mt-2 space-y-1">
-            {filteredSecondaryItems.map((item) => (
-              <SidebarNavItem
-                key={item.to}
-                item={item}
-                collapsed={collapsed && !isMobile}
-                isActive={location.pathname === item.to}
-                onNavigate={onNavigate}
-              />
-            ))}
-          </div>
-        </div>
       </nav>
 
       {/* Footer */}
       <div className="border-t border-sidebar-border p-3">
         {(!collapsed || isMobile) && (
-          <p className="text-center text-xs text-sidebar-foreground/50 whitespace-pre-line">
-            {t('common.tagline')}
-          </p>
+          <div className="space-y-1 text-center">
+            <NavLink to="/pricing" onClick={onNavigate} className="block text-xs text-sidebar-foreground/70 hover:text-primary" data-testid="sidebar-pricing">
+              {t('nav.plansPricing')}
+            </NavLink>
+            <p className="text-xs text-sidebar-foreground/50 whitespace-pre-line">{t('common.tagline')}</p>
+          </div>
         )}
       </div>
     </>
@@ -173,7 +158,8 @@ export function Sidebar() {
             <Button
               variant="ghost"
               size="icon"
-              className="fixed left-4 top-4 z-50 h-10 w-10 bg-sidebar/95 backdrop-blur-sm shadow-lg md:hidden"
+              className="fixed left-4 top-4 z-50 h-10 w-10 bg-sidebar/95 text-sidebar-foreground backdrop-blur-sm shadow-lg hover:bg-sidebar-accent hover:text-sidebar-accent-foreground md:hidden"
+              aria-label={isEnglish ? 'Open menu' : 'Abrir menu'}
             >
               <Menu className="h-5 w-5" />
             </Button>

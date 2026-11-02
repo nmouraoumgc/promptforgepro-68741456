@@ -8,6 +8,7 @@ import {
   Sparkles,
   UserPlus,
   Repeat,
+  AlertTriangle,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -26,236 +27,207 @@ import {
   CartesianGrid,
   Legend,
 } from 'recharts';
+import { useIsEnglish, isEnglishNow } from '@/i18n/lang';
 
-interface UserProfile {
-  id: string;
-  email: string;
-  current_plan: string;
-  created_at: string;
+/** Money by currency in minor units (cents), e.g. { EUR: 900, USD: 6300 }. */
+export type Money = Record<string, number>;
+
+/** Response of the admin-only `admin-metrics` edge function (computed from live Paddle data). */
+export interface AdminMetrics {
+  generated_at: string;
+  mrr_paid: Money;
+  mrr_paid_subs: number;
+  mrr_forecast: Money;
+  mrr_forecast_subs: number;
+  active_subs: number;
+  zero_charge_active_subs: number;
+  revenue_month: Money;
+  revenue_month_net: Money;
+  paid_txns_month: number;
+  free_txns_month: number;
+  revenue_30d: Money;
+  paid_txns_30d: number;
+  revenue_all_time: Money;
+  revenue_all_time_net: Money;
+  paid_txns_all_time: number;
+  refunds_chargebacks_all_time: Money;
+  refunds_chargebacks_count: number;
+  paying_user_ids: string[];
+  revenue_by_month: { month: string; amounts: Money }[];
+  recent_paid: { id: string; billed_at: string; currency: string; total: number; origin: string; user_id: string | null }[];
+  completed_txns_all_time: number;
+  paid_txns: { id: string; billed_at: string; currency: string; total: number; refunded: number; origin: string; subscription_id: string | null; discount_code: string | null }[];
+  discounts: { id: string; code: string | null; description: string | null; type: string; amount: string; currency: string | null; status: string; recur: boolean; times_used: number; usage_limit: number | null; expires_at: string | null; created_at: string }[];
+  discounts_active: number;
+  discounts_total: number;
+  /** Exact signups per month and how many of them are Pro (flag or active/trialing subscription). */
+  signups_by_month?: { month: string; signups: number; pro: number }[];
 }
 
-interface Purchase {
-  id: string;
-  user_id: string;
-  plan: string;
-  amount_cents: number;
-  currency: string;
-  status: string;
-  created_at: string;
-}
-
-interface Subscription {
-  id: string;
-  user_id: string;
-  status: string;
-  price_id: string;
-  environment: string;
-  current_period_end: string | null;
-  created_at: string;
+/** Exact counts from `count: 'exact'` queries (not limited by the 1000-row API cap). */
+export interface UserCounts {
+  total: number;
+  pro: number;
+  premium: number;
+  free: number;
+  new30d: number;
+  signupsByMonth: { month: string; count: number }[];
 }
 
 interface Props {
-  users: UserProfile[];
-  purchases: Purchase[];
-  subscriptions: Subscription[];
+  counts: UserCounts | null;
+  metrics: AdminMetrics | null;
+  metricsError: string | null;
 }
 
-const fmtEur = (cents: number) =>
-  new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(cents / 100);
+export const fmtCur = (cents: number, currency: string) =>
+  new Intl.NumberFormat(isEnglishNow() ? 'en-GB' : 'pt-PT', { style: 'currency', currency }).format(cents / 100);
 
-const monthKey = (d: Date) =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+/** "0,00 €" when empty, otherwise "63,00 US$ + 9,00 €"; each currency shown as-is, never converted. */
+export const fmtMoney = (m: Money | undefined, fallbackCurrency = 'EUR') => {
+  const entries = Object.entries(m ?? {}).filter(([, v]) => v !== 0);
+  if (entries.length === 0) return fmtCur(0, fallbackCurrency);
+  return entries.map(([c, v]) => fmtCur(v, c)).join(' + ');
+};
 
 const monthLabel = (key: string) => {
   const [y, m] = key.split('-');
   const date = new Date(Number(y), Number(m) - 1, 1);
-  return date.toLocaleDateString('pt-PT', { month: 'short', year: '2-digit' });
+  return date.toLocaleDateString(isEnglishNow() ? 'en-GB' : 'pt-PT', { month: 'short', year: '2-digit' });
 };
 
-export function AdminOverview({ users, purchases, subscriptions }: Props) {
+export function AdminOverview({ counts, metrics, metricsError }: Props) {
+  const isEnglish = useIsEnglish();
+  const na = 'n/d';
+
   const stats = useMemo(() => {
-    const completed = purchases.filter((p) => p.status === 'completed');
-    const totalRevenueCents = completed.reduce((s, p) => s + p.amount_cents, 0);
+    const total = counts?.total ?? 0;
+    const payingUsers = metrics ? metrics.paying_user_ids.length : null;
+    const conversionRate = payingUsers !== null && total > 0 ? (payingUsers / total) * 100 : null;
+    return { total, payingUsers, conversionRate };
+  }, [counts, metrics]);
 
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const monthRevenueCents = completed
-      .filter((p) => new Date(p.created_at) >= startOfMonth)
-      .reduce((s, p) => s + p.amount_cents, 0);
+  const currencies = useMemo(() => {
+    const set = new Set<string>();
+    metrics?.revenue_by_month.forEach((r) => Object.keys(r.amounts).forEach((c) => set.add(c)));
+    if (set.size === 0) set.add('EUR');
+    return [...set].sort();
+  }, [metrics]);
 
-    // Active live Pro subs = MRR @ 9€ (includes trial price)
-    const proPriceIds = new Set(['pro_monthly', 'pro_monthly_trial_7d']);
-    const activeProSubs = subscriptions.filter(
-      (s) =>
-        s.environment === 'live' &&
-        proPriceIds.has(s.price_id) &&
-        ['active', 'trialing', 'past_due'].includes(s.status) &&
-        (!s.current_period_end || new Date(s.current_period_end) > now)
-    ).length;
-    const mrrCents = activeProSubs * 900;
-
-    const trialingSubs = subscriptions.filter(
-      (s) => s.environment === 'live' && s.status === 'trialing'
-    ).length;
-    const pastDueSubs = subscriptions.filter(
-      (s) => s.environment === 'live' && s.status === 'past_due'
-    ).length;
-
-    const proUsers = users.filter((u) => u.current_plan === 'pro').length;
-    const premiumUsers = users.filter((u) => u.current_plan === 'premium').length;
-    const freeUsers = users.filter((u) => u.current_plan === 'free').length;
-    const paidUsers = proUsers + premiumUsers;
-    const conversionRate = users.length > 0 ? (paidUsers / users.length) * 100 : 0;
-
-    const last30 = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-    const newUsers30d = users.filter((u) => new Date(u.created_at) >= last30).length;
-    const newPurchases30d = completed.filter((p) => new Date(p.created_at) >= last30).length;
-
-    const arpu = paidUsers > 0 ? totalRevenueCents / paidUsers : 0;
-
-    return {
-      totalRevenueCents,
-      monthRevenueCents,
-      mrrCents,
-      activeProSubs,
-      trialingSubs,
-      pastDueSubs,
-      proUsers,
-      premiumUsers,
-      freeUsers,
-      paidUsers,
-      conversionRate,
-      newUsers30d,
-      newPurchases30d,
-      arpu,
-      totalCompleted: completed.length,
-    };
-  }, [users, purchases, subscriptions]);
-
-  // Revenue + signups by month (last 6 months)
   const monthlySeries = useMemo(() => {
-    const now = new Date();
-    const months: string[] = [];
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      months.push(monthKey(d));
-    }
-
-    const revenueByMonth = new Map<string, number>();
-    const signupsByMonth = new Map<string, number>();
-    months.forEach((m) => {
-      revenueByMonth.set(m, 0);
-      signupsByMonth.set(m, 0);
+    const serverSignups = metrics?.signups_by_month?.length ? metrics.signups_by_month : null;
+    const months = serverSignups?.map((s) => s.month) ?? counts?.signupsByMonth.map((s) => s.month) ?? metrics?.revenue_by_month.map((r) => r.month) ?? [];
+    return months.map((m) => {
+      const rev = metrics?.revenue_by_month.find((r) => r.month === m)?.amounts ?? {};
+      const srv = serverSignups?.find((s) => s.month === m);
+      const row: Record<string, string | number> = {
+        month: monthLabel(m),
+        signups: srv?.signups ?? counts?.signupsByMonth.find((s) => s.month === m)?.count ?? 0,
+      };
+      if (srv) row.pro = srv.pro;
+      currencies.forEach((c) => { row[c] = Number(((rev[c] ?? 0) / 100).toFixed(2)); });
+      return row;
     });
+  }, [counts, metrics, currencies]);
+  const hasProSeries = !!metrics?.signups_by_month?.length;
 
-    purchases
-      .filter((p) => p.status === 'completed')
-      .forEach((p) => {
-        const k = monthKey(new Date(p.created_at));
-        if (revenueByMonth.has(k)) {
-          revenueByMonth.set(k, (revenueByMonth.get(k) || 0) + p.amount_cents / 100);
-        }
-      });
-
-    users.forEach((u) => {
-      const k = monthKey(new Date(u.created_at));
-      if (signupsByMonth.has(k)) {
-        signupsByMonth.set(k, (signupsByMonth.get(k) || 0) + 1);
-      }
-    });
-
-    return months.map((m) => ({
-      month: monthLabel(m),
-      revenue: Number((revenueByMonth.get(m) || 0).toFixed(2)),
-      signups: signupsByMonth.get(m) || 0,
-    }));
-  }, [users, purchases]);
-
-  // Plan distribution
   const planData = useMemo(
     () => [
-      { name: 'Free', value: stats.freeUsers, color: 'hsl(var(--muted-foreground))' },
-      { name: 'Pro', value: stats.proUsers, color: 'hsl(var(--primary))' },
-      { name: 'Premium', value: stats.premiumUsers, color: 'hsl(45 93% 58%)' },
+      { name: 'Free', value: counts?.free ?? 0, color: 'hsl(var(--muted-foreground))' },
+      { name: 'Pro', value: counts?.pro ?? 0, color: 'hsl(var(--primary))' },
+      { name: 'Prompt Packs', value: counts?.premium ?? 0, color: 'hsl(45 93% 58%)' },
     ],
-    [stats]
+    [counts]
   );
 
-  // Recent purchases
-  const recentPurchases = useMemo(
-    () =>
-      [...purchases]
-        .filter((p) => p.status === 'completed')
-        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-        .slice(0, 5),
-    [purchases]
-  );
+  const curColors = ['hsl(var(--primary))', 'hsl(160 70% 45%)', 'hsl(45 93% 58%)'];
 
   return (
     <div className="space-y-6">
+      {metricsError && (
+        <Card className="border-destructive/50">
+          <CardContent className="py-3 flex items-center gap-2 text-sm text-destructive">
+            <AlertTriangle className="h-4 w-4" /> {metricsError}
+          </CardContent>
+        </Card>
+      )}
+
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <KpiCard
-          icon={Euro}
-          label="Receita Total"
-          value={fmtEur(stats.totalRevenueCents)}
-          sub={`${stats.totalCompleted} compras concluídas`}
+          icon={TrendingUp}
+          label={isEnglish ? 'Real MRR (paid)' : 'MRR real (pago)'}
+          value={metrics ? fmtMoney(metrics.mrr_paid) : na}
+          sub={metrics ? (isEnglish
+            ? `${metrics.mrr_paid_subs} subscriptions with a real charge`
+            : `${metrics.mrr_paid_subs} subscrições com cobrança real`) : undefined}
           accent="success"
         />
         <KpiCard
-          icon={TrendingUp}
-          label="MRR (Pro)"
-          value={fmtEur(stats.mrrCents)}
-          sub={`${stats.activeProSubs} subscrições ativas`}
+          icon={Repeat}
+          label={isEnglish ? 'Forecast MRR' : 'MRR previsto'}
+          value={metrics ? fmtMoney(metrics.mrr_forecast) : na}
+          sub={metrics ? (isEnglish
+            ? `${metrics.mrr_forecast_subs} active in Paddle · ${metrics.zero_charge_active_subs} never charged (only if next renewal succeeds)`
+            : `${metrics.mrr_forecast_subs} ativas no Paddle · ${metrics.zero_charge_active_subs} nunca cobradas (só se a próxima renovação passar)`) : undefined}
           accent="primary"
         />
         <KpiCard
-          icon={Repeat}
-          label="Receita este mês"
-          value={fmtEur(stats.monthRevenueCents)}
-          sub={`${stats.newPurchases30d} compras nos últimos 30d`}
+          icon={Euro}
+          label={isEnglish ? 'Revenue this month' : 'Receita este mês'}
+          value={metrics ? fmtMoney(metrics.revenue_month) : na}
+          sub={metrics ? (isEnglish
+            ? `${metrics.paid_txns_month} paid · ${metrics.free_txns_month} at 0 · net ${fmtMoney(metrics.revenue_month_net)} (Paddle)`
+            : `${metrics.paid_txns_month} pagas · ${metrics.free_txns_month} a 0 · líquido ${fmtMoney(metrics.revenue_month_net)} (Paddle)`) : undefined}
           accent="info"
         />
         <KpiCard
+          icon={ShoppingCart}
+          label={isEnglish ? 'Total revenue (net)' : 'Receita total (líquida)'}
+          value={metrics ? fmtMoney(metrics.revenue_all_time_net) : na}
+          sub={metrics ? (isEnglish
+            ? `gross ${fmtMoney(metrics.revenue_all_time)} · ${metrics.paid_txns_all_time} paid · ${metrics.refunds_chargebacks_count} refunds/chargebacks`
+            : `bruto ${fmtMoney(metrics.revenue_all_time)} · ${metrics.paid_txns_all_time} pagas · ${metrics.refunds_chargebacks_count} reembolsos/chargebacks`) : undefined}
+          accent="amber"
+        />
+        <KpiCard
           icon={Users}
-          label="Utilizadores"
-          value={String(users.length)}
-          sub={`+${stats.newUsers30d} nos últimos 30d`}
+          label={isEnglish ? 'Users' : 'Utilizadores'}
+          value={counts ? String(counts.total) : na}
+          sub={counts ? (isEnglish ? `+${counts.new30d} in the last 30d` : `+${counts.new30d} nos últimos 30d`) : undefined}
           accent="amber"
         />
       </div>
 
       {/* Secondary KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
-        <SmallStat icon={Crown} label="Premium" value={stats.premiumUsers} />
-        <SmallStat icon={Sparkles} label="Pro" value={stats.proUsers} />
+        <SmallStat icon={Crown} label={isEnglish ? 'Prompt Packs (plan)' : 'Prompt Packs (plano)'} value={counts?.premium ?? na} />
+        <SmallStat icon={Sparkles} label={isEnglish ? 'Pro (flag)' : 'Pro (flag)'} value={counts?.pro ?? na} />
+        <SmallStat icon={Users} label={isEnglish ? 'Paying users' : 'Pagantes reais'} value={stats.payingUsers ?? na} />
         <SmallStat
           icon={UserPlus}
-          label="Conversão"
-          value={`${stats.conversionRate.toFixed(1)}%`}
+          label={isEnglish ? 'Conversion (paying)' : 'Conversão (pagantes)'}
+          value={stats.conversionRate !== null ? `${stats.conversionRate.toFixed(2)}%` : na}
         />
-        <SmallStat icon={ShoppingCart} label="ARPU" value={fmtEur(stats.arpu)} />
-        <SmallStat icon={Sparkles} label="Em trial" value={stats.trialingSubs} />
-        <SmallStat icon={TrendingUp} label="Past Due" value={stats.pastDueSubs} />
+        <SmallStat icon={Repeat} label={isEnglish ? 'Revenue 30d' : 'Receita 30d'} value={metrics ? fmtMoney(metrics.revenue_30d) : na} />
+        <SmallStat
+          icon={AlertTriangle}
+          label={isEnglish ? 'Refunds/chargebacks' : 'Reembolsos/chargebacks'}
+          value={metrics ? fmtMoney(metrics.refunds_chargebacks_all_time) : na}
+        />
       </div>
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card>
           <CardHeader>
-            <CardTitle>Receita (últimos 6 meses)</CardTitle>
-            <CardDescription>Soma de compras concluídas por mês (€)</CardDescription>
+            <CardTitle>{isEnglish ? 'Revenue (last 6 months)' : 'Receita (últimos 6 meses)'}</CardTitle>
+            <CardDescription>{isEnglish ? 'Completed Paddle transactions with a real charge, per currency' : 'Transações Paddle concluídas com cobrança real, por moeda'}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={monthlySeries}>
-                  <defs>
-                    <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
-                      <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={12} />
                   <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
@@ -266,15 +238,20 @@ export function AdminOverview({ users, purchases, subscriptions }: Props) {
                       borderRadius: 8,
                       color: 'hsl(var(--popover-foreground))',
                     }}
-                    formatter={(v: number) => [`${v.toFixed(2)}€`, 'Receita']}
+                    formatter={(v: number, name: string) => [fmtCur(Math.round(v * 100), name), name]}
                   />
-                  <Area
-                    type="monotone"
-                    dataKey="revenue"
-                    stroke="hsl(var(--primary))"
-                    strokeWidth={2}
-                    fill="url(#revGrad)"
-                  />
+                  <Legend />
+                  {currencies.map((c, i) => (
+                    <Area
+                      key={c}
+                      type="monotone"
+                      dataKey={c}
+                      stroke={curColors[i % curColors.length]}
+                      strokeWidth={2}
+                      fill={curColors[i % curColors.length]}
+                      fillOpacity={0.15}
+                    />
+                  ))}
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -283,8 +260,12 @@ export function AdminOverview({ users, purchases, subscriptions }: Props) {
 
         <Card>
           <CardHeader>
-            <CardTitle>Novos utilizadores (últimos 6 meses)</CardTitle>
-            <CardDescription>Registos por mês</CardDescription>
+            <CardTitle>{isEnglish ? 'New users (last 6 months)' : 'Novos utilizadores (últimos 6 meses)'}</CardTitle>
+            <CardDescription>
+              {isEnglish
+                ? 'Sign-ups per month and how many of them became Pro (exact counts)'
+                : 'Registos por mês e quantos desses passaram a Pro (contagens exatas)'}
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-72">
@@ -301,7 +282,11 @@ export function AdminOverview({ users, purchases, subscriptions }: Props) {
                       color: 'hsl(var(--popover-foreground))',
                     }}
                   />
-                  <Bar dataKey="signups" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} />
+                  <Legend />
+                  <Bar dataKey="signups" name={isEnglish ? 'Sign-ups' : 'Registos'} fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} />
+                  {hasProSeries && (
+                    <Bar dataKey="pro" name={isEnglish ? 'Became Pro' : 'Passaram a Pro'} fill="hsl(45 93% 58%)" radius={[6, 6, 0, 0]} />
+                  )}
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -312,23 +297,18 @@ export function AdminOverview({ users, purchases, subscriptions }: Props) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card>
           <CardHeader>
-            <CardTitle>Distribuição de planos</CardTitle>
-            <CardDescription>Free vs Pro vs Premium</CardDescription>
+            <CardTitle>{isEnglish ? 'Plan distribution (profile flag)' : 'Distribuição de planos (flag do perfil)'}</CardTitle>
+            <CardDescription>
+              {isEnglish
+                ? 'Plan flag on profiles, not the same as paying (includes 100%-discount and manual grants)'
+                : 'Flag de plano nos perfis, não é o mesmo que pagar (inclui descontos de 100% e atribuições manuais)'}
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie
-                    data={planData}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={95}
-                    paddingAngle={2}
-                  >
+                  <Pie data={planData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={95} paddingAngle={2}>
                     {planData.map((entry, idx) => (
                       <Cell key={idx} fill={entry.color} />
                     ))}
@@ -350,47 +330,41 @@ export function AdminOverview({ users, purchases, subscriptions }: Props) {
 
         <Card>
           <CardHeader>
-            <CardTitle>Compras recentes</CardTitle>
-            <CardDescription>Últimas 5 transações concluídas</CardDescription>
+            <CardTitle>{isEnglish ? 'Recent paid transactions' : 'Transações pagas recentes'}</CardTitle>
+            <CardDescription>{isEnglish ? 'Last 5 completed Paddle transactions with amount > 0' : 'Últimas 5 transações Paddle concluídas com valor > 0'}</CardDescription>
           </CardHeader>
           <CardContent>
-            {recentPurchases.length === 0 ? (
+            {!metrics || metrics.recent_paid.length === 0 ? (
               <p className="text-sm text-muted-foreground py-8 text-center">
-                Ainda sem compras.
+                {isEnglish ? 'No paid transactions yet.' : 'Ainda sem transações pagas.'}
               </p>
             ) : (
               <ul className="divide-y divide-border">
-                {recentPurchases.map((p) => (
+                {metrics.recent_paid.map((p) => (
                   <li key={p.id} className="py-3 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                        {p.plan === 'premium' ? (
-                          <Crown className="h-4 w-4 text-primary" />
-                        ) : (
-                          <Sparkles className="h-4 w-4 text-primary" />
-                        )}
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline">{p.origin === 'subscription_recurring' ? (isEnglish ? 'renewal' : 'renovação') : (isEnglish ? 'new' : 'nova')}</Badge>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(p.billed_at).toLocaleDateString(isEnglish ? 'en-GB' : 'pt-PT', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: '2-digit',
+                          })}
+                        </span>
                       </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="capitalize">{p.plan}</Badge>
-                          <span className="text-xs text-muted-foreground">
-                            {new Date(p.created_at).toLocaleDateString('pt-PT', {
-                              day: '2-digit',
-                              month: 'short',
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}
-                          </span>
-                        </div>
-                        <p className="text-xs font-mono text-muted-foreground mt-0.5">
-                          {p.user_id.slice(0, 8)}…
-                        </p>
-                      </div>
+                      <p className="text-xs font-mono text-muted-foreground mt-0.5">{p.id.slice(0, 14)}…</p>
                     </div>
-                    <span className="font-semibold">{fmtEur(p.amount_cents)}</span>
+                    <span className="font-semibold">{fmtCur(p.total, p.currency)}</span>
                   </li>
                 ))}
               </ul>
+            )}
+            {metrics && (
+              <p className="text-[0.6875rem] text-muted-foreground mt-3">
+                {isEnglish ? 'Source: Paddle (live), updated' : 'Fonte: Paddle (live), atualizado'}{' '}
+                {new Date(metrics.generated_at).toLocaleString(isEnglish ? 'en-GB' : 'pt-PT', { timeZone: 'Europe/Lisbon' })}
+              </p>
             )}
           </CardContent>
         </Card>

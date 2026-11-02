@@ -1,27 +1,74 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="pt-PT">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PromptForge Pro</title>
-    <meta name="description" content="Crie, otimize e teste prompts profissionais com IA" />
+    <meta name="description" content="Cria, otimiza e guarda prompts profissionais para ChatGPT, Gemini e Claude, em português de Portugal. Começa grátis." />
     <meta name="author" content="PromptForge Pro" />
     <meta name="theme-color" content="#0f172a" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="PromptForge" />
+    <link rel="preconnect" href="https://cwrxbxxfaemcvliasycz.supabase.co" crossorigin />
+    <link rel="preconnect" href="https://eu.i.posthog.com" crossorigin />
+    <link rel="dns-prefetch" href="https://eu-assets.i.posthog.com" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <script>
+      // Apply the saved theme (or the system default) before first paint, so no page flashes white.
+      (function () {
+        var dark = true;
+        try {
+          var st = JSON.parse(localStorage.getItem('promptforge-storage') || 'null');
+          if (st && st.state && typeof st.state.darkMode === 'boolean') dark = st.state.darkMode;
+          else if (window.matchMedia) dark = !window.matchMedia('(prefers-color-scheme: light)').matches;
+        } catch (e) {}
+        var r = document.documentElement;
+        if (dark) r.classList.add('dark'); else r.classList.remove('dark');
+        r.style.colorScheme = dark ? 'dark' : 'light';
+        // Saved text size (A / A+ / A++), see src/lib/fontSize.ts.
+        try {
+          var fs = localStorage.getItem('pf_font_size');
+          if (fs === 'large' || fs === 'xlarge') r.setAttribute('data-fs', fs);
+        } catch (e) {}
+        var m = document.querySelector('meta[name="theme-color"]');
+        if (m) m.setAttribute('content', dark ? '#0f121a' : '#f5f6f8');
+        // Web fonts load after the page has rendered (metric-matched fallback below avoids layout shift).
+        var loadFonts = function () {
+          var f = document.createElement('link');
+          f.rel = 'stylesheet';
+          f.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap';
+          document.head.appendChild(f);
+        };
+        if (document.readyState === 'complete') loadFonts(); else window.addEventListener('load', loadFonts);
+        // Vercel Web Analytics queue stub.
+        window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+      })();
+    </script>
+    <style>html{background:#f5f6f8}html.dark{background:#0f121a}@font-face{font-family:'Inter Fallback';src:local('Arial');ascent-override:90.44%;descent-override:22.52%;line-gap-override:0%;size-adjust:107.12%}</style>
     <link rel="manifest" href="/manifest.webmanifest" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.svg" />
-    <link rel="icon" type="image/svg+xml" href="/pwa-icon.svg" />
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
     <meta property="og:title" content="PromptForge Pro" />
-    <meta property="og:description" content="Crie, otimize e teste prompts profissionais com IA" />
+    <meta property="og:description" content="Cria, otimiza e guarda prompts profissionais para ChatGPT, Gemini e Claude, em português de Portugal. Começa grátis." />
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <meta property="og:url" content="https://promptforgepro.me/" />
+    <meta property="og:site_name" content="PromptForge Pro" />
+    <meta property="og:locale" content="pt_PT" />
+    <meta property="og:image" content="https://promptforgepro.me/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="PromptForge Pro: prompts profissionais para IA, sem complicações." />
+    <link rel="canonical" href="https://promptforgepro.me/" />
 
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@Lovable" />
-    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <meta name="twitter:image" content="https://promptforgepro.me/og-image.png" />
+    <!-- Paddle.js (checkout + Retain). Static so it is in the raw HTML of every page; initialized from the bundle (src/lib/paddle.ts). -->
+    <script src="https://cdn.paddle.com/paddle/v2/paddle.js" data-paddle="true" defer></script>
+    <script defer src="/_vercel/insights/script.js"></script>
   </head>
 
   <body>

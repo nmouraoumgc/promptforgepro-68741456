@@ -1,6 +1,9 @@
 import { useState } from 'react';
+import { BrandSelector } from '@/components/brand/BrandSelector';
 import { motion } from 'framer-motion';
-import { Zap, CheckCircle } from 'lucide-react';
+import { Zap, CheckCircle, Lock } from 'lucide-react';
+import { TemplateFiller } from '@/components/templates/TemplateFiller';
+import { RunPromptDialogButton } from '@/components/run/RunPrompt';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,6 +14,7 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useTranslation } from 'react-i18next';
+import { localizeApiError } from '@/i18n/lang';
 interface PackPreviewProps {
   pack: Pack;
   onUnlock?: () => void;
@@ -66,7 +70,7 @@ const getPackCopy = (packSlug: string, isEnglish: boolean) => {
       limitTitle: '🔒 Limite gratuito atingido',
       limitSubtext: 'Desbloqueia o pack para gerar hooks ilimitados e aceder a todo o conteúdo.',
       ctaMicrocopy: 'Inclui todos os hooks, scripts, estruturas e CTAs do TikTok Viral.',
-      trustNote: 'Criado para quem quer publicar com consistência — não apenas "experimentar IA".',
+      trustNote: 'Criado para quem quer publicar com consistência, não apenas "experimentar IA".',
     },
     youtube: {
       inputLabel: 'Tema do conteúdo',
@@ -140,7 +144,7 @@ const getPackCopy = (packSlug: string, isEnglish: boolean) => {
       limitTitle: '🔒 Free limit reached',
       limitSubtext: 'Unlock this pack for full access and unlimited use.',
       ctaMicrocopy: 'Includes all content from the Instagram Reels Prompt Pack.',
-      trustNote: 'Built for creators who want consistent outcomes — not just to experiment with AI.',
+      trustNote: 'Built for creators who want consistent outcomes, not just to experiment with AI.',
     },
     tiktok: {
       inputLabel: 'Video topic',
@@ -153,7 +157,7 @@ const getPackCopy = (packSlug: string, isEnglish: boolean) => {
       limitTitle: '🔒 Free limit reached',
       limitSubtext: 'Unlock this pack to generate unlimited hooks and access all content.',
       ctaMicrocopy: 'Includes all TikTok Viral hooks, scripts, structures and CTAs.',
-      trustNote: 'Built for creators who want consistency — not just to "try AI".',
+      trustNote: 'Built for creators who want consistency, not just to "try AI".',
     },
     youtube: {
       inputLabel: 'Content topic',
@@ -166,7 +170,7 @@ const getPackCopy = (packSlug: string, isEnglish: boolean) => {
       limitTitle: '🔒 Free limit reached',
       limitSubtext: 'Unlock this pack for full access and unlimited use.',
       ctaMicrocopy: 'Includes all content from the YouTube Growth Prompt Pack.',
-      trustNote: 'Built for creators who want consistent outcomes — not just to experiment with AI.',
+      trustNote: 'Built for creators who want consistent outcomes, not just to experiment with AI.',
     },
     copywriting: {
       inputLabel: 'Content topic',
@@ -179,7 +183,7 @@ const getPackCopy = (packSlug: string, isEnglish: boolean) => {
       limitTitle: '🔒 Free limit reached',
       limitSubtext: 'Unlock this pack for full access and unlimited use.',
       ctaMicrocopy: 'Includes all content from the Sales Copywriting Prompt Pack.',
-      trustNote: 'Built for creators who want consistent outcomes — not just to experiment with AI.',
+      trustNote: 'Built for creators who want consistent outcomes, not just to experiment with AI.',
     },
   };
 
@@ -202,7 +206,7 @@ const getPackCopy = (packSlug: string, isEnglish: boolean) => {
       limitTitle: '🔒 Free limit reached',
       limitSubtext: 'Unlock this pack for full access and unlimited use.',
       ctaMicrocopy: 'Includes all pack content.',
-      trustNote: 'Built for creators who want consistent outcomes — not just to experiment with AI.',
+      trustNote: 'Built for creators who want consistent outcomes, not just to experiment with AI.',
     },
     ...(enOverrides[packSlug] || {}),
   };
@@ -221,6 +225,8 @@ export function PackPreview({ pack, onUnlock }: PackPreviewProps) {
   const [hasGenerated, setHasGenerated] = useState(false);
 
   const copy = getPackCopy(pack.slug, isEnglish);
+  const freePrompts = Object.values(pack.prompts).flat().filter((p) => p.isFreePreview);
+  const lockedCount = Math.max(0, pack.totalPrompts - freePrompts.length);
 
   const handleGenerate = async () => {
     if (!tema.trim()) return;
@@ -232,7 +238,8 @@ export function PackPreview({ pack, onUnlock }: PackPreviewProps) {
         body: { 
           tema: tema.trim(), 
           packSlug: pack.slug,
-          isPremium: hasAccess 
+          isPremium: hasAccess,
+          language: isEnglish ? 'en' : 'pt',
         }
       });
 
@@ -250,7 +257,7 @@ export function PackPreview({ pack, onUnlock }: PackPreviewProps) {
       if (data.error) {
         toast({
           title: isEnglish ? 'Error' : 'Erro',
-          description: data.error,
+          description: localizeApiError(data.error, isEnglish),
           variant: 'destructive',
         });
         setIsGenerating(false);
@@ -292,6 +299,30 @@ export function PackPreview({ pack, onUnlock }: PackPreviewProps) {
         </p>
       </div>
 
+      {/* Free templates (public previews served by the DB; premium ones are never sent to this user) */}
+      {!hasAccess && freePrompts.length > 0 && (
+        <Card className="p-5 space-y-3" data-testid="free-templates">
+          <h3 className="font-semibold text-lg text-foreground">
+            {isEnglish ? 'Free templates from this pack' : 'Modelos grátis deste pack'}
+          </h3>
+          {freePrompts.map((p) => (
+            <div key={p.id} className="p-3 rounded-lg border border-border bg-background space-y-3">
+              <div>
+                <p className="font-medium text-foreground">{p.title}</p>
+                {p.description && <p className="text-xs text-muted-foreground">{p.description}</p>}
+              </div>
+              <TemplateFiller template={p.content} isEnglish={isEnglish} idPrefix={`free-${p.id}`} extraActions={(text, missing) => <RunPromptDialogButton prompt={text} disabled={missing > 0} />} />
+            </div>
+          ))}
+          {lockedCount > 0 && (
+            <div className="flex items-center gap-2 p-3 rounded-lg border border-border/50 bg-muted/30 text-sm text-muted-foreground" data-testid="locked-templates">
+              <Lock className="h-4 w-4" />
+              {isEnglish ? `${lockedCount} more premium templates unlock with the full pack` : `Mais ${lockedCount} templates premium com o pack completo`}
+            </div>
+          )}
+        </Card>
+      )}
+
       {/* Interactive Preview Block */}
       {!hasAccess && (
         <Card className="p-5 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
@@ -317,6 +348,7 @@ export function PackPreview({ pack, onUnlock }: PackPreviewProps) {
                 onChange={(e) => setTema(e.target.value)}
                 disabled={hasGenerated}
               />
+              <BrandSelector className="pt-2" />
             </div>
 
             {/* Generate Button or Results */}

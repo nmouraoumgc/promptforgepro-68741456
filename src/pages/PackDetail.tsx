@@ -3,8 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, 
-  Copy, 
-  Check, 
+  Check,
   Lock, 
   Zap, 
   Layout, 
@@ -17,11 +16,13 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useToast } from '@/hooks/use-toast';
 import { usePlanStore } from '@/stores/planStore';
-import { getLocalizedPackBySlug } from '@/data/packs';
+import { usePacks } from '@/data/packsDb';
 import { PackPreview } from '@/components/packs';
+import { TemplateFiller } from '@/components/templates/TemplateFiller';
+import { RunPromptDialogButton } from '@/components/run/RunPrompt';
 import { cn } from '@/lib/utils';
+import { usePageMeta } from '@/lib/pageMeta';
 import { useTranslation } from 'react-i18next';
 
 const categoryIcons: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -34,19 +35,24 @@ const categoryIcons: Record<string, React.ComponentType<{ className?: string }>>
 export default function PackDetail() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const { toast } = useToast();
   const { canAccess } = usePlanStore();
   const { i18n } = useTranslation();
   const isEnglish = (i18n.resolvedLanguage || i18n.language || 'pt').startsWith('en');
   const hasAccess = canAccess('canAccessPromptPacks');
   
-  const pack = getLocalizedPackBySlug(slug || '', isEnglish);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const { packs, isLoading: packsLoading } = usePacks(isEnglish);
+  const pack = packs.find((p) => p.slug === (slug || ''));
+  usePageMeta(pack ? { title: pack.name, description: pack.promise || pack.description } : null, isEnglish);
   const [activeCategory, setActiveCategory] = useState<string>('');
 
   // Initialize active category when pack loads
-  if (pack && !activeCategory && pack.categories.length > 0) {
+  // (Re)select the first category when none is set or the loaded catalogue has different category ids.
+  if (pack && pack.categories.length > 0 && !pack.categories.some((c) => c.id === activeCategory)) {
     setActiveCategory(pack.categories[0].id);
+  }
+
+  if (!pack && packsLoading) {
+    return <div className="p-6 text-center text-muted-foreground">{isEnglish ? 'Loading…' : 'A carregar…'}</div>;
   }
 
   if (!pack) {
@@ -61,15 +67,6 @@ export default function PackDetail() {
     );
   }
 
-  const copyPrompt = (id: string, content: string) => {
-    navigator.clipboard.writeText(content);
-    setCopiedId(id);
-    toast({
-      title: isEnglish ? 'Copied!' : 'Copiado!',
-      description: isEnglish ? 'Template copied to clipboard.' : 'Template copiado para a área de transferência.',
-    });
-    setTimeout(() => setCopiedId(null), 2000);
-  };
 
   const currentPrompts = pack.prompts[activeCategory] || [];
 
@@ -172,54 +169,19 @@ export default function PackDetail() {
                     transition={{ delay: i * 0.05 }}
                   >
                     <Card className="p-4 hover:border-primary/30 transition-all">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1 space-y-2">
-                          <div className="flex items-center gap-2">
+                      <div className="space-y-3">
+                        <div className="space-y-1">
+                          <div className="flex flex-wrap items-center gap-2">
                             <h3 className="font-semibold text-foreground">{prompt.title}</h3>
                             {prompt.isFreePreview && (
                               <Badge variant="secondary" className="text-xs">
-                                {isEnglish ? 'Preview' : 'Preview'}
+                                {isEnglish ? 'Free' : 'Grátis'}
                               </Badge>
                             )}
                           </div>
-                          <p className="text-sm text-muted-foreground">{prompt.description}</p>
-                          
-                          {/* Variables */}
-                          {prompt.variables.length > 0 && (
-                            <div className="flex flex-wrap gap-1.5 pt-1">
-                              {prompt.variables.map((v) => (
-                                <Badge
-                                  key={v}
-                                  variant="outline"
-                                  className="text-xs font-mono bg-primary/5 border-primary/20 text-primary"
-                                >
-                                  {`{{${v}}}`}
-                                </Badge>
-                              ))}
-                            </div>
-                          )}
-
-                          {/* Prompt Content */}
-                          <div className="mt-3 p-3 bg-muted/50 rounded-lg border border-border/50">
-                            <p className="text-sm font-mono text-foreground/90 whitespace-pre-wrap">
-                              {prompt.content}
-                            </p>
-                          </div>
+                          {prompt.description && <p className="text-sm text-muted-foreground">{prompt.description}</p>}
                         </div>
-
-                        {/* Copy Button */}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => copyPrompt(prompt.id, prompt.content)}
-                          className="shrink-0"
-                        >
-                          {copiedId === prompt.id ? (
-                            <Check className="h-4 w-4 text-primary" />
-                          ) : (
-                            <Copy className="h-4 w-4" />
-                          )}
-                        </Button>
+                        <TemplateFiller template={prompt.content} isEnglish={isEnglish} idPrefix={prompt.id} extraActions={(text, missing) => <RunPromptDialogButton prompt={text} disabled={missing > 0} />} />
                       </div>
                     </Card>
                   </motion.div>

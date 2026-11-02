@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.1"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
@@ -71,39 +71,175 @@ export type Database = {
         }
         Relationships: []
       }
-      pack_prompts: {
+      learn_lesson_content: {
         Row: {
-          category: string | null
-          content: string
-          created_at: string
-          id: string
-          is_free_preview: boolean
-          pack_id: string
-          sort_order: number
-          title: string
+          body_en: Json
+          body_pt: Json
+          lesson_id: string
           updated_at: string
         }
         Insert: {
-          category?: string | null
-          content: string
-          created_at?: string
-          id?: string
-          is_free_preview?: boolean
-          pack_id: string
-          sort_order?: number
-          title: string
+          body_en: Json
+          body_pt: Json
+          lesson_id: string
           updated_at?: string
         }
         Update: {
-          category?: string | null
-          content?: string
+          body_en?: Json
+          body_pt?: Json
+          lesson_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "learn_lesson_content_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: true
+            referencedRelation: "learn_lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      learn_lessons: {
+        Row: {
+          created_at: string
+          duration_min: number
+          id: string
+          is_active: boolean
+          is_free: boolean
+          level: string
+          sector: string | null
+          slug: string
+          sort_order: number
+          summary_en: string
+          summary_pt: string
+          title_en: string
+          title_pt: string
+          track: string
+          updated_at: string
+        }
+        Insert: {
           created_at?: string
+          duration_min?: number
+          id?: string
+          is_active?: boolean
+          is_free?: boolean
+          level?: string
+          sector?: string | null
+          slug: string
+          sort_order?: number
+          summary_en: string
+          summary_pt: string
+          title_en: string
+          title_pt: string
+          track: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          duration_min?: number
+          id?: string
+          is_active?: boolean
+          is_free?: boolean
+          level?: string
+          sector?: string | null
+          slug?: string
+          sort_order?: number
+          summary_en?: string
+          summary_pt?: string
+          title_en?: string
+          title_pt?: string
+          track?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      learn_progress: {
+        Row: {
+          completed_at: string
+          lesson_id: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string
+          lesson_id: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string
+          lesson_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "learn_progress_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "learn_lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pack_prompts: {
+        Row: {
+          category: string | null
+          category_en: string | null
+          category_key: string | null
+          content: string
+          content_en: string | null
+          created_at: string
+          description_en: string | null
+          description_pt: string | null
+          id: string
+          is_free_preview: boolean
+          pack_id: string
+          prompt_key: string | null
+          sort_order: number
+          title: string
+          title_en: string | null
+          updated_at: string
+          variables_en: string[]
+          variables_pt: string[]
+        }
+        Insert: {
+          category?: string | null
+          category_en?: string | null
+          category_key?: string | null
+          content: string
+          content_en?: string | null
+          created_at?: string
+          description_en?: string | null
+          description_pt?: string | null
+          id?: string
+          is_free_preview?: boolean
+          pack_id: string
+          prompt_key?: string | null
+          sort_order?: number
+          title: string
+          title_en?: string | null
+          updated_at?: string
+          variables_en?: string[]
+          variables_pt?: string[]
+        }
+        Update: {
+          category?: string | null
+          category_en?: string | null
+          category_key?: string | null
+          content?: string
+          content_en?: string | null
+          created_at?: string
+          description_en?: string | null
+          description_pt?: string | null
           id?: string
           is_free_preview?: boolean
           pack_id?: string
+          prompt_key?: string | null
           sort_order?: number
           title?: string
+          title_en?: string | null
           updated_at?: string
+          variables_en?: string[]
+          variables_pt?: string[]
         }
         Relationships: [
           {
@@ -127,7 +263,7 @@ export type Database = {
           created_at?: string
           current_plan?: Database["public"]["Enums"]["plan_type"]
           email: string
-          id: string
+          id?: string
           updated_at?: string
         }
         Update: {
@@ -149,7 +285,7 @@ export type Database = {
           description: string | null
           discount_type: string
           discount_value: number
-          duration_months: number | null
+          duration_months: number
           expires_at: string
           id: string
           is_active: boolean
@@ -163,9 +299,9 @@ export type Database = {
           created_by?: string | null
           current_uses?: number
           description?: string | null
-          discount_type?: string
+          discount_type: string
           discount_value?: number
-          duration_months?: number | null
+          duration_months?: number
           expires_at: string
           id?: string
           is_active?: boolean
@@ -181,7 +317,7 @@ export type Database = {
           description?: string | null
           discount_type?: string
           discount_value?: number
-          duration_months?: number | null
+          duration_months?: number
           expires_at?: string
           id?: string
           is_active?: boolean
@@ -192,36 +328,75 @@ export type Database = {
       }
       prompt_packs: {
         Row: {
+          audience_en: string | null
+          audience_pt: string | null
+          benefits_en: string[]
+          benefits_pt: string[]
           created_at: string
           description: string | null
+          description_en: string | null
+          gradient: string | null
+          icon: string | null
           id: string
           is_active: boolean
           is_premium: boolean
           name: string
+          name_en: string | null
+          outcome_category: string
+          preview_limit: number
+          promise_en: string | null
+          promise_pt: string | null
           slug: string
           sort_order: number
+          total_prompts: number
           updated_at: string
         }
         Insert: {
+          audience_en?: string | null
+          audience_pt?: string | null
+          benefits_en?: string[]
+          benefits_pt?: string[]
           created_at?: string
           description?: string | null
+          description_en?: string | null
+          gradient?: string | null
+          icon?: string | null
           id?: string
           is_active?: boolean
           is_premium?: boolean
           name: string
+          name_en?: string | null
+          outcome_category?: string
+          preview_limit?: number
+          promise_en?: string | null
+          promise_pt?: string | null
           slug: string
           sort_order?: number
+          total_prompts?: number
           updated_at?: string
         }
         Update: {
+          audience_en?: string | null
+          audience_pt?: string | null
+          benefits_en?: string[]
+          benefits_pt?: string[]
           created_at?: string
           description?: string | null
+          description_en?: string | null
+          gradient?: string | null
+          icon?: string | null
           id?: string
           is_active?: boolean
           is_premium?: boolean
           name?: string
+          name_en?: string | null
+          outcome_category?: string
+          preview_limit?: number
+          promise_en?: string | null
+          promise_pt?: string | null
           slug?: string
           sort_order?: number
+          total_prompts?: number
           updated_at?: string
         }
         Relationships: []
@@ -365,7 +540,9 @@ export type Database = {
         }
         Returns: boolean
       }
-      increment_promo_usage: { Args: { _code: string }; Returns: boolean }
+      increment_promo_usage:
+        | { Args: { _code: string }; Returns: boolean }
+        | { Args: { promo_id_param: string }; Returns: undefined }
       validate_promo_code: {
         Args: { _code: string; _plan: Database["public"]["Enums"]["plan_type"] }
         Returns: {
@@ -378,7 +555,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
-      plan_type: "free" | "pro" | "premium"
+      plan_type: "free" | "pro" | "premium" | "packs"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -394,12 +571,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -423,11 +600,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -448,11 +625,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -473,11 +650,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -490,11 +667,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -507,7 +684,8 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
-      plan_type: ["free", "pro", "premium"],
+      plan_type: ["free", "pro", "premium", "packs"],
     },
   },
 } as const
+

@@ -63,7 +63,17 @@ export function PastDueBanner() {
         headers: session ? { Authorization: `Bearer ${session.access_token}` } : undefined,
       });
       if (error) throw new Error(error.message);
+      if (data?.no_billing) {
+        toast({
+          title: isEnglish ? 'No billing on file yet' : 'Ainda não tens faturação associada',
+          description: isEnglish
+            ? 'There is no payment method or invoice linked to your account.'
+            : 'Não existe nenhum método de pagamento ou fatura associado à tua conta.',
+        });
+        return;
+      }
       if (data?.url) window.open(data.url, '_blank');
+      else throw new Error(data?.error ?? 'No customer portal URL returned');
     } catch (e) {
       toast({
         title: isEnglish ? 'Could not open billing portal' : 'Não foi possível abrir o portal',

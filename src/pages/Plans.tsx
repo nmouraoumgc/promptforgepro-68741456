@@ -11,9 +11,10 @@ import { usePlanStore } from '@/stores/planStore';
 import { PlanType, PLAN_LIMITS, PLAN_INFO } from '@/types/plans';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { localizeApiError } from '@/i18n/lang';
 
 export default function Plans() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { profile, user } = useAuthStore();
   const { currentPlan: localPlan } = usePlanStore();
@@ -49,12 +50,14 @@ export default function Plans() {
   const planDetails: Record<PlanType, { price: string; period: string; description: string }> = {
     free: { price: '0€', period: t('plans.details.freePeriod'), description: t('plans.details.freeDesc') },
     pro: { price: '9€', period: t('plans.details.proPeriod'), description: t('plans.details.proDesc') },
+    packs: { price: '19€', period: t('plans.details.packsPeriod'), description: t('plans.details.packsDesc') },
     premium: { price: '19€', period: t('plans.details.premiumPeriod'), description: t('plans.details.premiumDesc') },
   };
 
   const getPlanIcon = (plan: PlanType) => {
     switch (plan) {
-      case 'premium': return <Sparkles className="h-5 w-5" />;
+      case 'premium':
+      case 'packs': return <Sparkles className="h-5 w-5" />;
       case 'pro': return <Zap className="h-5 w-5" />;
       default: return <Crown className="h-5 w-5" />;
     }
@@ -70,7 +73,7 @@ export default function Plans() {
       const { data, error } = await supabase.functions.invoke("customer-portal");
       if (error) throw new Error(error.message);
       if (data?.error) {
-        toast({ title: t('common.error'), description: data.error, variant: "destructive" });
+        toast({ title: t('common.error'), description: localizeApiError(data.error, (i18n.resolvedLanguage || i18n.language || 'pt').startsWith('en')), variant: "destructive" });
         return;
       }
       if (data?.url) window.location.href = data.url;
@@ -82,7 +85,8 @@ export default function Plans() {
     }
   };
 
-  const plans: PlanType[] = ['free', 'pro', 'premium'];
+  // Grandfathered Premium holders see their legacy plan; everyone else sees the Prompt Packs product.
+  const plans: PlanType[] = currentPlan === 'premium' ? ['free', 'pro', 'premium'] : ['free', 'pro', 'packs'];
 
   return (
     <div className="p-6 md:p-8 lg:p-10 animate-fade-in">
@@ -98,7 +102,7 @@ export default function Plans() {
               <div className="flex items-center justify-between flex-wrap gap-4">
                 <div className="flex items-center gap-3">
                   <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
-                    currentPlan === 'premium' ? 'bg-primary/20 text-primary' :
+                    currentPlan === 'premium' || currentPlan === 'packs' ? 'bg-primary/20 text-primary' :
                     currentPlan === 'pro' ? 'bg-info/20 text-info' :
                     'bg-muted text-muted-foreground'
                   }`}>
@@ -116,7 +120,7 @@ export default function Plans() {
                       {t('plans.manageSubscription')}
                     </Button>
                   )}
-                  {currentPlan === 'free' && !hasPaddleSubscription && (
+                  {(currentPlan === 'free' || currentPlan === 'packs') && !hasPaddleSubscription && (
                     <Button onClick={() => navigate('/pricing')}>{t('plans.upgrade')}</Button>
                   )}
                 </div>
@@ -140,7 +144,7 @@ export default function Plans() {
                   )}
                   <CardHeader className="text-center pb-4">
                     <div className={`mx-auto h-12 w-12 rounded-full flex items-center justify-center mb-3 ${
-                      plan === 'premium' ? 'bg-primary/10 text-primary' :
+                      plan === 'premium' || plan === 'packs' ? 'bg-primary/10 text-primary' :
                       plan === 'pro' ? 'bg-info/10 text-info' :
                       'bg-muted text-muted-foreground'
                     }`}>
@@ -167,9 +171,9 @@ export default function Plans() {
                         </div>
                       );
                     })}
-                    {!isCurrentPlan && plan !== 'free' && (
-                      <Button className="w-full mt-4" variant={plan === 'premium' ? 'default' : 'outline'} onClick={() => navigate(plan === 'premium' ? '/checkout' : '/pricing')}>
-                        {plan === 'premium' ? t('plans.unlock') : t('plans.viewDetails')}
+                    {!isCurrentPlan && plan !== 'free' && plan !== 'premium' && !(plan === 'packs' && (currentPlan === 'pro' || currentPlan === 'premium')) && (
+                      <Button className="w-full mt-4" variant={plan === 'packs' ? 'default' : 'outline'} onClick={() => navigate(plan === 'packs' ? '/checkout' : '/pricing')}>
+                        {plan === 'packs' ? t('plans.unlock') : t('plans.viewDetails')}
                       </Button>
                     )}
                   </CardContent>

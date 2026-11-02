@@ -1,5 +1,5 @@
 // Lista curta de domínios de email descartáveis mais comuns.
-// Não é exaustiva — primeira linha de defesa antes do checkout.
+// Não é exaustiva, primeira linha de defesa antes do checkout.
 const DISPOSABLE_DOMAINS = new Set([
   'mailinator.com', 'mailinator.net', 'tempmail.com', 'temp-mail.org', 'temp-mail.io',
   '10minutemail.com', '10minutemail.net', 'guerrillamail.com', 'guerrillamail.net',
@@ -8,7 +8,7 @@ const DISPOSABLE_DOMAINS = new Set([
   'mailnesia.com', 'mintemail.com', 'mohmal.com', 'mytemp.email', 'emailondeck.com',
   'spam4.me', 'spambox.us', 'tempr.email', 'inboxbear.com', 'mailcatch.com',
   'mailtemp.info', 'tmpmail.org', 'tmpeml.com', 'mvrht.com', 'mailpoof.com',
-  'tempmailo.com', 'minuteinbox.com', 'fakemailgenerator.com',
+  'tempmailo.com', 'minuteinbox.com', 'fakemailgenerator.com', 'crackone.org', 'wibucrypto.pro',
 ]);
 
 export function isDisposableEmail(email: string): boolean {

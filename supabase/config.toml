@@ -1,4 +1,4 @@
-project_id = "hkmxtamqvekycbbzoeaw"
+project_id = "cwrxbxxfaemcvliasycz"
 
 [functions.generate-hooks]
 verify_jwt = false
@@ -7,7 +7,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.send-welcome-email]
-verify_jwt = false
+verify_jwt = true
 
 [functions.customer-portal]
 verify_jwt = false
@@ -32,3 +32,18 @@ verify_jwt = false
 
 [functions.quick-prompt]
 verify_jwt = false
+
+[functions.run-prompt]
+verify_jwt = false
+
+[functions.delete-account]
+verify_jwt = false
+
+[functions.unsubscribe]
+verify_jwt = false
+
+[functions.campaign-admin]
+verify_jwt = false
+
+[functions.admin-metrics]
+verify_jwt = true

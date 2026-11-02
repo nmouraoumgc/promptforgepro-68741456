@@ -1,4 +1,6 @@
+import { markOnboardingStep } from '@/data/onboarding';
 import { useState } from 'react';
+import { toPlainText } from '@/lib/plainText';
 import { useTranslation } from 'react-i18next';
 import { FlaskConical, ArrowLeftRight, Trophy, ThumbsUp } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,13 +12,14 @@ import { useAuthStore } from '@/stores/authStore';
 import { ProContextualUpsell, AuthGate } from '@/components/gating/FeatureGate';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { localizeApiError } from '@/i18n/lang';
 
-export default function PromptTester() {
+export default function PromptTester({ initialA = '', initialB = '', embedded = false }: { initialA?: string; initialB?: string; embedded?: boolean } = {}) {
   const { t, i18n } = useTranslation();
   const { canAccess } = usePlanStore();
   const { user } = useAuthStore();
-  const [promptA, setPromptA] = useState('');
-  const [promptB, setPromptB] = useState('');
+  const [promptA, setPromptA] = useState(initialA);
+  const [promptB, setPromptB] = useState(initialB);
   const [responseA, setResponseA] = useState('');
   const [responseB, setResponseB] = useState('');
   const [winner, setWinner] = useState<'A' | 'B' | null>(null);
@@ -25,7 +28,7 @@ export default function PromptTester() {
 
   if (!user) {
     return (
-      <div className="p-6 animate-fade-in">
+      <div className={embedded ? '' : 'p-6 animate-fade-in'}>
         <Card>
           <AuthGate message={t('tester.authRequired')} />
         </Card>
@@ -35,7 +38,7 @@ export default function PromptTester() {
 
   if (!canAccess('canAccessABTesting')) {
     return (
-      <div className="p-6 animate-fade-in">
+      <div className={embedded ? '' : 'p-6 animate-fade-in'}>
         <Card>
           <ProContextualUpsell context="ab-testing" />
         </Card>
@@ -56,19 +59,15 @@ export default function PromptTester() {
       if (error) throw error;
 
       if (data.error) {
-        toast({ title: t('tester.errorTitle'), description: data.error, variant: 'destructive' });
+        toast({ title: t('tester.errorTitle'), description: localizeApiError(data.error, (i18n.resolvedLanguage || i18n.language || 'pt').startsWith('en')), variant: 'destructive' });
         setIsTesting(false);
         return;
       }
 
-      setResponseA(data.responseA);
-      setResponseB(data.responseB);
+      setResponseA(toPlainText(data.responseA));
+      setResponseB(toPlainText(data.responseB));
 
-      const completed = localStorage.getItem('onboarding-completed');
-      const steps = completed ? JSON.parse(completed) : [];
-      if (!steps.includes('compare')) {
-        localStorage.setItem('onboarding-completed', JSON.stringify([...steps, 'compare']));
-      }
+      markOnboardingStep('compare');
     } catch (error) {
       console.error('Error testing prompts:', error);
       toast({ title: t('tester.errorTitle'), description: t('tester.errorDesc'), variant: 'destructive' });
@@ -80,7 +79,7 @@ export default function PromptTester() {
   const selectWinner = (choice: 'A' | 'B') => setWinner(choice);
 
   return (
-    <div className="p-6 space-y-6 animate-fade-in">
+    <div className={embedded ? 'space-y-6' : 'p-6 space-y-6 animate-fade-in'}>
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><FlaskConical className="h-5 w-5" />{t('tester.title')}</CardTitle>
@@ -99,7 +98,7 @@ export default function PromptTester() {
                 <Card className="bg-muted/50">
                   <CardContent className="p-4">
                     <p className="text-sm font-medium mb-2">{t('tester.response')}</p>
-                    <p className="text-sm text-muted-foreground">{responseA}</p>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{responseA}</p>
                   </CardContent>
                 </Card>
               )}
@@ -121,7 +120,7 @@ export default function PromptTester() {
                 <Card className="bg-muted/50">
                   <CardContent className="p-4">
                     <p className="text-sm font-medium mb-2">{t('tester.response')}</p>
-                    <p className="text-sm text-muted-foreground">{responseB}</p>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{responseB}</p>
                   </CardContent>
                 </Card>
               )}

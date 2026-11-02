@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthStore } from "@/stores/authStore";
 import { useTranslation } from "react-i18next";
+import { getCampaignCode } from "@/lib/campaignCode";
+import { track } from "@/lib/analytics";
 
 const BASE_PRICE = 19;
 
@@ -26,6 +28,8 @@ const Checkout = () => {
   const [appliedPromo, setAppliedPromo] = useState<AppliedPromo | null>(null);
   const [promoError, setPromoError] = useState("");
   const navigate = useNavigate();
+  // Stored campaign code (e.g. WELCOME100, Pro monthly only): shown as a hint, never applied to Premium.
+  const [campaignCode] = useState(() => getCampaignCode());
   const { toast } = useToast();
   const { user, profile, isLoading: authLoading } = useAuthStore();
   const { i18n } = useTranslation();
@@ -34,13 +38,13 @@ const Checkout = () => {
     ? [
         "All premium Prompt Packs",
         "Ready-to-use hooks, scripts, structures and CTAs",
-        "Unlimited generation inside packs",
+        "All Learn lessons",
         "Future updates included",
       ]
     : [
         "Todos os Prompt Packs premium",
         "Hooks, scripts, estruturas e CTAs prontos",
-        "Geração ilimitada dentro dos packs",
+        "Todas as lições do Aprender",
         "Atualizações futuras incluídas",
       ];
 
@@ -48,9 +52,10 @@ const Checkout = () => {
     if (user?.email) setEmail(user.email);
   }, [user]);
 
-  useEffect(() => {
-    if (profile?.current_plan === "premium") navigate("/packs");
-  }, [profile, navigate]);
+  // Already entitled to the packs (Prompt Packs, Pro includes them, grandfathered Premium, admin): no checkout.
+  const isAdminUser = useAuthStore((st) => st.isAdmin);
+  const plan = profile?.current_plan;
+  const hasPacksAccess = isAdminUser || plan === "packs" || plan === "pro" || plan === "premium";
 
   // Force authentication before checkout. Without a logged-in user, the webhook
   // cannot link the purchase to an account and the user would lose access.
@@ -64,6 +69,22 @@ const Checkout = () => {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (hasPacksAccess) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center p-6" data-testid="checkout-has-access">
+        <div className="max-w-md text-center space-y-3">
+          <h1 className="text-2xl font-bold">{isEnglish ? "You already have access to the Prompt Packs" : "Já tens acesso aos Prompt Packs"}</h1>
+          <p className="text-muted-foreground">
+            {plan === "pro"
+              ? (isEnglish ? "Every Prompt Pack is included in your Pro plan." : "Todos os Prompt Packs estão incluídos no teu plano Pro.")
+              : (isEnglish ? "Your account already includes every premium Prompt Pack." : "A tua conta já inclui todos os Prompt Packs premium.")}
+          </p>
+          <Button onClick={() => navigate("/packs")}>{isEnglish ? "Open the Prompt Packs" : "Abrir os Prompt Packs"}</Button>
+        </div>
       </div>
     );
   }
@@ -89,7 +110,7 @@ const Checkout = () => {
         PROMO_INACTIVE: isEnglish ? 'Inactive code.' : 'Código inativo.',
         PROMO_EXPIRED: isEnglish ? 'Expired code.' : 'Código expirado.',
         PROMO_LIMIT_REACHED: isEnglish ? 'Code usage limit reached.' : 'Código atingiu o limite de utilizações.',
-        PROMO_NOT_APPLICABLE: isEnglish ? 'Code not valid for Premium.' : 'Código não válido para Premium.',
+        PROMO_NOT_APPLICABLE: isEnglish ? 'Code not valid for Prompt Packs.' : 'Código não válido para os Prompt Packs.',
       };
       const key = Object.keys(map).find((k) => msg.includes(k));
       setPromoError(key ? map[key] : (isEnglish ? 'Could not verify the code.' : 'Não foi possível verificar o código.'));
@@ -146,22 +167,52 @@ const Checkout = () => {
 
     setIsLoading(true);
     try {
-      const { initializePaddle, getPaddlePriceId } = await import("@/lib/paddle");
-      await initializePaddle();
-      const paddlePriceId = await getPaddlePriceId("premium_one_time");
-
-      window.Paddle.Checkout.open({
-        items: [{ priceId: paddlePriceId, quantity: 1 }],
-        customer: { email },
-        customData: user ? { userId: user.id } : undefined,
-        discountCode: appliedPromo?.code,
-        settings: {
-          displayMode: "overlay",
-          successUrl: `${window.location.origin}/purchase-success`,
-          allowLogout: false,
-          variant: "one-page",
-        },
+      const { initializePaddle, getPaddlePriceId, getPaddleEnvironment, setCheckoutAttemptId } = await import("@/lib/paddle");
+      const { runPreCheckoutCheck, checkoutBlockMessage, checkoutRetryMessage } = await import("@/lib/checkoutGuard");
+      // Same server-side gate as the Pro subscription: disposable email, account/IP failure and attempt
+      // limits, and discount codes validated server-side (confirmed email, once per account) with the
+      // Paddle transaction created there. Fails closed: checkout opens only on an explicit allowed=true.
+      const code = (appliedPromo?.code || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+      const check = await runPreCheckoutCheck({
+        intent: "premium",
+        environment: getPaddleEnvironment(),
+        ...(code ? { discountCode: code } : {}),
       });
+      if (check.status === "blocked") {
+        toast({
+          title: isEnglish ? "Checkout blocked" : "Pagamento bloqueado",
+          description: checkoutBlockMessage(check.reason, isEnglish),
+          variant: "destructive",
+        });
+        return;
+      }
+      if (check.status === "error" || (code && !check.transactionId)) {
+        toast({ ...checkoutRetryMessage(isEnglish), variant: "destructive" });
+        return;
+      }
+
+      await initializePaddle();
+      setCheckoutAttemptId(check.attemptId);
+      const settings = {
+        displayMode: "overlay",
+        successUrl: `${window.location.origin}/purchase-success`,
+        allowLogout: false,
+        variant: "one-page",
+        showAddTaxId: false,
+      };
+      if (check.transactionId) {
+        // Discount flow: transaction (price + discount + customer + customData) created server-side.
+        window.Paddle.Checkout.open({ transactionId: check.transactionId, settings });
+      } else {
+        const paddlePriceId = await getPaddlePriceId("premium_one_time");
+        window.Paddle.Checkout.open({
+          items: [{ priceId: paddlePriceId, quantity: 1 }],
+          customer: { email: user.email ?? email },
+          customData: { userId: user.id, ...(check.attemptId ? { attemptId: check.attemptId } : {}) },
+          settings,
+        });
+      }
+      track("checkout_opened", { plan: "premium_one_time", has_campaign_code: !!code, ...(code ? { campaign_code: code } : {}) });
     } catch (error) {
       console.error("Checkout error:", error);
       toast({
@@ -185,7 +236,7 @@ const Checkout = () => {
           <div className="text-center mb-8">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary mb-4">
               <Sparkles className="h-4 w-4" />
-              <span className="text-sm font-medium">Premium</span>
+              <span className="text-sm font-medium">Prompt Packs</span>
             </div>
             <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
               {isEnglish ? "Unlock full access to Prompt Packs" : "Desbloqueia acesso completo aos Prompt Packs"}
@@ -222,7 +273,7 @@ const Checkout = () => {
                 <span className="text-sm text-muted-foreground line-through">{BASE_PRICE}€</span>
                 <div className="inline-flex items-baseline gap-1">
                   <span className="text-4xl font-bold text-primary">{finalPrice.toFixed(2)}€</span>
-                  <span className="text-muted-foreground">{isEnglish ? "— one-time payment" : "— pagamento único"}</span>
+                  <span className="text-muted-foreground">{isEnglish ? "one-time payment" : "pagamento único"}</span>
                 </div>
                 <span className="text-xs text-primary font-medium">
                   {isEnglish ? `You save ${discount.toFixed(2)}€ with ${appliedPromo.code}` : `Poupas ${discount.toFixed(2)}€ com ${appliedPromo.code}`}
@@ -231,10 +282,17 @@ const Checkout = () => {
             ) : (
               <div className="inline-flex items-baseline gap-1">
                 <span className="text-4xl font-bold text-foreground">{BASE_PRICE}€</span>
-                <span className="text-muted-foreground">{isEnglish ? "— one-time payment" : "— pagamento único"}</span>
+                <span className="text-muted-foreground">{isEnglish ? "one-time payment" : "pagamento único"}</span>
               </div>
             )}
           </div>
+
+          {campaignCode && (
+            <div className="mb-4 rounded-lg border border-primary/40 bg-primary/5 p-3 text-sm">
+              {isEnglish ? <>Your code <strong>{campaignCode}</strong> is for the Pro monthly plan, not this one-time purchase. </> : <>O teu código <strong>{campaignCode}</strong> é para o plano Pro mensal, não para esta compra única. </>}
+              <Link to="/pricing" className="text-primary underline font-medium">{isEnglish ? 'Use it on Pricing' : 'Usar nos Preços'}</Link>
+            </div>
+          )}
 
           <Card>
             <CardContent className="pt-6">
@@ -279,6 +337,7 @@ const Checkout = () => {
                         size="icon"
                         onClick={removePromo}
                         disabled={isLoading}
+                        aria-label={isEnglish ? 'Remove code' : 'Remover código'}
                       >
                         <X className="h-4 w-4" />
                       </Button>

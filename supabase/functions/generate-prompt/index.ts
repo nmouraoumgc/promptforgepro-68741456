@@ -1,6 +1,9 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { authenticateRequest, corsHeaders } from "../_shared/auth.ts";
+import { loadActiveBrand, brandInstructions } from "../_shared/brand.ts";
+import { PT_PT_RULES } from '../_shared/ptpt.ts';
+import { plainTextRules, toPlainText } from '../_shared/plaintext.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -20,8 +23,11 @@ serve(async (req) => {
       constraints, 
       creativityLevel,
       format,
-      language 
+      language: reqLanguage,
+      useBrand,
     } = await req.json();
+    const brand = useBrand === false ? null : await loadActiveBrand(auth.userId);
+    const language = brand?.language ?? reqLanguage;
 
     if (!objective) {
       return new Response(
@@ -30,9 +36,9 @@ serve(async (req) => {
       );
     }
 
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) {
-      console.error('LOVABLE_API_KEY not configured');
+    const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY');
+    if (!GROQ_API_KEY) {
+      console.error('GROQ_API_KEY not configured');
       return new Response(
         JSON.stringify({ error: 'API key não configurada' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -66,9 +72,9 @@ serve(async (req) => {
 
 Create a professional, optimized prompt that:
 - Is clear and specific
-- Has a well-defined structure with sections
+- Has a well-defined structure with sections (section titles as plain lines in CAPITALS)
 - Includes context, instructions and output expectations
-- Is formatted in a readable way
+- Is plain text that can be copy-pasted anywhere (no Markdown)
 - Is optimized for ${targetModel || 'any AI model'}
 
 The prompt MUST be entirely written in English and ready to use.`
@@ -76,9 +82,9 @@ The prompt MUST be entirely written in English and ready to use.`
 
 Cria um prompt profissional e otimizado que:
 - Seja claro e específico
-- Tenha estrutura bem definida com secções
+- Tenha estrutura bem definida com secções (títulos das secções em linhas simples em MAIÚSCULAS)
 - Inclua contexto, instruções e expectativas de output
-- Seja formatado de forma legível
+- Seja texto simples, pronto a copiar e colar em qualquer lado (sem Markdown)
 - Esteja otimizado para ${targetModel || 'qualquer modelo de IA'}
 
 O prompt DEVE estar totalmente em português (Portugal) e ser pronto a usar.`;
@@ -116,10 +122,10 @@ O prompt DEVE estar totalmente em português (Portugal) e ser pronto a usar.`;
     let userRequest = `${labels.intro}
 
 ${labels.objective}: ${objective}
-${labels.outputType}: ${outputTypeLabels[outputType] || (isEnglish ? 'text' : 'texto')}`;
+${labels.outputType}: ${isEnglish ? (outputType || 'text') : (outputTypeLabels[outputType] || 'texto')}`;
 
     if (tone) {
-      userRequest += `\n${labels.tone}: ${toneLabels[tone] || tone}`;
+      userRequest += `\n${labels.tone}: ${isEnglish ? tone : (toneLabels[tone] || tone)}`;
     }
     if (targetAudience) {
       userRequest += `\n${labels.audience}: ${targetAudience}`;
@@ -137,18 +143,19 @@ ${labels.outputType}: ${outputTypeLabels[outputType] || (isEnglish ? 'text' : 't
 
     userRequest += labels.outro;
 
-    console.log('Generating prompt with Lovable AI...');
+    console.log('Generating prompt with Groq API...');
 
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'Authorization': `Bearer ${GROQ_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: Deno.env.get('AI_MODEL') ?? 'openai/gpt-oss-120b',
+        ...(Deno.env.get('AI_REASONING_EFFORT') ? { reasoning_effort: Deno.env.get('AI_REASONING_EFFORT') } : {}),
         messages: [
-          { role: 'system', content: systemPrompt },
+          { role: 'system', content: (isEnglish ? systemPrompt : systemPrompt + PT_PT_RULES) + brandInstructions(brand, isEnglish) + plainTextRules(isEnglish ? 'en' : 'pt') },
           { role: 'user', content: userRequest }
         ],
       }),
@@ -189,7 +196,7 @@ ${labels.outputType}: ${outputTypeLabels[outputType] || (isEnglish ? 'text' : 't
     console.log('Successfully generated prompt');
 
     return new Response(
-      JSON.stringify({ prompt: generatedPrompt.trim() }),
+      JSON.stringify({ prompt: toPlainText(generatedPrompt), brand: brand ? { id: brand.id, name: brand.name } : null }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 

@@ -10,45 +10,46 @@ export { EventName };
 
 export type PaddleEnv = 'sandbox' | 'live';
 
-const GATEWAY_BASE_URL = 'https://connector-gateway.lovable.dev/paddle';
+// Direct Paddle API (previously proxied via the Lovable connector gateway).
+const PADDLE_BASE_URL: Record<PaddleEnv, string> = {
+  live: 'https://api.paddle.com',
+  sandbox: 'https://sandbox-api.paddle.com',
+};
 
 export function getConnectionApiKey(env: PaddleEnv): string {
-  return env === 'sandbox'
-    ? getEnv('PADDLE_SANDBOX_API_KEY')
-    : getEnv('PADDLE_LIVE_API_KEY');
+  if (env === 'sandbox') {
+    const key = Deno.env.get('PADDLE_SANDBOX_API_KEY');
+    if (!key) throw new Error('Paddle sandbox is not configured (PADDLE_SANDBOX_API_KEY missing)');
+    return key;
+  }
+  return getEnv('PADDLE_LIVE_API_KEY');
 }
 
 export function getPaddleClient(env: PaddleEnv): Paddle {
-  const connectionApiKey = getConnectionApiKey(env);
-  const lovableApiKey = getEnv('LOVABLE_API_KEY');
-
-  return new Paddle(connectionApiKey, {
-    environment: GATEWAY_BASE_URL as unknown as Environment,
-    customHeaders: {
-      'X-Connection-Api-Key': connectionApiKey,
-      'Lovable-API-Key': lovableApiKey,
-    },
+  const apiKey = getConnectionApiKey(env);
+  return new Paddle(apiKey, {
+    environment: env === 'sandbox' ? Environment.sandbox : Environment.production,
   });
 }
 
 export async function gatewayFetch(env: PaddleEnv, path: string, init?: RequestInit): Promise<Response> {
-  const connectionApiKey = getConnectionApiKey(env);
-  const lovableApiKey = getEnv('LOVABLE_API_KEY');
-  return fetch(`${GATEWAY_BASE_URL}${path}`, {
+  const apiKey = getConnectionApiKey(env);
+  return fetch(`${PADDLE_BASE_URL[env]}${path}`, {
     ...init,
     headers: {
       'Content-Type': 'application/json',
-      'X-Connection-Api-Key': connectionApiKey,
-      'Lovable-API-Key': lovableApiKey,
+      'Authorization': `Bearer ${apiKey}`,
       ...init?.headers,
     },
   });
 }
 
 export function getWebhookSecret(env: PaddleEnv): string {
-  return env === 'sandbox'
-    ? getEnv('PAYMENTS_SANDBOX_WEBHOOK_SECRET')
-    : getEnv('PAYMENTS_LIVE_WEBHOOK_SECRET');
+  if (env === 'sandbox') return getEnv('PAYMENTS_SANDBOX_WEBHOOK_SECRET');
+  // New name PADDLE_WEBHOOK_SECRET; legacy PAYMENTS_LIVE_WEBHOOK_SECRET still accepted.
+  const secret = Deno.env.get('PADDLE_WEBHOOK_SECRET') ?? Deno.env.get('PAYMENTS_LIVE_WEBHOOK_SECRET');
+  if (!secret) throw new Error('PADDLE_WEBHOOK_SECRET is not configured');
+  return secret;
 }
 
 export async function verifyWebhook(req: Request, env: PaddleEnv) {
@@ -62,4 +63,38 @@ export async function verifyWebhook(req: Request, env: PaddleEnv) {
 
   const paddle = getPaddleClient(env);
   return await paddle.webhooks.unmarshal(body, secret, signature);
+}
+
+// ---------- Price aliases ----------
+// Prices imported from Lovable carry import_meta.external_id (pro_monthly, premium_one_time, ...).
+// Prices created later directly in Paddle cannot get an import_meta, so they are mapped here
+// (Paddle price id -> logical external id). The logical id is what subscriptions.price_id stores
+// and what the sync_profile_plan_from_subscription trigger maps to a plan.
+export const PRICE_ALIASES: Record<PaddleEnv, Record<string, string>> = {
+  live: {
+    pro_annual: 'pri_01m67br0e15t23kqzaa4m3qa78', // Pro annual, 90 EUR/year (created 2026-10-30)
+  },
+  sandbox: {},
+};
+
+const ALIAS_BY_PADDLE_ID: Record<string, string> = Object.fromEntries(
+  Object.values(PRICE_ALIASES).flatMap((m) => Object.entries(m).map(([ext, id]) => [id, ext])),
+);
+
+/** Logical external id of a Paddle price object (SDK camelCase or REST snake_case). */
+// deno-lint-ignore no-explicit-any
+export function priceExternalIdOf(price: any): string | null {
+  return price?.importMeta?.externalId ?? price?.import_meta?.external_id ??
+    price?.customData?.external_id ?? price?.custom_data?.external_id ??
+    (typeof price?.id === 'string' ? ALIAS_BY_PADDLE_ID[price.id] : undefined) ?? null;
+}
+
+/** Paddle price id for a logical external id (alias first, then import_meta.external_id lookup). */
+export async function resolvePriceId(env: PaddleEnv, externalId: string, activeOnly = false): Promise<string | null> {
+  const alias = PRICE_ALIASES[env][externalId];
+  if (alias) return alias;
+  const r = await gatewayFetch(env, `/prices?external_id=${encodeURIComponent(externalId)}${activeOnly ? '&status=active' : ''}`);
+  if (!r.ok) throw new Error(`Paddle price lookup failed (${r.status})`);
+  const j = await r.json();
+  return j?.data?.[0]?.id ?? null;
 }

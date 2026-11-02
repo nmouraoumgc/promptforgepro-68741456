@@ -9,7 +9,10 @@ export const corsHeaders = {
 export interface AuthResult {
   userId: string;
   email: string | null;
+  /** Paid tools tier (Pro, grandfathered Premium, admin). NOT granted by the one-time 'packs' plan. */
   isPremium: boolean;
+  /** Premium Prompt Packs access: Pro, grandfathered Premium, Prompt Packs ('packs') or admin. */
+  canAccessPacks: boolean;
   isAdmin: boolean;
 }
 
@@ -56,11 +59,13 @@ export async function authenticateRequest(req: Request): Promise<AuthResult | Re
   const plan = profile?.current_plan ?? "free";
   const isAdmin = (roles ?? []).some((r: { role: string }) => r.role === "admin");
   const isPremium = isAdmin || plan === "pro" || plan === "premium";
+  const canAccessPacks = isPremium || plan === "packs";
 
   return {
     userId,
     email: userData.user.email ?? null,
     isPremium,
+    canAccessPacks,
     isAdmin,
   };
 }

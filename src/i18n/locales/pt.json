@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "PromptForge",
+    "appName": "PromptForge Pro",
     "tagline": "Melhores prompts, melhores resultados.",
     "loading": "A carregar...",
     "save": "Guardar",
@@ -30,9 +30,9 @@
     "switchTo": "Mudar para {{lang}}"
   },
   "nav": {
-    "dashboard": "Dashboard",
+    "dashboard": "Painel",
     "dashboardDesc": "Visão geral",
-    "quickPrompt": "Quick Prompt",
+    "quickPrompt": "Prompt rápido",
     "quickPromptDesc": "Rápido com voz",
     "createPrompt": "Criar Prompt",
     "createPromptDesc": "Criador guiado",
@@ -47,7 +47,7 @@
     "learn": "Aprender",
     "learnDesc": "Tutoriais",
     "packs": "Packs",
-    "packsDesc": "Templates prontos",
+    "packsDesc": "Modelos prontos",
     "plans": "Planos",
     "plansDesc": "Gerir plano",
     "settings": "Definições",
@@ -57,39 +57,42 @@
     "main": "Principal",
     "more": "Mais",
     "newPrompt": "Novo Prompt",
-    "searchPrompts": "Pesquisar prompts..."
+    "searchPrompts": "Pesquisar prompts...",
+    "create": "Criar",
+    "createDesc": "Rápido, detalhado ou otimizar",
+    "brand": "Cofre de marca",
+    "brandDesc": "A tua marca",
+    "plansPricing": "Planos e preços"
   },
   "header": {
-    "myAccount": "Minha Conta",
+    "myAccount": "A minha conta",
     "settings": "Definições",
     "adminBackoffice": "Backoffice Admin",
     "signOut": "Terminar Sessão",
-    "login": "Login",
-    "signup": "Sign Up",
-    "plan": "Plano {{plan}}"
+    "login": "Entrar",
+    "signup": "Criar conta",
+    "plan": "Plano {{plan}}",
+    "plans": "Planos",
+    "brand": "Cofre de marca"
   },
   "dashboard": {
-    "greeting": "Olá, Prompt Master!",
+    "greeting": "Olá!",
     "subtitle": "O que vais criar hoje?",
     "actions": {
       "create": "Criar Prompt",
       "createDesc": "Do zero à excelência",
-      "quick": "Quick Prompt",
-      "quickDesc": "Rápido e direto ao ponto",
       "optimize": "Otimizar",
-      "optimizeDesc": "Versões mais fortes",
-      "test": "Testar A/B",
-      "testDesc": "Descobre o melhor"
+      "optimizeDesc": "Versões mais fortes"
     },
     "stats": {
       "prompts": "{{count}} prompts",
       "favorites": "{{count}} favoritos",
-      "avgScore": "{{score}}% score médio"
+      "avgScore": "{{score}}% de pontuação média"
     },
     "recent": "Recentes"
   },
   "quickPrompt": {
-    "badge": "Quick Prompt",
+    "badge": "Prompt rápido",
     "title": "Gera prompts instantâneos",
     "description": "Escreve ou dita o que precisas e recebe um prompt otimizado em segundos.",
     "inputTitle": "O que precisas?",
@@ -117,7 +120,7 @@
     "tipVoiceDesc": "Clica no microfone para ditar.",
     "tipLanguage": "PT ou EN",
     "tipLanguageDesc": "Funciona em ambos os idiomas.",
-    "authRequired": "Cria uma conta gratuita para usar o Quick Prompt."
+    "authRequired": "Cria uma conta gratuita para usar o Prompt rápido."
   },
   "settings": {
     "currentPlan": "Plano Atual",
@@ -128,15 +131,9 @@
     "language": "Idioma",
     "languageDesc": "Escolhe o idioma da interface"
   },
-  "learn": {
-    "tipsTitle": "Dicas Rápidas",
-    "tipsDesc": "Melhora os teus prompts com estas técnicas",
-    "lessonsTitle": "Lições",
-    "lessonsDesc": "Aprende a criar prompts profissionais"
-  },
   "showcase": {
     "cardTitle": "Exemplo de Prompt de Alta Qualidade",
-    "viewDetails": "Ver detalhes",
+    "viewDetails": "Porque funciona",
     "modalTitle": "Anatomia de um Prompt Eficaz",
     "modalDesc": "Compreende a estrutura que garante resultados consistentes",
     "objectiveTitle": "1. Objetivo Claro",
@@ -150,7 +147,7 @@
     "restrictionsDesc": "Limites claros: formato, tom, o que evitar",
     "outputLabel": "[OUTPUT ESPERADO]",
     "outputDesc": "Descrição exata do resultado final",
-    "whyHighScore": "3. Porque o Score é Alto ({{score}}%)",
+    "whyHighScore": "3. Porque a pontuação é alta ({{score}}%)",
     "ctaTitle": "Pronto para criar prompts assim?",
     "ctaButton": "Começar a Construir",
     "objective": "Criar um post viral para Instagram sobre sustentabilidade que gere engagement e partilhas",
@@ -230,7 +227,9 @@
       "proPeriod": "/mês",
       "proDesc": "Para uso profissional diário",
       "premiumPeriod": "único",
-      "premiumDesc": "Acesso completo aos Packs"
+      "premiumDesc": "Acesso completo (plano legado)",
+      "packsPeriod": "pagamento único",
+      "packsDesc": "Todos os Prompt Packs e lições do Aprender"
     }
   },
   "account": {
@@ -240,8 +239,9 @@
     "email": "Email",
     "currentPlan": "Plano atual",
     "freeDesc": "Acesso básico às funcionalidades",
-    "proDesc": "Ferramentas profissionais ativas",
-    "premiumDesc": "Acesso completo a todos os Packs",
+    "proDesc": "Ferramentas profissionais e todos os Prompt Packs",
+    "premiumDesc": "Acesso completo a todas as funcionalidades (plano legado)",
+    "packsDesc": "Todos os Prompt Packs e todas as lições do Aprender",
     "viewPlans": "Ver planos",
     "upgrade": "Fazer upgrade",
     "billingTitle": "Portal de faturação",
@@ -253,22 +253,63 @@
     "openingPortal": "A abrir portal...",
     "billingErrorTitle": "Não foi possível abrir o portal",
     "billingErrorDesc": "Por favor tenta novamente em instantes.",
+    "noBillingTitle": "Ainda não tens faturação associada",
+    "noBillingDesc": "Ainda não existe nenhum método de pagamento ou fatura associado à tua conta. A faturação aparece aqui após o primeiro pagamento.",
     "actions": "Ações",
     "signOut": "Terminar sessão"
   },
-  "proTrial": {
-    "badge": "Oferta limitada",
-    "title": "Experimenta o Pro por apenas 2€",
-    "subtitle": "Desbloqueia tudo durante 7 dias. Depois 9€/mês — cancela quando quiseres.",
-    "firstMonth": "por 7 dias",
-    "thenPrice": "Depois 9€/mês — cancela quando quiseres.",
-    "features": {
-      "unlimited": "Otimizações ilimitadas",
-      "abTesting": "Testes A/B avançados",
-      "history": "Histórico de versões completo",
-      "export": "Exportação de prompts"
-    },
-    "cta": "Começar por 2€",
-    "dismiss": "Talvez mais tarde"
+  "fontSize": {
+    "label": "Tamanho do texto",
+    "normal": "Normal",
+    "large": "Grande",
+    "xlarge": "Muito grande",
+    "desc": "Aumenta o texto em todo o site"
+  },
+  "optimizerFlow": {
+    "step1Title": "1. O teu prompt",
+    "step1Desc": "Cola ou escreve o prompt e carrega em Otimizar. Recebes versões melhoradas e uma pontuação.",
+    "placeholder": "Ex: Escreve um post para Instagram sobre sustentabilidade...",
+    "optimize": "Otimizar prompt",
+    "optimizeAgain": "Otimizar de novo",
+    "optimizing": "A analisar e otimizar...",
+    "step2Title": "2. Escolhe a versão a executar",
+    "step2Desc": "Toca numa versão para a escolheres. Podes copiar qualquer uma.",
+    "otherVersions": "Outras versões",
+    "selected": "Selecionada",
+    "choose": "Escolher",
+    "copy": "Copiar",
+    "step3Title": "3. Executar",
+    "step3Desc": "Vais executar a versão: {{name}}",
+    "analysisTitle": "O que foi melhorado",
+    "useDetailed": "Usar a versão Detalhado",
+    "draftRestored": "Rascunho recuperado",
+    "draftHint": "Guardado automaticamente neste dispositivo durante 24 horas.",
+    "draftClear": "Limpar",
+    "variants": {
+      "detailed": {
+        "label": "Detalhado",
+        "desc": "Estruturado e preciso: contexto, regras e formato definidos. Ideal para resultados consistentes."
+      },
+      "creative": {
+        "label": "Criativo",
+        "desc": "Mais aberto e inspirador: dá margem ao modelo para surpreender. Ideal para ideias e textos."
+      },
+      "shorter": {
+        "label": "Mais curto",
+        "desc": "Condensado e direto, para respostas rápidas."
+      },
+      "technical": {
+        "label": "Mais técnico",
+        "desc": "Linguagem precisa e termos específicos."
+      },
+      "restrictive": {
+        "label": "Mais controlado",
+        "desc": "Formato estrito e limites claros."
+      },
+      "original": {
+        "label": "O teu original",
+        "desc": "O prompt tal como o escreveste, sem alterações."
+      }
+    }
   }
 }

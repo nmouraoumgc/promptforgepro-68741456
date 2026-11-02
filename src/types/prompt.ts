@@ -195,12 +195,22 @@ export const CATEGORIES: { value: Category; label: string; icon: string }[] = [
 
 export const AI_MODELS: { value: AIModel; label: string; type: OutputType[] }[] = [
   { value: 'generic', label: 'Genérico (qualquer IA)', type: ['text', 'image', 'code', 'video', 'audio'] },
-  { value: 'gpt-4', label: 'GPT-4 / ChatGPT', type: ['text', 'code'] },
-  { value: 'claude', label: 'Claude', type: ['text', 'code'] },
-  { value: 'gemini', label: 'Google Gemini', type: ['text', 'code', 'image'] },
+  { value: 'gpt-4', label: 'ChatGPT (OpenAI)', type: ['text', 'code', 'image'] },
+  { value: 'claude', label: 'Claude (Anthropic)', type: ['text', 'code'] },
+  { value: 'gemini', label: 'Gemini (Google)', type: ['text', 'code', 'image'] },
   { value: 'midjourney', label: 'Midjourney', type: ['image'] },
-  { value: 'dalle', label: 'DALL-E', type: ['image'] },
-  { value: 'stable-diffusion', label: 'Stable Diffusion', type: ['image'] },
+  { value: 'dalle', label: 'Imagens do ChatGPT', type: ['image'] },
+  { value: 'stable-diffusion', label: 'Stable Diffusion / Flux', type: ['image'] },
   { value: 'sora', label: 'Sora', type: ['video'] },
   { value: 'runway', label: 'Runway', type: ['video'] },
 ];
+
+/** English labels keyed by value (the arrays above hold the Portuguese labels). */
+export const OUTPUT_TYPE_LABEL_EN: Record<OutputType, string> = {
+  text: 'Text', image: 'Image', code: 'Code', video: 'Video', audio: 'Audio',
+};
+export const TONE_LABEL_EN: Record<ToneStyle, string> = {
+  professional: 'Professional', casual: 'Casual', friendly: 'Friendly', formal: 'Formal',
+  creative: 'Creative', technical: 'Technical', humorous: 'Humorous', persuasive: 'Persuasive',
+  informative: 'Informative', narrative: 'Narrative',
+};

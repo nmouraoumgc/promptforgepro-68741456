@@ -1,4 +1,4 @@
-import { gatewayFetch, type PaddleEnv } from '../_shared/paddle.ts';
+import { gatewayFetch, resolvePriceId, type PaddleEnv } from '../_shared/paddle.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -6,13 +6,9 @@ const corsHeaders = {
 };
 
 async function resolvePaddlePrice(priceId: string, environment: PaddleEnv): Promise<string> {
-  const response = await gatewayFetch(
-    environment,
-    `/prices?external_id=${encodeURIComponent(priceId)}`,
-  );
-  const data = await response.json();
-  if (!data.data?.length) throw new Error(`Price not found: ${priceId}`);
-  return data.data[0].id;
+  const id = await resolvePriceId(environment, priceId);
+  if (!id) throw new Error(`Price not found: ${priceId}`);
+  return id;
 }
 
 async function resolvePaddleDiscount(discountCode: string, environment: PaddleEnv): Promise<string> {

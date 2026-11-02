@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useIsEnglish } from '@/i18n/lang';
 
 interface ImprovementsListProps {
   originalPrompt: string;
@@ -12,6 +13,7 @@ interface ImprovementsListProps {
 }
 
 export default function ImprovementsList({ originalPrompt, optimizedPrompt, improvements }: ImprovementsListProps) {
+  const isEnglish = useIsEnglish();
   const [viewMode, setViewMode] = useState<'original' | 'optimized' | 'diff'>('optimized');
 
   // Simple diff highlighting (in production, use a proper diff library)
@@ -26,7 +28,7 @@ export default function ImprovementsList({ originalPrompt, optimizedPrompt, impr
           <p className="text-sm text-muted-foreground">{originalPrompt}</p>
         </div>
         <div className="rounded-lg bg-success/10 p-3 border border-success/20">
-          <p className="text-xs font-medium text-success mb-2">+ Otimizado</p>
+          <p className="text-xs font-medium text-success mb-2">{isEnglish ? '+ Optimized' : '+ Otimizado'}</p>
           <p className="text-sm">{optimizedPrompt}</p>
         </div>
       </div>
@@ -38,7 +40,7 @@ export default function ImprovementsList({ originalPrompt, optimizedPrompt, impr
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
           <Lightbulb className="h-5 w-5 text-warning" />
-          O que foi melhorado neste prompt
+          {isEnglish ? 'What was improved in this prompt' : 'O que foi melhorado neste prompt'}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -61,23 +63,23 @@ export default function ImprovementsList({ originalPrompt, optimizedPrompt, impr
             </TabsTrigger>
             <TabsTrigger value="optimized" className="text-xs gap-1">
               <Eye className="h-3 w-3" />
-              Otimizado
+              {isEnglish ? 'Optimized' : 'Otimizado'}
             </TabsTrigger>
             <TabsTrigger value="diff" className="text-xs gap-1">
               <GitCompare className="h-3 w-3" />
-              Diferenças
+              {isEnglish ? 'Differences' : 'Diferenças'}
             </TabsTrigger>
           </TabsList>
           
           <div className="mt-3 rounded-lg bg-muted/50 p-4 min-h-[100px]">
             <TabsContent value="original" className="mt-0">
               <pre className="text-sm whitespace-pre-wrap font-mono text-muted-foreground">
-                {originalPrompt || 'Nenhum prompt original'}
+                {originalPrompt || (isEnglish ? 'No original prompt' : 'Nenhum prompt original')}
               </pre>
             </TabsContent>
             <TabsContent value="optimized" className="mt-0">
               <pre className="text-sm whitespace-pre-wrap font-mono">
-                {optimizedPrompt || 'Nenhum prompt otimizado'}
+                {optimizedPrompt || (isEnglish ? 'No optimized prompt' : 'Nenhum prompt otimizado')}
               </pre>
             </TabsContent>
             <TabsContent value="diff" className="mt-0">

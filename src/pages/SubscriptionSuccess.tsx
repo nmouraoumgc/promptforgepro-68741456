@@ -6,6 +6,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Check, Zap, History, TestTube, BarChart3, Download, Loader2 } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
 import { useTranslation } from "react-i18next";
+import { clearCampaignCode } from "@/lib/campaignCode";
+import { track } from "@/lib/analytics";
 
 const SubscriptionSuccess = () => {
   const navigate = useNavigate();
@@ -22,6 +24,8 @@ const SubscriptionSuccess = () => {
     { icon: Download, label: isEnglish ? "Prompt export available" : "Exportação de prompts disponível" },
   ];
 
+  useEffect(() => { clearCampaignCode(); }, []);
+
   useEffect(() => {
     let cancelled = false;
     const start = Date.now();
@@ -32,7 +36,11 @@ const SubscriptionSuccess = () => {
         if (plan === 'pro' || plan === 'premium') break;
         await new Promise((r) => setTimeout(r, 1500));
       }
-      if (!cancelled) setIsVerifying(false);
+      if (!cancelled) {
+        const plan = useAuthStore.getState().profile?.current_plan ?? null;
+        track("subscription_success", { plan, verified: plan === "pro" || plan === "premium" });
+        setIsVerifying(false);
+      }
     };
     poll();
     return () => { cancelled = true; };
@@ -104,7 +112,7 @@ const SubscriptionSuccess = () => {
             >
               <Button
                 className="w-full h-12 font-semibold text-base"
-                onClick={() => navigate("/optimizer")}
+                onClick={() => navigate("/create?mode=optimize")}
               >
                 <Zap className="h-4 w-4 mr-2" />
                 {isEnglish ? "Start optimizing prompts" : "Começar a otimizar prompts"}
@@ -121,7 +129,7 @@ const SubscriptionSuccess = () => {
           className="text-center mt-6"
         >
           <button
-            onClick={() => navigate("/plans")}
+            onClick={() => navigate("/account")}
             className="text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             {isEnglish ? "Manage my subscription →" : "Gerir a minha subscrição →"}

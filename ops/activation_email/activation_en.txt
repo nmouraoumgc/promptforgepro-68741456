@@ -1,0 +1,24 @@
+Subject: Your first optimised prompt takes 60 seconds
+Preheader: The example prompt is already in the box. Press Optimise, see your score and run it. Free, no card needed.
+---
+Hi there,
+
+You created a PromptForge Pro account but haven't tried it yet. Here is the quickest way to see what it does, in under a minute:
+
+1. Open the optimiser with the button below (sign in if asked).
+2. This example prompt is already in the box for you, no copying needed (edit it if you like):
+
+   Write a short email to a client asking them to pay an overdue invoice. Keep it polite.
+
+3. Press Optimise prompt. You get a score out of 100 and improved versions.
+4. Choose Detailed and press Run. The finished email appears right there, ready to copy.
+
+Optimise my first prompt: https://promptforgepro.me/create?mode=optimize&lang=en&prompt=Write%20a%20short%20email%20to%20a%20client%20asking%20them%20to%20pay%20an%20overdue%20invoice.%20Keep%20it%20polite.&c=ACTIVATION1&r={{SEND_ID}}
+
+This is part of your Free plan, no card needed (3 optimisations per prompt, 5 runs per day).
+
+Once you've seen it work, try it with a prompt of your own. If anything gets in the way, just reply to this email. I read every reply.
+
+Nuno, PromptForge Pro
+
+You're receiving this because you have a PromptForge Pro account. Unsubscribe: {{UNSUBSCRIBE_URL}}

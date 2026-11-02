@@ -22,6 +22,7 @@ import { Switch } from '@/components/ui/switch';
 import { usePromoStore } from '@/stores/promoStore';
 import { useAuthStore } from '@/stores/authStore';
 import { toast } from 'sonner';
+import { useIsEnglish } from '@/i18n/lang';
 
 interface PromoCodeDialogProps {
   open: boolean;
@@ -37,6 +38,7 @@ export function PromoCodeDialog({
   onSuccess,
 }: PromoCodeDialogProps) {
   const { user } = useAuthStore();
+  const isEnglish = useIsEnglish();
   const { promoCodes, createPromoCode, updatePromoCode } = usePromoStore();
   const [isLoading, setIsLoading] = useState(false);
   
@@ -87,21 +89,21 @@ export function PromoCodeDialog({
   const handleSave = async () => {
     // Validação
     if (!formData.code.trim()) {
-      toast.error('Código é obrigatório');
+      toast.error((isEnglish ? 'Code is required' : 'Código é obrigatório'));
       return;
     }
     if (formData.discount_value <= 0) {
-      toast.error('Valor de desconto deve ser maior que 0');
+      toast.error((isEnglish ? 'Discount value must be greater than 0' : 'Valor de desconto deve ser maior que 0'));
       return;
     }
     if (!formData.expires_at) {
-      toast.error('Data de expiração é obrigatória');
+      toast.error((isEnglish ? 'Expiry date is required' : 'Data de expiração é obrigatória'));
       return;
     }
     const expiresAt = new Date(formData.expires_at);
     expiresAt.setHours(23, 59, 59, 999);
     if (expiresAt < new Date()) {
-      toast.error('Data de expiração não pode ser no passado');
+      toast.error((isEnglish ? 'Expiry date cannot be in the past' : 'Data de expiração não pode ser no passado'));
       return;
     }
 
@@ -109,23 +111,23 @@ export function PromoCodeDialog({
     try {
       if (editingId) {
         await updatePromoCode(editingId, formData);
-        toast.success('Código atualizado com sucesso!');
+        toast.success((isEnglish ? 'Code updated successfully!' : 'Código atualizado com sucesso!'));
       } else {
         if (!user) {
-          toast.error('Utilizador não autenticado');
+          toast.error((isEnglish ? 'User not authenticated' : 'Utilizador não autenticado'));
           return;
         }
         await createPromoCode({
           ...formData,
           created_by: user.id,
         });
-        toast.success('Código criado com sucesso!');
+        toast.success((isEnglish ? 'Code created successfully!' : 'Código criado com sucesso!'));
       }
       onSuccess?.();
       onOpenChange(false);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      toast.error(`Erro ao guardar código: ${message}`);
+      toast.error(isEnglish ? `Error saving code: ${message}` : `Erro ao guardar código: ${message}`);
     } finally {
       setIsLoading(false);
     }
@@ -137,14 +139,14 @@ export function PromoCodeDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Ticket className="h-5 w-5" />
-            {editingId ? 'Editar Código de Promoção' : 'Novo Código de Promoção'}
+            {editingId ? (isEnglish ? 'Edit promo code' : 'Editar Código de Promoção') : (isEnglish ? 'New promo code' : 'Novo Código de Promoção')}
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
           {/* Código */}
           <div className="space-y-2">
-            <Label>Código de Promoção</Label>
+            <Label>{isEnglish ? 'Promo code' : 'Código de Promoção'}</Label>
             <Input
               value={formData.code}
               onChange={(e) =>
@@ -157,20 +159,20 @@ export function PromoCodeDialog({
 
           {/* Descrição */}
           <div className="space-y-2">
-            <Label>Descrição (opcional)</Label>
+            <Label>{isEnglish ? 'Description (optional)' : 'Descrição (opcional)'}</Label>
             <Textarea
               value={formData.description}
               onChange={(e) =>
                 setFormData({ ...formData, description: e.target.value })
               }
-              placeholder="Ex: Desconto de verão"
+              placeholder={(isEnglish ? 'E.g. Summer discount' : 'Ex: Desconto de verão')}
             />
           </div>
 
           {/* Tipo de Desconto */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Tipo de Desconto</Label>
+              <Label>{isEnglish ? 'Discount type' : 'Tipo de Desconto'}</Label>
               <Select
                 value={formData.discount_type}
                 onValueChange={(value: any) => {
@@ -187,16 +189,16 @@ export function PromoCodeDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="percentage">Percentagem (%)</SelectItem>
-                  <SelectItem value="fixed">Valor Fixo (€)</SelectItem>
-                  <SelectItem value="free_days">Dias Grátis</SelectItem>
+                  <SelectItem value="percentage">{isEnglish ? 'Percentage (%)' : 'Percentagem (%)'}</SelectItem>
+                  <SelectItem value="fixed">{isEnglish ? 'Fixed amount (€)' : 'Valor Fixo (€)'}</SelectItem>
+                  <SelectItem value="free_days">{isEnglish ? 'Free days' : 'Dias Grátis'}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             {/* Valor do Desconto */}
             <div className="space-y-2">
-              <Label>Valor</Label>
+              <Label>{isEnglish ? 'Value' : 'Valor'}</Label>
               <Input
                 type="number"
                 value={formData.discount_value}
@@ -217,10 +219,10 @@ export function PromoCodeDialog({
             </div>
           </div>
 
-          {/* Duração do desconto (meses) — only for percentage/fixed */}
+          {/* Duração do desconto (meses), only for percentage/fixed */}
           {formData.discount_type !== 'free_days' && (
             <div className="space-y-2">
-              <Label>Duração do desconto (meses)</Label>
+              <Label>{isEnglish ? 'Discount duration (months)' : 'Duração do desconto (meses)'}</Label>
               <Input
                 type="number"
                 min={0}
@@ -234,14 +236,14 @@ export function PromoCodeDialog({
                 placeholder="Ex: 3"
               />
               <p className="text-xs text-muted-foreground">
-                0 = aplica uma vez, 3 = desconto durante 3 meses
+                {isEnglish ? '0 = applies once, 3 = discount for 3 months' : '0 = aplica uma vez, 3 = desconto durante 3 meses'}
               </p>
             </div>
           )}
 
           {/* Planos Aplicáveis */}
           <div className="space-y-2">
-            <Label>Planos Aplicáveis</Label>
+            <Label>{isEnglish ? 'Applicable plans' : 'Planos Aplicáveis'}</Label>
             <div className="flex gap-4">
               {['free', 'pro', 'premium'].map((plan) => (
                 <label key={plan} className="flex items-center gap-2">
@@ -276,7 +278,7 @@ export function PromoCodeDialog({
 
           {/* Máximo de Utilizações */}
           <div className="space-y-2">
-            <Label>Máximo de Utilizações</Label>
+            <Label>{isEnglish ? 'Maximum uses' : 'Máximo de Utilizações'}</Label>
             <Input
               type="number"
               value={formData.max_uses}
@@ -294,7 +296,7 @@ export function PromoCodeDialog({
           <div className="space-y-2">
             <Label className="flex items-center gap-2">
               <Calendar className="h-4 w-4" />
-              Data de Expiração
+              {isEnglish ? 'Expiry date' : 'Data de Expiração'}
             </Label>
             <Input
               type="date"
@@ -307,7 +309,7 @@ export function PromoCodeDialog({
 
           {/* Ativo */}
           <div className="flex items-center justify-between">
-            <Label>Ativo</Label>
+            <Label>{isEnglish ? 'Active' : 'Ativo'}</Label>
             <Switch
               checked={formData.is_active}
               onCheckedChange={(checked) =>
@@ -323,10 +325,10 @@ export function PromoCodeDialog({
             onClick={() => onOpenChange(false)}
             disabled={isLoading}
           >
-            Cancelar
+            {isEnglish ? 'Cancel' : 'Cancelar'}
           </Button>
           <Button onClick={handleSave} disabled={isLoading}>
-            {isLoading ? 'A guardar...' : editingId ? 'Atualizar' : 'Criar'}
+            {isLoading ? (isEnglish ? 'Saving...' : 'A guardar...') : editingId ? (isEnglish ? 'Update' : 'Atualizar') : (isEnglish ? 'Create' : 'Criar')}
           </Button>
         </DialogFooter>
       </DialogContent>

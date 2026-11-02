@@ -1,0 +1,26 @@
+Subject A: O teu mês grátis de Pro ainda está à tua espera
+Subject B: O ONEHACK100 ainda funciona: 1 mês de Pro grátis
+Preheader: Restam {{USES_LEFT}} de 50 códigos OneHack, válidos até 28 nov. 0 € hoje, cancelas quando quiseres.
+---
+Olá,
+
+Registaste-te no PromptForge Pro através do post na OneHack e ainda não usaste o teu mês grátis de Pro. Boa notícia: o código ainda funciona.
+
+O botão abaixo abre a página de preços com o ONEHACK100 já aplicado. Escolhe Pro, continua para o pagamento e o Paddle mostra 0,00 € a pagar hoje. O Pro fica ativo de imediato.
+
+A tua oferta OneHack
+- Código: ONEHACK100
+- O que recebes: 1 mês de Pro, 100% de desconto
+- A pagar hoje: 0 €
+- Códigos restantes: {{USES_LEFT}} de 50
+- Válido até: 28 nov 2026, 13:00 (hora de Lisboa), ou até acabarem os códigos
+
+Ativar o meu mês grátis: https://promptforgepro.me/pricing?code=ONEHACK100&lang=pt&c=ONEHACK_REMIND&r={{SEND_ID}}
+
+O Paddle pede um cartão ou PayPal para iniciar a subscrição, mas hoje não é cobrado nada. Depois do mês grátis renova a 9 €/mês, a não ser que canceles, o que podes fazer a qualquer momento na página Conta.
+
+Se alguma coisa falhar, responde a este email. Leio todas as respostas.
+
+Nuno, PromptForge Pro
+
+Recebes este email porque te registaste no PromptForge Pro através do post na OneHack. Cancelar subscrição: {{UNSUBSCRIBE_URL}}

@@ -1,4 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { isInternalCaller } from '../_shared/internalAuth.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -31,6 +32,8 @@ const BODY_PT: Record<ReminderType, { headline: string; body: string }> = {
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return new Response('Method not allowed', { status: 405, headers: corsHeaders });
+
+  if (!(await isInternalCaller(req))) return new Response(JSON.stringify({ error: 'unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
   try {
     const { userId, subscriptionId, type } = await req.json() as {
@@ -87,18 +90,18 @@ Deno.serve(async (req) => {
     </body></html>`;
 
     const resendKey = Deno.env.get('RESEND_API_KEY');
-    const lovableKey = Deno.env.get('LOVABLE_API_KEY');
-    if (!resendKey || !lovableKey) return json({ error: 'missing_config' }, 500);
+    if (!resendKey) return json({ error: 'missing_config' }, 500);
 
-    const res = await fetch('https://connector-gateway.lovable.dev/resend/emails', {
+    // Direct Resend API (previously via Lovable connector gateway)
+    const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${lovableKey}`,
-        'X-Connection-Api-Key': resendKey,
+        'Authorization': `Bearer ${resendKey}`,
       },
       body: JSON.stringify({
-        from: 'PromptForge <onboarding@resend.dev>',
+        from: Deno.env.get('RESEND_FROM') ?? 'PromptForge <onboarding@resend.dev>',
+        reply_to: Deno.env.get('RESEND_REPLY_TO') ?? 'geral@promptforgepro.me',
         to: [profile.email],
         subject,
         html,

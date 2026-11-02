@@ -23,11 +23,19 @@ i18n
       escapeValue: false,
     },
     detection: {
-      order: ['querystring', 'htmlTag', 'localStorage', 'navigator'],
+      // The user's saved choice (localStorage) must win over the static <html lang>.
+      order: ['querystring', 'localStorage', 'htmlTag', 'navigator'],
       lookupQuerystring: 'lang',
       lookupLocalStorage: 'pf_lang',
       caches: ['localStorage'],
     },
   });
+
+const syncHtmlLang = (lng?: string) => {
+  if (typeof document === 'undefined') return;
+  document.documentElement.lang = (lng || '').startsWith('en') ? 'en' : 'pt-PT';
+};
+syncHtmlLang(i18n.resolvedLanguage || i18n.language);
+i18n.on('languageChanged', syncHtmlLang);
 
 export default i18n;

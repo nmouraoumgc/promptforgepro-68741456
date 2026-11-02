@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { authenticateRequest, corsHeaders } from "../_shared/auth.ts";
+import { PT_PT_RULES } from '../_shared/ptpt.ts';
+import { plainTextRules, toPlainText } from '../_shared/plaintext.ts';
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -20,9 +22,9 @@ serve(async (req) => {
       );
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+    const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");
+    if (!GROQ_API_KEY) {
+      throw new Error("GROQ_API_KEY is not configured");
     }
 
     // Hook de choque controlado prompt
@@ -44,19 +46,20 @@ Regras:
 Formato:
 Responde APENAS com os hooks numerados, um por linha. Sem introdução nem explicação.`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        Authorization: `Bearer ${GROQ_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: Deno.env.get('AI_MODEL') ?? 'openai/gpt-oss-120b',
+        ...(Deno.env.get('AI_REASONING_EFFORT') ? { reasoning_effort: Deno.env.get('AI_REASONING_EFFORT') } : {}),
         messages: [
-          { role: "system", content: systemPrompt },
+          { role: "system", content: systemPrompt + PT_PT_RULES + plainTextRules('pt') },
           { role: "user", content: userPrompt },
         ],
-        max_tokens: 500,
+        max_tokens: 1500, // was 500; raised because reasoning models (gpt-oss) count reasoning tokens here
         temperature: 0.8,
       }),
     });
@@ -87,7 +90,7 @@ Responde APENAS com os hooks numerados, um por linha. Sem introdução nem expli
 
     return new Response(
       JSON.stringify({ 
-        hooks: content,
+        hooks: toPlainText(content),
         limited: !isPremium,
         totalHooks: isPremium ? 5 : 2,
         maxHooks: 5

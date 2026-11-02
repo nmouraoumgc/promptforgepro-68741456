@@ -6,7 +6,8 @@ import {
   ToggleLeft, ToggleRight, Search, Ticket, Copy,
   CheckCircle, XCircle, LayoutDashboard
 } from 'lucide-react';
-import { AdminOverview } from '@/components/admin/AdminOverview';
+import { AdminFraudFlags } from '@/components/admin/AdminFraudFlags';
+import { AdminOverview, fmtCur, fmtMoney, type AdminMetrics, type UserCounts } from '@/components/admin/AdminOverview';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,6 +31,7 @@ import { PromoCodeDialog } from '@/components/promo/PromoCodeDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { useIsEnglish } from '@/i18n/lang';
 
 interface PromptPack {
   id: string;
@@ -71,6 +73,7 @@ interface Subscription {
 
 export default function Admin() {
   const navigate = useNavigate();
+  const isEnglish = useIsEnglish();
   const { toast: showToast } = useToast();
   const { isAdmin, isLoading: authLoading } = useAuthStore();
   const { promoCodes, fetchPromoCodes, deletePromoCode } = usePromoStore();
@@ -79,6 +82,9 @@ export default function Admin() {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
+  const [userCounts, setUserCounts] = useState<UserCounts | null>(null);
+  const [metrics, setMetrics] = useState<AdminMetrics | null>(null);
+  const [metricsError, setMetricsError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -99,10 +105,10 @@ export default function Admin() {
 
   useEffect(() => {
     if (!authLoading && !isAdmin) {
-      navigate('/');
+      navigate('/app');
       showToast({
-        title: 'Acesso negado',
-        description: 'Não tens permissões de administrador.',
+        title: (isEnglish ? 'Access denied' : 'Acesso negado'),
+        description: (isEnglish ? "You don't have administrator permissions." : 'Não tens permissões de administrador.'),
         variant: 'destructive',
       });
     }
@@ -113,6 +119,38 @@ export default function Admin() {
       fetchData();
     }
   }, [isAdmin]);
+
+  const fetchUserCounts = async () => {
+    const baseCount = () => supabase.from('profiles').select('id', { count: 'exact', head: true });
+    type CountQuery = ReturnType<typeof baseCount>;
+    const countWhere = async (apply?: (q: CountQuery) => CountQuery) => {
+      const q = baseCount();
+      const { count } = await (apply ? apply(q) : q);
+      return count ?? 0;
+    };
+    const now = new Date();
+    const last30 = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const monthStarts: Date[] = [];
+    for (let i = 5; i >= 0; i--) monthStarts.push(new Date(now.getFullYear(), now.getMonth() - i, 1));
+    const [total, pro, premium, free, new30d, ...perMonth] = await Promise.all([
+      countWhere(),
+      countWhere((q) => q.eq('current_plan', 'pro')),
+      countWhere((q) => q.in('current_plan', ['packs', 'premium'])), // Prompt Packs buyers (+ grandfathered premium)
+      countWhere((q) => q.eq('current_plan', 'free')),
+      countWhere((q) => q.gte('created_at', last30)),
+      ...monthStarts.map((start, i) => {
+        const end = new Date(start.getFullYear(), start.getMonth() + 1, 1);
+        return countWhere((q) => q.gte('created_at', start.toISOString()).lt('created_at', end.toISOString()));
+      }),
+    ]);
+    setUserCounts({
+      total, pro, premium, free, new30d,
+      signupsByMonth: monthStarts.map((d, i) => ({
+        month: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
+        count: perMonth[i],
+      })),
+    });
+  };
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -149,6 +187,19 @@ export default function Admin() {
 
     if (subsData) setSubscriptions(subsData as Subscription[]);
 
+    // Exact user counts (the profiles list above is capped at 1000 rows by PostgREST)
+    await fetchUserCounts();
+
+    // Real revenue / MRR from Paddle, computed server-side (admin-only edge function)
+    setMetricsError(null);
+    const { data: m, error: mErr } = await supabase.functions.invoke('admin-metrics');
+    if (mErr || !m || (m as { error?: string }).error) {
+      setMetrics(null);
+      setMetricsError(isEnglish ? 'Could not load Paddle metrics' : 'Não foi possível carregar as métricas do Paddle');
+    } else {
+      setMetrics(m as AdminMetrics);
+    }
+
     // Fetch promo codes
     await fetchPromoCodes();
 
@@ -157,15 +208,15 @@ export default function Admin() {
 
   // Promo Code Handlers
   const handleDeletePromo = async (id: string) => {
-    if (!confirm('Tens a certeza que queres eliminar este código?')) return;
+    if (!confirm((isEnglish ? 'Are you sure you want to delete this code?' : 'Tens a certeza que queres eliminar este código?'))) return;
     
     await deletePromoCode(id);
-    toast.success('Código de promoção eliminado');
+    toast.success((isEnglish ? 'Promo code deleted' : 'Código de promoção eliminado'));
   };
 
   const handleCopyPromoCode = (code: string) => {
     navigator.clipboard.writeText(code);
-    toast.success('Código copiado!');
+    toast.success((isEnglish ? 'Code copied!' : 'Código copiado!'));
   };
 
   // Pack handlers (existing)
@@ -177,9 +228,9 @@ export default function Admin() {
         .eq('id', editingPack.id);
       
       if (error) {
-        showToast({ title: 'Erro ao atualizar', variant: 'destructive' });
+        showToast({ title: (isEnglish ? 'Update failed' : 'Erro ao atualizar'), variant: 'destructive' });
       } else {
-        showToast({ title: 'Pack atualizado' });
+        showToast({ title: (isEnglish ? 'Pack updated' : 'Pack atualizado') });
         fetchData();
       }
     } else {
@@ -188,9 +239,9 @@ export default function Admin() {
         .insert([{ ...packForm, sort_order: packs.length }]);
       
       if (error) {
-        showToast({ title: 'Erro ao criar', description: error.message, variant: 'destructive' });
+        showToast({ title: (isEnglish ? 'Creation failed' : 'Erro ao criar'), description: error.message, variant: 'destructive' });
       } else {
-        showToast({ title: 'Pack criado' });
+        showToast({ title: (isEnglish ? 'Pack created' : 'Pack criado') });
         fetchData();
       }
     }
@@ -217,7 +268,7 @@ export default function Admin() {
       .eq('id', id);
     
     if (!error) {
-      showToast({ title: 'Pack eliminado' });
+      showToast({ title: (isEnglish ? 'Pack deleted' : 'Pack eliminado') });
       fetchData();
     }
   };
@@ -262,7 +313,7 @@ export default function Admin() {
       >
         <header className="mb-8">
           <h1 className="text-3xl font-bold tracking-tight mb-2">Backoffice</h1>
-          <p className="text-muted-foreground">Gestão de conteúdos, utilizadores e promoções</p>
+          <p className="text-muted-foreground">{isEnglish ? 'Content, user and promotion management' : 'Gestão de conteúdos, utilizadores e promoções'}</p>
         </header>
 
         {/* Stats */}
@@ -287,8 +338,8 @@ export default function Admin() {
                   <Users className="h-5 w-5 text-info" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{users.length}</p>
-                  <p className="text-sm text-muted-foreground">Utilizadores</p>
+                  <p className="text-2xl font-bold">{userCounts?.total ?? users.length}</p>
+                  <p className="text-sm text-muted-foreground">{isEnglish ? 'Users' : 'Utilizadores'}</p>
                 </div>
               </div>
             </CardContent>
@@ -300,8 +351,13 @@ export default function Admin() {
                   <CreditCard className="h-5 w-5 text-success" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{purchases.length}</p>
-                  <p className="text-sm text-muted-foreground">Compras</p>
+                  <p className="text-2xl font-bold">{metrics ? metrics.paid_txns_all_time : 'n/d'}</p>
+                  <p className="text-sm text-muted-foreground">{isEnglish ? 'Purchases (paid, Paddle)' : 'Compras (pagas, Paddle)'}</p>
+                  {metrics && (
+                    <p className="text-xs text-muted-foreground">
+                      {isEnglish ? 'gross' : 'bruto'} {fmtMoney(metrics.revenue_all_time)} · {isEnglish ? 'net' : 'líquido'} {fmtMoney(metrics.revenue_all_time_net)}
+                    </p>
+                  )}
                 </div>
               </div>
             </CardContent>
@@ -313,8 +369,13 @@ export default function Admin() {
                   <Ticket className="h-5 w-5 text-amber-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{promoCodes.length}</p>
-                  <p className="text-sm text-muted-foreground">Códigos Promo</p>
+                  <p className="text-2xl font-bold">{metrics ? `${metrics.discounts_active}/${metrics.discounts_total}` : 'n/d'}</p>
+                  <p className="text-sm text-muted-foreground">{isEnglish ? 'Promo codes (active/total, Paddle)' : 'Códigos Promo (ativos/total, Paddle)'}</p>
+                  {metrics && metrics.discounts.filter((d) => d.status === 'active' && (!d.expires_at || new Date(d.expires_at) > new Date())).slice(0, 2).map((d) => (
+                    <p key={d.id} className="text-xs text-muted-foreground">
+                      {d.code ?? d.id}: {d.times_used}{d.usage_limit ? `/${d.usage_limit}` : ''} {isEnglish ? 'uses' : 'usos'}
+                    </p>
+                  ))}
                 </div>
               </div>
             </CardContent>
@@ -329,17 +390,18 @@ export default function Admin() {
               Overview
             </TabsTrigger>
             <TabsTrigger value="packs">Prompt Packs</TabsTrigger>
-            <TabsTrigger value="users">Utilizadores</TabsTrigger>
-            <TabsTrigger value="purchases">Compras</TabsTrigger>
-            <TabsTrigger value="promo">Códigos de Promoção</TabsTrigger>
+            <TabsTrigger value="users">{isEnglish ? 'Users' : 'Utilizadores'}</TabsTrigger>
+            <TabsTrigger value="purchases">{isEnglish ? 'Purchases' : 'Compras'}</TabsTrigger>
+            <TabsTrigger value="promo">{isEnglish ? 'Promo codes' : 'Códigos de Promoção'}</TabsTrigger>
+            <TabsTrigger value="alerts">{isEnglish ? 'Alerts' : 'Alertas'}</TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
           <TabsContent value="overview">
             {isLoading ? (
-              <div className="text-center py-12 text-muted-foreground">A carregar estatísticas…</div>
+              <div className="text-center py-12 text-muted-foreground">{isEnglish ? 'Loading statistics…' : 'A carregar estatísticas…'}</div>
             ) : (
-              <AdminOverview users={users} purchases={purchases} subscriptions={subscriptions} />
+              <AdminOverview counts={userCounts} metrics={metrics} metricsError={metricsError} />
             )}
           </TabsContent>
 
@@ -349,22 +411,22 @@ export default function Admin() {
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
                   <CardTitle>Prompt Packs</CardTitle>
-                  <CardDescription>Gere os packs disponíveis</CardDescription>
+                  <CardDescription>{isEnglish ? 'Manage the available packs' : 'Gere os packs disponíveis'}</CardDescription>
                 </div>
                 <Dialog open={packDialogOpen} onOpenChange={setPackDialogOpen}>
                   <DialogTrigger asChild>
                     <Button onClick={resetPackForm}>
                       <Plus className="h-4 w-4 mr-2" />
-                      Novo Pack
+                      {isEnglish ? 'New pack' : 'Novo Pack'}
                     </Button>
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>{editingPack ? 'Editar Pack' : 'Novo Pack'}</DialogTitle>
+                      <DialogTitle>{editingPack ? (isEnglish ? 'Edit pack' : 'Editar Pack') : (isEnglish ? 'New pack' : 'Novo Pack')}</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                       <div className="space-y-2">
-                        <Label>Nome</Label>
+                        <Label>{isEnglish ? 'Name' : 'Nome'}</Label>
                         <Input
                           value={packForm.name}
                           onChange={(e) => setPackForm({ ...packForm, name: e.target.value })}
@@ -380,11 +442,11 @@ export default function Admin() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>Descrição</Label>
+                        <Label>{isEnglish ? 'Description' : 'Descrição'}</Label>
                         <Textarea
                           value={packForm.description}
                           onChange={(e) => setPackForm({ ...packForm, description: e.target.value })}
-                          placeholder="Descrição do pack..."
+                          placeholder={(isEnglish ? 'Pack description...' : 'Descrição do pack...')}
                         />
                       </div>
                       <div className="flex items-center justify-between">
@@ -395,7 +457,7 @@ export default function Admin() {
                         />
                       </div>
                       <div className="flex items-center justify-between">
-                        <Label>Ativo</Label>
+                        <Label>{isEnglish ? 'Active' : 'Ativo'}</Label>
                         <Switch
                           checked={packForm.is_active}
                           onCheckedChange={(v) => setPackForm({ ...packForm, is_active: v })}
@@ -404,10 +466,10 @@ export default function Admin() {
                     </div>
                     <DialogFooter>
                       <Button variant="outline" onClick={() => setPackDialogOpen(false)}>
-                        Cancelar
+                        {isEnglish ? 'Cancel' : 'Cancelar'}
                       </Button>
                       <Button onClick={handleSavePack}>
-                        {editingPack ? 'Guardar' : 'Criar'}
+                        {editingPack ? (isEnglish ? 'Save' : 'Guardar') : (isEnglish ? 'Create' : 'Criar')}
                       </Button>
                     </DialogFooter>
                   </DialogContent>
@@ -417,11 +479,11 @@ export default function Admin() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Nome</TableHead>
+                      <TableHead>{isEnglish ? 'Name' : 'Nome'}</TableHead>
                       <TableHead>Slug</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Estado</TableHead>
-                      <TableHead className="text-right">Ações</TableHead>
+                      <TableHead>{isEnglish ? 'Type' : 'Tipo'}</TableHead>
+                      <TableHead>{isEnglish ? 'Status' : 'Estado'}</TableHead>
+                      <TableHead className="text-right">{isEnglish ? 'Actions' : 'Ações'}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -436,7 +498,7 @@ export default function Admin() {
                         </TableCell>
                         <TableCell>
                           <Badge variant={pack.is_active ? 'default' : 'outline'}>
-                            {pack.is_active ? 'Ativo' : 'Inativo'}
+                            {pack.is_active ? (isEnglish ? 'Active' : 'Ativo') : (isEnglish ? 'Inactive' : 'Inativo')}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
@@ -445,6 +507,7 @@ export default function Admin() {
                               variant="ghost"
                               size="icon"
                               onClick={() => handleToggleActive(pack)}
+                              aria-label={pack.is_active ? (isEnglish ? 'Deactivate pack' : 'Desativar pack') : (isEnglish ? 'Activate pack' : 'Ativar pack')}
                             >
                               {pack.is_active ? (
                                 <ToggleRight className="h-4 w-4" />
@@ -456,6 +519,7 @@ export default function Admin() {
                               variant="ghost"
                               size="icon"
                               onClick={() => openEditPack(pack)}
+                              aria-label={isEnglish ? 'Edit pack' : 'Editar pack'}
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
@@ -463,6 +527,7 @@ export default function Admin() {
                               variant="ghost"
                               size="icon"
                               onClick={() => handleDeletePack(pack.id)}
+                              aria-label={isEnglish ? 'Delete pack' : 'Apagar pack'}
                             >
                               <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
@@ -482,13 +547,13 @@ export default function Admin() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle>Utilizadores</CardTitle>
-                    <CardDescription>Lista de utilizadores registados</CardDescription>
+                    <CardTitle>{isEnglish ? 'Users' : 'Utilizadores'}</CardTitle>
+                    <CardDescription>{isEnglish ? 'Registered users' : 'Lista de utilizadores registados'}</CardDescription>
                   </div>
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="Pesquisar por email..."
+                      placeholder={(isEnglish ? 'Search by email...' : 'Pesquisar por email...')}
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="pl-9 w-64"
@@ -501,8 +566,8 @@ export default function Admin() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Email</TableHead>
-                      <TableHead>Plano</TableHead>
-                      <TableHead>Registado em</TableHead>
+                      <TableHead>{isEnglish ? 'Plan' : 'Plano'}</TableHead>
+                      <TableHead>{isEnglish ? 'Signed up' : 'Registado em'}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -511,14 +576,14 @@ export default function Admin() {
                         <TableCell className="font-medium">{user.email}</TableCell>
                         <TableCell>
                           <Badge variant={
-                            user.current_plan === 'premium' ? 'default' :
+                            user.current_plan === 'premium' || user.current_plan === 'packs' ? 'default' :
                             user.current_plan === 'pro' ? 'secondary' : 'outline'
                           }>
                             {user.current_plan}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-muted-foreground">
-                          {new Date(user.created_at).toLocaleDateString('pt-PT')}
+                          {new Date(user.created_at).toLocaleDateString(isEnglish ? 'en-GB' : 'pt-PT')}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -530,20 +595,66 @@ export default function Admin() {
 
           {/* Purchases Tab */}
           <TabsContent value="purchases">
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle>{isEnglish ? 'Paid transactions (Paddle, read-only)' : 'Transações pagas (Paddle, só leitura)'}</CardTitle>
+                <CardDescription>
+                  {metrics
+                    ? (isEnglish
+                      ? `${metrics.paid_txns_all_time} paid of ${metrics.completed_txns_all_time} completed · gross ${fmtMoney(metrics.revenue_all_time)} · refunds/chargebacks ${fmtMoney(metrics.refunds_chargebacks_all_time)}`
+                      : `${metrics.paid_txns_all_time} pagas de ${metrics.completed_txns_all_time} concluídas · bruto ${fmtMoney(metrics.revenue_all_time)} · reembolsos/chargebacks ${fmtMoney(metrics.refunds_chargebacks_all_time)}`)
+                    : (metricsError ?? (isEnglish ? 'Loading…' : 'A carregar…'))}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {metrics && metrics.paid_txns.length > 0 && (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>ID</TableHead>
+                        <TableHead>{isEnglish ? 'Type' : 'Tipo'}</TableHead>
+                        <TableHead>{isEnglish ? 'Amount' : 'Valor'}</TableHead>
+                        <TableHead>{isEnglish ? 'Refunded' : 'Devolvido'}</TableHead>
+                        <TableHead>{isEnglish ? 'Discount' : 'Desconto'}</TableHead>
+                        <TableHead>{isEnglish ? 'Date' : 'Data'}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {metrics.paid_txns.map((t) => (
+                        <TableRow key={t.id}>
+                          <TableCell className="font-mono text-sm">{t.id.slice(0, 14)}...</TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{t.origin === 'subscription_recurring' ? (isEnglish ? 'renewal' : 'renovação') : (isEnglish ? 'new' : 'nova')}</Badge>
+                          </TableCell>
+                          <TableCell>{fmtCur(t.total, t.currency)}</TableCell>
+                          <TableCell>
+                            {t.refunded > 0 ? <Badge variant="destructive">{fmtCur(t.refunded, t.currency)}</Badge> : <span className="text-muted-foreground">0</span>}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">{t.discount_code ?? '-'}</TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {new Date(t.billed_at).toLocaleDateString(isEnglish ? 'en-GB' : 'pt-PT')}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
             <Card>
               <CardHeader>
-                <CardTitle>Compras</CardTitle>
-                <CardDescription>Histórico de transações</CardDescription>
+                <CardTitle>{isEnglish ? 'Purchases (database table)' : 'Compras (tabela da base de dados)'}</CardTitle>
+                <CardDescription>{isEnglish ? 'Legacy purchases table, not used by Paddle checkout' : 'Tabela antiga de compras, não é usada pelo checkout Paddle'}</CardDescription>
               </CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>ID</TableHead>
-                      <TableHead>Plano</TableHead>
-                      <TableHead>Valor</TableHead>
-                      <TableHead>Estado</TableHead>
-                      <TableHead>Data</TableHead>
+                      <TableHead>{isEnglish ? 'Plan' : 'Plano'}</TableHead>
+                      <TableHead>{isEnglish ? 'Amount' : 'Valor'}</TableHead>
+                      <TableHead>{isEnglish ? 'Status' : 'Estado'}</TableHead>
+                      <TableHead>{isEnglish ? 'Date' : 'Data'}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -564,7 +675,7 @@ export default function Admin() {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-muted-foreground">
-                          {new Date(purchase.created_at).toLocaleDateString('pt-PT')}
+                          {new Date(purchase.created_at).toLocaleDateString(isEnglish ? 'en-GB' : 'pt-PT')}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -576,11 +687,58 @@ export default function Admin() {
 
           {/* Promo Codes Tab - NEW */}
           <TabsContent value="promo">
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle>{isEnglish ? 'Paddle discounts (read-only)' : 'Descontos Paddle (só leitura)'}</CardTitle>
+                <CardDescription>
+                  {metrics
+                    ? (isEnglish ? `${metrics.discounts_active} active of ${metrics.discounts_total}` : `${metrics.discounts_active} ativos de ${metrics.discounts_total}`)
+                    : (metricsError ?? (isEnglish ? 'Loading…' : 'A carregar…'))}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {metrics && metrics.discounts.length > 0 && (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{isEnglish ? 'Code' : 'Código'}</TableHead>
+                        <TableHead>{isEnglish ? 'Discount' : 'Desconto'}</TableHead>
+                        <TableHead>{isEnglish ? 'Uses' : 'Usos'}</TableHead>
+                        <TableHead>{isEnglish ? 'Status' : 'Estado'}</TableHead>
+                        <TableHead>{isEnglish ? 'Expires' : 'Expira'}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {metrics.discounts.map((d) => {
+                        const expired = !!d.expires_at && new Date(d.expires_at) <= new Date();
+                        const state = d.status !== 'active' ? (isEnglish ? 'archived' : 'arquivado') : expired ? (isEnglish ? 'expired' : 'expirado') : (isEnglish ? 'active' : 'ativo');
+                        return (
+                          <TableRow key={d.id}>
+                            <TableCell className="font-mono text-sm">{d.code ?? d.id}</TableCell>
+                            <TableCell>
+                              {d.type === 'percentage' ? `${d.amount}%` : fmtCur(Number(d.amount), d.currency ?? 'EUR')}
+                              {d.recur ? (isEnglish ? ' (recurring)' : ' (recorrente)') : (isEnglish ? ' (1st charge)' : ' (1.ª cobrança)')}
+                            </TableCell>
+                            <TableCell>{d.times_used}{d.usage_limit ? ` / ${d.usage_limit}` : ''}</TableCell>
+                            <TableCell>
+                              <Badge variant={state === 'ativo' || state === 'active' ? 'default' : 'secondary'}>{state}</Badge>
+                            </TableCell>
+                            <TableCell className="text-muted-foreground">
+                              {d.expires_at ? new Date(d.expires_at).toLocaleDateString(isEnglish ? 'en-GB' : 'pt-PT') : '-'}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
-                  <CardTitle>Códigos de Promoção</CardTitle>
-                  <CardDescription>Gerir descontos e ofertas</CardDescription>
+                  <CardTitle>{isEnglish ? 'Promo codes (database table)' : 'Códigos de Promoção (tabela da base de dados)'}</CardTitle>
+                  <CardDescription>{isEnglish ? 'Internal promo codes, separate from Paddle discounts' : 'Códigos internos, separados dos descontos Paddle'}</CardDescription>
                 </div>
                 <Button 
                   onClick={() => { 
@@ -590,17 +748,17 @@ export default function Admin() {
                   className="gap-2"
                 >
                   <Plus className="h-4 w-4" />
-                  Novo Código
+                  {isEnglish ? 'New code' : 'Novo Código'}
                 </Button>
               </CardHeader>
               <CardContent>
                 {isLoading ? (
                   <div className="text-center py-8">
-                    <p className="text-muted-foreground">A carregar...</p>
+                    <p className="text-muted-foreground">{isEnglish ? 'Loading...' : 'A carregar...'}</p>
                   </div>
                 ) : promoCodes.length === 0 ? (
                   <div className="text-center py-8">
-                    <p className="text-muted-foreground">Nenhum código de promoção criado</p>
+                    <p className="text-muted-foreground">{isEnglish ? 'No promo codes created yet' : 'Nenhum código de promoção criado'}</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -624,12 +782,12 @@ export default function Admin() {
                             {promo.is_active ? (
                               <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                                 <CheckCircle className="h-3 w-3 mr-1" />
-                                Ativo
+                                {isEnglish ? 'Active' : 'Ativo'}
                               </Badge>
                             ) : (
                               <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
                                 <XCircle className="h-3 w-3 mr-1" />
-                                Inativo
+                                {isEnglish ? 'Inactive' : 'Inativo'}
                               </Badge>
                             )}
                           </div>
@@ -638,18 +796,18 @@ export default function Admin() {
                           )}
                           <div className="flex gap-4 text-sm">
                             <span>
-                              <strong>Desconto:</strong> {promo.discount_type === 'percentage' ? `${promo.discount_value}%` : promo.discount_type === 'fixed' ? `€${(promo.discount_value ?? 0).toFixed(2)}` : `${promo.discount_value} dias`}
+                              <strong>{isEnglish ? 'Discount:' : 'Desconto:'}</strong> {promo.discount_type === 'percentage' ? `${promo.discount_value}%` : promo.discount_type === 'fixed' ? `€${(promo.discount_value ?? 0).toFixed(2)}` : `${promo.discount_value} ${isEnglish ? 'days' : 'dias'}`}
                             </span>
                             {promo.discount_type !== 'free_days' && (
                               <span>
-                                <strong>Duração:</strong> {promo.duration_months > 0 ? `${promo.duration_months} meses` : 'Aplica uma vez'}
+                                <strong>{isEnglish ? 'Duration:' : 'Duração:'}</strong> {promo.duration_months > 0 ? `${promo.duration_months} ${isEnglish ? 'months' : 'meses'}` : (isEnglish ? 'Applies once' : 'Aplica uma vez')}
                               </span>
                             )}
                             <span>
-                              <strong>Utilizações:</strong> {promo.current_uses} / {promo.max_uses}
+                              <strong>{isEnglish ? 'Uses:' : 'Utilizações:'}</strong> {promo.current_uses} / {promo.max_uses}
                             </span>
                             <span>
-                              <strong>Expira:</strong> {format(new Date(promo.expires_at), 'dd/MM/yyyy')}
+                              <strong>{isEnglish ? 'Expires:' : 'Expira:'}</strong> {format(new Date(promo.expires_at), 'dd/MM/yyyy')}
                             </span>
                           </div>
                         </div>
@@ -678,6 +836,11 @@ export default function Admin() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Anti-fraud alerts */}
+          <TabsContent value="alerts">
+            <AdminFraudFlags isEnglish={isEnglish} />
           </TabsContent>
         </Tabs>
 

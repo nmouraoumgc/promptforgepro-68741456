@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -20,9 +21,15 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { email, appUrl }: WelcomeEmailRequest = await req.json();
-    
-    console.log(`Sending welcome email to: ${email}`);
+    // Only the signed-in user, to their own address; body fields are ignored.
+    const token = (req.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
+    const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!);
+    const { data: { user } } = token ? await sb.auth.getUser(token) : { data: { user: null } };
+    if (!user?.email) {
+      return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } });
+    }
+    const email = user.email;
+    const appUrl = "https://promptforgepro.me";
 
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
     
@@ -129,7 +136,8 @@ const handler = async (req: Request): Promise<Response> => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "PromptForge <onboarding@resend.dev>",
+        from: Deno.env.get("RESEND_FROM") ?? "PromptForge <onboarding@resend.dev>",
+        reply_to: Deno.env.get("RESEND_REPLY_TO") ?? "geral@promptforgepro.me",
         to: [email],
         subject: "O teu acesso está desbloqueado 🚀",
         html: emailHtml,
@@ -155,7 +163,7 @@ const handler = async (req: Request): Promise<Response> => {
   } catch (error: any) {
     console.error("Error in send-welcome-email function:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: "failed" }),
       {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },

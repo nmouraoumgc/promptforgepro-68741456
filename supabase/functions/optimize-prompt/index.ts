@@ -1,6 +1,9 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { authenticateRequest, corsHeaders } from "../_shared/auth.ts";
+import { loadActiveBrand, brandInstructions } from "../_shared/brand.ts";
+import { PT_PT_RULES } from '../_shared/ptpt.ts';
+import { plainTextRules, toPlainText } from '../_shared/plaintext.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -11,7 +14,9 @@ serve(async (req) => {
     const auth = await authenticateRequest(req);
     if (auth instanceof Response) return auth;
 
-    const { prompt, language } = await req.json();
+    const { prompt, language: reqLanguage, useBrand } = await req.json();
+    const brand = useBrand === false ? null : await loadActiveBrand(auth.userId);
+    const language = brand?.language ?? reqLanguage;
 
     if (!prompt || prompt.trim().length === 0) {
       return new Response(
@@ -20,9 +25,9 @@ serve(async (req) => {
       );
     }
 
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) {
-      console.error('LOVABLE_API_KEY not configured');
+    const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY');
+    if (!GROQ_API_KEY) {
+      console.error('GROQ_API_KEY not configured');
       return new Response(
         JSON.stringify({ error: 'API key não configurada' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -134,18 +139,21 @@ Formato da resposta:
   "improvements": ["...", "...", "..."]
 }`;
 
-    console.log('Calling Lovable AI for prompt optimization...');
+    console.log('Calling Groq API for prompt optimization...');
 
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'Authorization': `Bearer ${GROQ_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: Deno.env.get('AI_MODEL') ?? 'openai/gpt-oss-120b',
+        ...(Deno.env.get('AI_REASONING_EFFORT') ? { reasoning_effort: Deno.env.get('AI_REASONING_EFFORT') } : {}),
         messages: [
-          { role: 'system', content: systemPrompt },
+          { role: 'system', content: (isEnglish ? systemPrompt : systemPrompt + PT_PT_RULES) + brandInstructions(brand, isEnglish) + (isEnglish
+            ? '\n\nThe "content" of each variation is a plain-text prompt (use \\n for line breaks inside the JSON string).'
+            : '\n\nO "content" de cada variação é um prompt em texto simples (usa \\n para quebras de linha dentro da string JSON).') + plainTextRules(isEnglish ? 'en' : 'pt') },
           { role: 'user', content: isEnglish ? `Analyze and optimize this prompt:\n\n"${prompt}"` : `Analisa e otimiza este prompt:\n\n"${prompt}"` }
         ],
       }),
@@ -207,10 +215,21 @@ Formato da resposta:
       overall: Number(rawScore.overall ?? 0),
     };
 
+    // Strip any Markdown the model still produced in textual fields.
+    if (Array.isArray(result.optimizations)) {
+      result.optimizations = result.optimizations.map((o: Record<string, unknown>) => ({
+        ...o,
+        content: toPlainText(o?.content),
+        explanation: toPlainText(o?.explanation),
+        changes: Array.isArray(o?.changes) ? (o.changes as unknown[]).map(toPlainText) : o?.changes,
+      }));
+    }
+    if (Array.isArray(result.improvements)) result.improvements = result.improvements.map(toPlainText);
+
     console.log('Successfully optimized prompt');
 
     return new Response(
-      JSON.stringify({ ...result, score: normalizedScore }),
+      JSON.stringify({ ...result, score: normalizedScore, brand: brand ? { id: brand.id, name: brand.name } : null }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 

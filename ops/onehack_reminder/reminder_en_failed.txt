@@ -1,0 +1,30 @@
+Subject A: Something went wrong with your free month. Try again?
+Subject B: Your ONEHACK100 code is still yours to use
+Preheader: Your last checkout didn't go through. Nothing was charged and the code still works.
+---
+Hi there,
+
+You tried to claim your free month of Pro with ONEHACK100, but the checkout didn't go through. Sorry about that. Nothing was charged and the code was not used, so you can try again.
+
+Why it usually fails
+To start the subscription, Paddle checks your card with a €0 verification, and some banks decline it or ask for extra confirmation. What helps:
+- Try another card, or PayPal.
+- Turn on online (and international) payments in your banking app.
+- Approve the 3D Secure request from your bank when it pops up.
+
+Your OneHack offer
+- Code: ONEHACK100
+- What you get: 1 month of Pro, 100% off
+- Due today: €0 / $0
+- Codes left: {{USES_LEFT}} of 50
+- Valid until: 28 Nov 2026, 13:00 Lisbon time, or until the codes run out
+
+Try again: https://promptforgepro.me/pricing?code=ONEHACK100&lang=en&c=ONEHACK_REMIND&r={{SEND_ID}}
+
+The button opens Pricing with the code already applied, and Paddle shows €0.00 due today. After the free month Pro renews at €9/month ($9 in some countries) unless you cancel, which you can do anytime from your Account page.
+
+Still stuck? Just reply to this email and I'll help you sort it out.
+
+Nuno, PromptForge Pro
+
+You're receiving this because you signed up for PromptForge Pro through the OneHack post. Unsubscribe: {{UNSUBSCRIBE_URL}}

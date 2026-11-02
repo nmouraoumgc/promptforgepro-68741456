@@ -1,6 +1,8 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { authenticateRequest, corsHeaders } from "../_shared/auth.ts";
+import { outputLanguageRules, isEnglishLang } from '../_shared/ptpt.ts';
+import { plainTextRules, toPlainText } from '../_shared/plaintext.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -11,20 +13,24 @@ serve(async (req) => {
     const auth = await authenticateRequest(req);
     if (auth instanceof Response) return auth;
 
-    const { promptA, promptB } = await req.json();
+    const { promptA, promptB, language } = await req.json();
+    const en = isEnglishLang(language);
+    const systemPrompt = (en
+      ? 'You are a helpful assistant. Answer clearly and concisely in English.'
+      : 'És um assistente prestável. Responde de forma clara e concisa em português de Portugal.') + outputLanguageRules(language) + plainTextRules(language);
 
     if (!promptA || !promptB) {
       return new Response(
-        JSON.stringify({ error: 'Ambos os prompts são obrigatórios' }),
+        JSON.stringify({ error: en ? 'Both prompts are required' : 'Ambos os prompts são obrigatórios' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) {
-      console.error('LOVABLE_API_KEY not configured');
+    const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY');
+    if (!GROQ_API_KEY) {
+      console.error('GROQ_API_KEY not configured');
       return new Response(
-        JSON.stringify({ error: 'API key não configurada' }),
+        JSON.stringify({ error: en ? 'API key not configured' : 'API key não configurada' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -33,30 +39,32 @@ serve(async (req) => {
 
     // Test both prompts in parallel
     const [responseA, responseB] = await Promise.all([
-      fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+          'Authorization': `Bearer ${GROQ_API_KEY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'google/gemini-2.5-flash',
+          model: Deno.env.get('AI_MODEL') ?? 'openai/gpt-oss-120b',
+          ...(Deno.env.get('AI_REASONING_EFFORT') ? { reasoning_effort: Deno.env.get('AI_REASONING_EFFORT') } : {}),
           messages: [
-            { role: 'system', content: 'És um assistente prestável. Responde de forma clara e concisa em português.' },
+            { role: 'system', content: systemPrompt },
             { role: 'user', content: promptA }
           ],
         }),
       }),
-      fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+          'Authorization': `Bearer ${GROQ_API_KEY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'google/gemini-2.5-flash',
+          model: Deno.env.get('AI_MODEL') ?? 'openai/gpt-oss-120b',
+          ...(Deno.env.get('AI_REASONING_EFFORT') ? { reasoning_effort: Deno.env.get('AI_REASONING_EFFORT') } : {}),
           messages: [
-            { role: 'system', content: 'És um assistente prestável. Responde de forma clara e concisa em português.' },
+            { role: 'system', content: systemPrompt },
             { role: 'user', content: promptB }
           ],
         }),
@@ -66,14 +74,14 @@ serve(async (req) => {
     // Handle rate limiting
     if (responseA.status === 429 || responseB.status === 429) {
       return new Response(
-        JSON.stringify({ error: 'Limite de pedidos excedido. Tenta novamente mais tarde.' }),
+        JSON.stringify({ error: en ? 'Rate limit exceeded. Please try again later.' : 'Limite de pedidos excedido. Tenta novamente mais tarde.' }),
         { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     if (responseA.status === 402 || responseB.status === 402) {
       return new Response(
-        JSON.stringify({ error: 'Créditos insuficientes.' }),
+        JSON.stringify({ error: en ? 'Insufficient credits.' : 'Créditos insuficientes.' }),
         { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -81,7 +89,7 @@ serve(async (req) => {
     if (!responseA.ok || !responseB.ok) {
       console.error('AI gateway error:', responseA.status, responseB.status);
       return new Response(
-        JSON.stringify({ error: 'Erro ao processar os prompts' }),
+        JSON.stringify({ error: en ? 'Error processing the prompts' : 'Erro ao processar os prompts' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -91,8 +99,8 @@ serve(async (req) => {
       responseB.json()
     ]);
 
-    const contentA = dataA.choices?.[0]?.message?.content || 'Sem resposta';
-    const contentB = dataB.choices?.[0]?.message?.content || 'Sem resposta';
+    const contentA = toPlainText(dataA.choices?.[0]?.message?.content) || (en ? 'No response' : 'Sem resposta');
+    const contentB = toPlainText(dataB.choices?.[0]?.message?.content) || (en ? 'No response' : 'Sem resposta');
 
     console.log('Successfully tested both prompts');
 

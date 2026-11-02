@@ -1,36 +1,46 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { PromoCodeDialog } from '@/components/promo/PromoCodeDialog';
-import { ProTrialDialog } from '@/components/promo/ProTrialDialog';
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AppLayout } from "@/components/layout";
-import Dashboard from "@/pages/Dashboard";
-import GuidedBuilder from "@/pages/GuidedBuilder";
-import PromptLibrary from "@/pages/PromptLibrary";
-import PromptOptimizer from "@/pages/PromptOptimizer";
-import VersionHistory from "@/pages/VersionHistory";
-import PromptTester from "@/pages/PromptTester";
-import QuickPrompt from "@/pages/QuickPrompt";
-import Learn from "@/pages/Learn";
-import PromptPacks from "@/pages/PromptPacks";
-import PackDetail from "@/pages/PackDetail";
-import Settings from "@/pages/Settings";
-import Pricing from "@/pages/Pricing";
-import Checkout from "@/pages/Checkout";
-import PurchaseSuccess from "@/pages/PurchaseSuccess";
-import SubscriptionSuccess from "@/pages/SubscriptionSuccess";
-import Login from "@/pages/Login";
-import Signup from "@/pages/Signup";
-import Account from "@/pages/Account";
-import Plans from "@/pages/Plans";
-import Admin from "@/pages/Admin";
-import Terms from "@/pages/legal/Terms";
-import Refunds from "@/pages/legal/Refunds";
-import Privacy from "@/pages/legal/Privacy";
-import NotFound from "./pages/NotFound";
+import { RedirectToCreate, RedirectToPromptTab } from "@/components/layout/LegacyRedirects";
+import { RouteMeta } from '@/lib/pageMeta';
+import { lazy, Suspense } from 'react';
+import Home from "@/pages/Home";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { ThemeSync } from "@/components/layout/ThemeSync";
+import PaddleRetain from "@/components/PaddleRetain";
+
+// Route-level code splitting: only the landing page (and the shell) ship in the main bundle.
+const Dashboard = lazy(() => import("@/pages/Dashboard"));
+const PromptLibrary = lazy(() => import("@/pages/PromptLibrary"));
+const PromptDetail = lazy(() => import("@/pages/PromptDetail"));
+const Create = lazy(() => import("@/pages/Create"));
+const BrandKit = lazy(() => import("@/pages/BrandKit"));
+const Learn = lazy(() => import("@/pages/Learn"));
+const LessonDetail = lazy(() => import("@/pages/LessonDetail"));
+const PromptPacks = lazy(() => import("@/pages/PromptPacks"));
+const PackDetail = lazy(() => import("@/pages/PackDetail"));
+const Settings = lazy(() => import("@/pages/Settings"));
+const Pricing = lazy(() => import("@/pages/Pricing"));
+const Checkout = lazy(() => import("@/pages/Checkout"));
+const PurchaseSuccess = lazy(() => import("@/pages/PurchaseSuccess"));
+const SubscriptionSuccess = lazy(() => import("@/pages/SubscriptionSuccess"));
+const Login = lazy(() => import("@/pages/Login"));
+const Signup = lazy(() => import("@/pages/Signup"));
+const ForgotPassword = lazy(() => import("@/pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
+const Account = lazy(() => import("@/pages/Account"));
+const Admin = lazy(() => import("@/pages/Admin"));
+const Terms = lazy(() => import("@/pages/legal/Terms"));
+const Refunds = lazy(() => import("@/pages/legal/Refunds"));
+const Privacy = lazy(() => import("@/pages/legal/Privacy"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const Unsubscribe = lazy(() => import("@/pages/Unsubscribe"));
+
+const RouteFallback = () => <div className="min-h-[50vh]" aria-busy="true" />;
 
 const queryClient = new QueryClient();
 
@@ -40,39 +50,59 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <RouteMeta />
+        <ThemeSync />
+        <PaddleRetain />
+        <Suspense fallback={<RouteFallback />}>
         <Routes>
           {/* Auth routes (no layout) */}
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
 
           {/* Public legal pages (no auth required) */}
           <Route path="/terms" element={<Terms />} />
           <Route path="/refunds" element={<Refunds />} />
           <Route path="/privacy" element={<Privacy />} />
+          <Route path="/unsubscribe" element={<Unsubscribe />} />
+
+          {/* Public landing (signed-in users are redirected to /app) */}
+          <Route path="/" element={<Home />} />
+          <Route path="/planos" element={<Navigate to="/pricing" replace />} />
           
-          {/* App routes */}
-          <Route element={<><ProTrialDialog /><AppLayout /></>}>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/builder" element={<GuidedBuilder />} />
-            <Route path="/quick" element={<QuickPrompt />} />
+          {/* Public page inside the app shell: logged-out visitors can see prices; checkout CTAs send them to login/signup */}
+          <Route element={<AppLayout />}>
+            <Route path="/pricing" element={<Pricing />} />
+          </Route>
+
+          {/* App routes: every screen in the app layout requires sign-in (redirects to /login?redirect=<path>) */}
+          <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+            <Route path="/app" element={<Dashboard />} />
+            <Route path="/create" element={<Create />} />
             <Route path="/library" element={<PromptLibrary />} />
-            <Route path="/optimizer" element={<PromptOptimizer />} />
-            <Route path="/versions" element={<VersionHistory />} />
-            <Route path="/tester" element={<PromptTester />} />
+            <Route path="/library/:id" element={<PromptDetail />} />
+            <Route path="/brand" element={<BrandKit />} />
+            {/* Legacy routes (old 9-item menu) -> new screens */}
+            <Route path="/builder" element={<RedirectToCreate mode="guided" />} />
+            <Route path="/quick" element={<RedirectToCreate mode="quick" />} />
+            <Route path="/optimizer" element={<RedirectToCreate mode="optimize" />} />
+            <Route path="/versions" element={<RedirectToPromptTab tab="versions" />} />
+            <Route path="/tester" element={<RedirectToPromptTab tab="test" />} />
             <Route path="/learn" element={<Learn />} />
+            <Route path="/learn/:slug" element={<LessonDetail />} />
             <Route path="/packs" element={<PromptPacks />} />
             <Route path="/packs/:slug" element={<PackDetail />} />
             <Route path="/settings" element={<Settings />} />
-            <Route path="/pricing" element={<Pricing />} />
-            <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
-            <Route path="/purchase-success" element={<ProtectedRoute><PurchaseSuccess /></ProtectedRoute>} />
-            <Route path="/subscription-success" element={<ProtectedRoute><SubscriptionSuccess /></ProtectedRoute>} />
-            <Route path="/account" element={<ProtectedRoute><Account /></ProtectedRoute>} />
-            <Route path="/planos" element={<ProtectedRoute><Plans /></ProtectedRoute>} />
+            <Route path="/checkout" element={<Checkout />} />
+            <Route path="/purchase-success" element={<PurchaseSuccess />} />
+            <Route path="/subscription-success" element={<SubscriptionSuccess />} />
+            <Route path="/account" element={<Account />} />
             <Route path="/admin" element={<ProtectedRoute requireAdmin><Admin /></ProtectedRoute>} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
+        </Suspense>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
