@@ -30,7 +30,7 @@ import { usePromoStore } from '@/stores/promoStore';
 import { PromoCodeDialog } from '@/components/promo/PromoCodeDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
-import { toast } from 'sonner';
+import { toast } from '@/lib/sonner-toast';
 import { useIsEnglish } from '@/i18n/lang';
 
 interface PromptPack {

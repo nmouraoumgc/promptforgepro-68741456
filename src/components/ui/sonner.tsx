@@ -1,5 +1,6 @@
 import { useTheme } from "next-themes";
-import { Toaster as Sonner, toast } from "sonner";
+import { Toaster as Sonner } from "sonner";
+import { TOAST_DURATION } from "@/lib/toast-policy";
 
 type ToasterProps = React.ComponentProps<typeof Sonner>;
 
@@ -8,9 +9,12 @@ const Toaster = ({ ...props }: ToasterProps) => {
 
   return (
     <Sonner
+      {...props}
       theme={theme as ToasterProps["theme"]}
       className="toaster group"
       toastOptions={{
+        ...props.toastOptions,
+        duration: TOAST_DURATION,
         classNames: {
           toast:
             "group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg",
@@ -19,9 +23,10 @@ const Toaster = ({ ...props }: ToasterProps) => {
           cancelButton: "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground",
         },
       }}
-      {...props}
+      duration={TOAST_DURATION}
+      closeButton
     />
   );
 };
 
-export { Toaster, toast };
+export { Toaster };

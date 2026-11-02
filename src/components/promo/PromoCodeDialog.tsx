@@ -21,7 +21,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { usePromoStore } from '@/stores/promoStore';
 import { useAuthStore } from '@/stores/authStore';
-import { toast } from 'sonner';
+import { toast } from '@/lib/sonner-toast';
 import { useIsEnglish } from '@/i18n/lang';
 
 interface PromoCodeDialogProps {
