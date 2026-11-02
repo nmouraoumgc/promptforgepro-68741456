@@ -12,6 +12,10 @@ serve(async (req) => {
   try {
     const auth = await authenticateRequest(req);
     if (auth instanceof Response) return auth;
+    if (!auth.isPremium) {
+      return new Response(JSON.stringify({ error: 'Esta funcionalidade requer o Pro. / Pro is required.', code: 'PRO_REQUIRED' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
 
     const { promptA, promptB, language } = await req.json();
     const en = isEnglishLang(language);

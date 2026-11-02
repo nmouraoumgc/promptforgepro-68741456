@@ -1,7 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { authenticateRequest, corsHeaders } from "../_shared/auth.ts";
-import { loadActiveBrand, brandInstructions } from "../_shared/brand.ts";
+import { resolveTaskBrand, BrandSelectionError, brandInstructions } from "../_shared/brand.ts";
 import { PT_PT_RULES } from '../_shared/ptpt.ts';
 import { plainTextRules, toPlainText } from '../_shared/plaintext.ts';
 
@@ -24,10 +24,10 @@ serve(async (req) => {
       creativityLevel,
       format,
       language: reqLanguage,
-      useBrand,
+      useBrand, brandId,
     } = await req.json();
-    const brand = useBrand === false ? null : await loadActiveBrand(auth.userId);
-    const language = brand?.language ?? reqLanguage;
+    const brand = await resolveTaskBrand(auth.userId, { useBrand, brandId });
+    const language = reqLanguage ?? brand?.language;
 
     if (!objective) {
       return new Response(
@@ -201,6 +201,7 @@ ${labels.outputType}: ${isEnglish ? (outputType || 'text') : (outputTypeLabels[o
     );
 
   } catch (error) {
+    if (error instanceof BrandSelectionError) return new Response(JSON.stringify({ error: error.message }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     console.error('Error in generate-prompt function:', error);
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : 'Erro desconhecido' }),

@@ -1,7 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { authenticateRequest, corsHeaders } from "../_shared/auth.ts";
-import { loadActiveBrand, brandInstructions } from "../_shared/brand.ts";
+import { resolveTaskBrand, BrandSelectionError, brandInstructions } from "../_shared/brand.ts";
 import { PT_PT_RULES } from '../_shared/ptpt.ts';
 import { plainTextRules, toPlainText } from '../_shared/plaintext.ts';
 
@@ -14,9 +14,9 @@ serve(async (req) => {
     const auth = await authenticateRequest(req);
     if (auth instanceof Response) return auth;
 
-    const { request: promptRequest, language: reqLanguage, useBrand } = await req.json();
-    const brand = useBrand === false ? null : await loadActiveBrand(auth.userId);
-    const language = brand?.language ?? reqLanguage;
+    const { request: promptRequest, language: reqLanguage, useBrand, brandId } = await req.json();
+    const brand = await resolveTaskBrand(auth.userId, { useBrand, brandId });
+    const language = reqLanguage ?? brand?.language;
     const request = promptRequest;
 
     if (!request || request.trim().length === 0) {
@@ -120,6 +120,7 @@ CRITICAL LANGUAGE RULE:
     );
 
   } catch (error) {
+    if (error instanceof BrandSelectionError) return new Response(JSON.stringify({ error: error.message }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     console.error('Error in quick-prompt function:', error);
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : 'Erro desconhecido / Unknown error' }),

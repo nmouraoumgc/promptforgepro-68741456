@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Search, User, LogOut, Settings, ShieldCheck, Palette, CreditCard, Flame } from 'lucide-react';
@@ -19,6 +20,7 @@ import { Wordmark } from '@/components/brand/Wordmark';
 
 export function Header() {
   const navigate = useNavigate();
+  const [search, setSearch] = useState('');
   const { t } = useTranslation();
   const { user, profile, isAdmin, signOut } = useAuthStore();
   const isMobile = useIsMobile();
@@ -42,13 +44,16 @@ export function Header() {
       {/* Actions */}
       <div className="flex items-center gap-1 sm:gap-2 md:gap-4">
         {/* Search - hidden on mobile */}
-        <div className="relative hidden md:block">
+        {user && <form role="search" className="relative hidden md:block" onSubmit={(event) => { event.preventDefault(); navigate(`/library${search.trim() ? `?q=${encodeURIComponent(search.trim())}` : ''}`); }}>
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder={t('nav.searchPrompts')}
+            aria-label={t('nav.searchPrompts')}
+            value={search}
+            onChange={event => setSearch(event.target.value)}
             className="w-64 pl-9"
           />
-        </div>
+        </form>}
 
         {/* Text size + Language Switcher */}
         <FontSizeControl />

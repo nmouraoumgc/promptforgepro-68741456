@@ -8,7 +8,7 @@ export interface BrandProfile {
   keywords: string[]; forbidden_words: string[]; language: 'pt' | 'en';
 }
 
-const clean = (s: unknown, max = 800) => String(s ?? '').replace(/[\u0000-\u001f]+/g, ' ').trim().slice(0, max);
+const clean = (s: unknown, max = 800) => String(s ?? '').replace(/\p{Cc}+/gu, ' ').trim().slice(0, max);
 
 export async function loadActiveBrand(userId: string): Promise<BrandProfile | null> {
   try {
@@ -18,6 +18,18 @@ export async function loadActiveBrand(userId: string): Promise<BrandProfile | nu
       .eq('user_id', userId).eq('is_active', true).maybeSingle();
     return (data as BrandProfile) ?? null;
   } catch { return null; }
+}
+
+export class BrandSelectionError extends Error {}
+export async function resolveTaskBrand(userId: string, selection: { brandId?: unknown; useBrand?: unknown }): Promise<BrandProfile | null> {
+  if (selection.useBrand === false || selection.brandId === null) return null;
+  if (selection.brandId === undefined) return loadActiveBrand(userId); // old clients only
+  if (typeof selection.brandId !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(selection.brandId)) throw new BrandSelectionError('Marca inválida / Invalid brand');
+  const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+  const { data, error } = await admin.from('brand_profiles').select('id, name, tone, audience, offering, keywords, forbidden_words, language')
+    .eq('user_id', userId).eq('id', selection.brandId).maybeSingle();
+  if (error || !data) throw new BrandSelectionError('Marca indisponível / Brand unavailable');
+  return data as BrandProfile;
 }
 
 /** Instructions block for the system prompt. `forPrompt` = we are writing a prompt for another AI. */

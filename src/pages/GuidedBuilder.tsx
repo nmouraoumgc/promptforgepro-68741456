@@ -41,7 +41,8 @@ import {
 } from '@/types/prompt';
 import { cn } from '@/lib/utils';
 import LivePromptPreview from '@/components/builder/LivePromptPreview';
-import { BrandSelector } from '@/components/brand/BrandSelector';
+import { TaskBrandSelector } from '@/components/brand/TaskBrandSelector';
+import { useTaskBrand } from '@/components/brand/taskBrandContext';
 import { RunPrompt } from '@/components/run/RunPrompt';
 import { supabase } from '@/integrations/supabase/client';
 import { localizeApiError } from '@/i18n/lang';
@@ -51,6 +52,7 @@ const stepIcons = {
 };
 
 export default function GuidedBuilder({ embedded = false }: { embedded?: boolean } = {}) {
+  const { requestBrand, isLoading: brandLoading } = useTaskBrand();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuthStore();
@@ -165,6 +167,7 @@ export default function GuidedBuilder({ embedded = false }: { embedded?: boolean
     try {
       const { data, error } = await supabase.functions.invoke('generate-prompt', {
         body: { 
+          ...requestBrand,
           objective, 
           outputType, 
           targetModel, 
@@ -506,11 +509,11 @@ export default function GuidedBuilder({ embedded = false }: { embedded?: boolean
               </CardContent>
             </Card>
 
-            <BrandSelector />
+            <TaskBrandSelector request={builderState.objective} />
 
             {/* Generate Button */}
             {!generatedPrompt && (
-              <Button onClick={generatePrompt} size="lg" className="w-full gap-2" disabled={isGenerating}>
+              <Button onClick={generatePrompt} size="lg" className="w-full gap-2" disabled={brandLoading || isGenerating}>
                 {isGenerating ? (
                   <>
                     <Loader2 className="h-5 w-5 animate-spin" />

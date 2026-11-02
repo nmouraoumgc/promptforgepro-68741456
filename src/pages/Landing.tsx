@@ -1,3 +1,4 @@
+import { UsageLimits } from '@/components/UsageLimits';
 // Public landing page for logged-out visitors at "/". Signed-in users are sent to the app (/app) by Home.
 // Kept free of heavy dependencies (no animation library) so it paints fast on mobile.
 import { useEffect } from 'react';
@@ -71,7 +72,7 @@ export default function Landing() {
   ];
 
   const plans: { name: string; price: string; detail: string; note?: string; items: string[]; highlight?: boolean }[] = [
-    { name: 'Free', price: '0€', detail: L('para sempre', 'forever'), items: [L('3 otimizações por prompt', '3 optimisations per prompt'), L('Biblioteca de prompts', 'Prompt library'), L('Criador guiado básico', 'Basic guided builder')] },
+    { name: 'Free', price: '0€', detail: L('para sempre', 'forever'), items: [L('3 otimizações por prompt, até 20 por dia', '3 optimisations per prompt, up to 20 per day'), L('Biblioteca de prompts', 'Prompt library'), L('Criador guiado básico', 'Basic guided builder')] },
     { name: 'Prompt Packs', price: '19€', detail: L('pagamento único', 'one-time payment'), items: [L('Todos os Prompt Packs premium', 'All premium Prompt Packs'), L('Todas as lições do Aprender', 'All Learn lessons'), L('Atualizações futuras incluídas', 'Future updates included')] },
     { name: 'Pro', price: '9€', detail: L('/mês, sem fidelização', '/month, no commitment'), note: L('ou 90€/ano, 2 meses grátis', 'or 90€/year, 2 months free'), items: [L('Tudo dos Prompt Packs incluído', 'Everything in Prompt Packs included'), L('Otimizações ilimitadas', 'Unlimited optimisations'), L('Histórico de versões e testes A/B', 'Version history and A/B tests'), L('Todas as lições do Aprender', 'All Learn lessons')], highlight: true },
   ];
@@ -177,7 +178,8 @@ export default function Landing() {
           </div>
         </section>
 
-        <section className="border-t border-border bg-muted/30 py-16" aria-labelledby="faq">
+        <UsageLimits />
+      <section className="border-t border-border bg-muted/30 py-16" aria-labelledby="faq">
           <div className="mx-auto max-w-3xl px-4">
             <h2 id="faq" className="mb-8 text-center text-2xl font-semibold">{L('Perguntas frequentes', 'Frequently asked questions')}</h2>
             <div className="space-y-3">

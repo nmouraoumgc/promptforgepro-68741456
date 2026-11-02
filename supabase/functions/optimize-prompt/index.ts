@@ -1,7 +1,9 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { withOptimizationQuota } from "../_shared/optimizationQuota.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { authenticateRequest, corsHeaders } from "../_shared/auth.ts";
-import { loadActiveBrand, brandInstructions } from "../_shared/brand.ts";
+import { resolveTaskBrand, BrandSelectionError, brandInstructions } from "../_shared/brand.ts";
 import { PT_PT_RULES } from '../_shared/ptpt.ts';
 import { plainTextRules, toPlainText } from '../_shared/plaintext.ts';
 
@@ -14,11 +16,11 @@ serve(async (req) => {
     const auth = await authenticateRequest(req);
     if (auth instanceof Response) return auth;
 
-    const { prompt, language: reqLanguage, useBrand } = await req.json();
-    const brand = useBrand === false ? null : await loadActiveBrand(auth.userId);
-    const language = brand?.language ?? reqLanguage;
+    const { prompt, language: reqLanguage, useBrand, brandId } = await req.json();
+    const brand = await resolveTaskBrand(auth.userId, { useBrand, brandId });
+    const language = reqLanguage ?? brand?.language;
 
-    if (!prompt || prompt.trim().length === 0) {
+    if (typeof prompt !== 'string' || !prompt.trim() || prompt.length > 20000) {
       return new Response(
         JSON.stringify({ error: 'Prompt é obrigatório' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -34,6 +36,8 @@ serve(async (req) => {
       );
     }
 
+    const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+    return await withOptimizationQuota({ userId: auth.userId, prompt, rpc: (name, args) => admin.rpc(name, args), headers: { ...corsHeaders, 'Content-Type': 'application/json' } }, async () => {
     const isEnglish = language === 'en';
     const systemPrompt = isEnglish
       ? `You are an expert prompt engineer. Your task is to analyze and optimize AI prompts.
@@ -147,6 +151,7 @@ Formato da resposta:
         'Authorization': `Bearer ${GROQ_API_KEY}`,
         'Content-Type': 'application/json',
       },
+      signal: AbortSignal.timeout(45000),
       body: JSON.stringify({
         model: Deno.env.get('AI_MODEL') ?? 'openai/gpt-oss-120b',
         ...(Deno.env.get('AI_REASONING_EFFORT') ? { reasoning_effort: Deno.env.get('AI_REASONING_EFFORT') } : {}),
@@ -172,8 +177,7 @@ Formato da resposta:
           { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
-      const errorText = await response.text();
-      console.error('AI gateway error:', response.status, errorText);
+      console.error('AI gateway error:', response.status);
       return new Response(
         JSON.stringify({ error: 'Erro ao processar o pedido' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -233,10 +237,12 @@ Formato da resposta:
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
+    });
   } catch (error) {
-    console.error('Error in optimize-prompt function:', error);
+    if (error instanceof BrandSelectionError) return new Response(JSON.stringify({ error: error.message }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    console.error('Error in optimize-prompt function');
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Erro desconhecido' }),
+      JSON.stringify({ error: 'Não foi possível otimizar. Tenta novamente. / Could not optimize. Try again.' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

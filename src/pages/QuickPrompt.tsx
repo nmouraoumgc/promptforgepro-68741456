@@ -4,7 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { Zap, Mic, MicOff, Copy, Sparkles, Loader2, RotateCcw, BookmarkPlus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { usePromptStore } from '@/stores/promptStore';
-import { BrandSelector } from '@/components/brand/BrandSelector';
+import { TaskBrandSelector } from '@/components/brand/TaskBrandSelector';
+import { useTaskBrand } from '@/components/brand/taskBrandContext';
 import { RunPrompt } from '@/components/run/RunPrompt';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,6 +23,7 @@ interface QuickDraft { request: string; generatedPrompt: string; runResult: stri
 const SCOPE = 'create-quick';
 
 export default function QuickPrompt({ embedded = false, initialRequest = '' }: { embedded?: boolean; initialRequest?: string } = {}) {
+  const { requestBrand, isLoading: brandLoading } = useTaskBrand();
   const { user } = useAuthStore();
   const navigate = useNavigate();
   const addPrompt = usePromptStore((s) => s.addPrompt);
@@ -132,7 +134,7 @@ export default function QuickPrompt({ embedded = false, initialRequest = '' }: {
     setIsGenerating(true);
     try {
       const { data, error } = await supabase.functions.invoke('quick-prompt', {
-        body: { request, language },
+        body: { request, language, ...requestBrand },
       });
       if (error) throw error;
       if (data.error) {
@@ -194,7 +196,7 @@ export default function QuickPrompt({ embedded = false, initialRequest = '' }: {
             {t('quickPrompt.inputTitle')}
           </CardTitle>
           <CardDescription>{t('quickPrompt.inputDescription')}</CardDescription>
-          <BrandSelector className="pt-2" />
+          <TaskBrandSelector className="pt-2" request={request} />
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="relative">
@@ -237,7 +239,7 @@ export default function QuickPrompt({ embedded = false, initialRequest = '' }: {
           <div className="flex gap-2">
             <Button
               onClick={generatePrompt}
-              disabled={isGenerating || !request.trim() || isRecording}
+              disabled={brandLoading || isGenerating || !request.trim() || isRecording}
               className="flex-1"
               size="lg"
             >

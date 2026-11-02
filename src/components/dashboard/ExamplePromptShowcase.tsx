@@ -34,7 +34,7 @@ export default function ExamplePromptShowcase() {
                 <div className="flex items-center gap-2 mb-1">
                   <span className="font-medium text-sm md:text-base">{t('showcase.cardTitle')}</span>
                   <Badge variant="secondary" className="text-xs bg-success/10 text-success border-0 shrink-0">
-                    {SCORE}%
+                    {SCORE}% · {t('showcase.illustrative')}
                   </Badge>
                 </div>
                 <p className="text-sm text-muted-foreground truncate">
@@ -60,7 +60,7 @@ export default function ExamplePromptShowcase() {
               {t('showcase.modalTitle')}
             </DialogTitle>
             <DialogDescription>
-              {t('showcase.modalDesc')}
+              {t('showcase.illustrative')} ·               {t('showcase.modalDesc')}
             </DialogDescription>
           </DialogHeader>
 
