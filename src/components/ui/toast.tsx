@@ -4,6 +4,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { toastDuration } from "@/lib/toast-policy";
 
 const ToastProvider = ToastPrimitives.Provider;
 
@@ -41,7 +42,7 @@ const Toast = React.forwardRef<
   React.ElementRef<typeof ToastPrimitives.Root>,
   React.ComponentPropsWithoutRef<typeof ToastPrimitives.Root> & VariantProps<typeof toastVariants>
 >(({ className, variant, ...props }, ref) => {
-  return <ToastPrimitives.Root ref={ref} className={cn(toastVariants({ variant }), className)} {...props} />;
+  return <ToastPrimitives.Root ref={ref} className={cn(toastVariants({ variant }), className)} {...props} duration={toastDuration(variant)} data-testid="toast" data-toast-duration={toastDuration(variant)} />;
 });
 Toast.displayName = ToastPrimitives.Root.displayName;
 
@@ -71,6 +72,7 @@ const ToastClose = React.forwardRef<
       className,
     )}
     toast-close=""
+    aria-label="Fechar aviso"
     {...props}
   >
     <X className="h-4 w-4" />

@@ -1,9 +1,11 @@
 import * as React from "react";
 
 import type { ToastActionElement, ToastProps } from "@/components/ui/toast";
+import { toastDuration } from "@/lib/toast-policy";
 
 const TOAST_LIMIT = 1;
-const TOAST_REMOVE_DELAY = 1000000;
+// Cleanup after the closing animation, not the visible lifetime.
+const TOAST_REMOVE_DELAY = 1_000;
 
 type ToasterToast = ToastProps & {
   id: string;
@@ -51,6 +53,7 @@ interface State {
 }
 
 const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
+const autoDismissTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
 
 const addToRemoveQueue = (toastId: string) => {
   if (toastTimeouts.has(toastId)) {
@@ -127,6 +130,21 @@ let memoryState: State = { toasts: [] };
 
 function dispatch(action: Action) {
   memoryState = reducer(memoryState, action);
+  for (const [id, timer] of autoDismissTimeouts) {
+    if (!memoryState.toasts.some(t => t.id === id && t.open)) {
+      clearTimeout(timer);
+      autoDismissTimeouts.delete(id);
+    }
+  }
+  if (action.type === 'ADD_TOAST' || action.type === 'UPDATE_TOAST') {
+    const current = memoryState.toasts.find(t => t.id === action.toast.id);
+    if (current?.open) {
+      clearTimeout(autoDismissTimeouts.get(current.id));
+      autoDismissTimeouts.set(current.id, setTimeout(() => {
+        dispatch({ type: 'DISMISS_TOAST', toastId: current.id });
+      }, toastDuration(current.variant)));
+    }
+  }
   listeners.forEach((listener) => {
     listener(memoryState);
   });
@@ -137,7 +155,7 @@ type Toast = Omit<ToasterToast, "id">;
 function toast({ ...props }: Toast) {
   const id = genId();
 
-  const update = (props: ToasterToast) =>
+  const update = (props: Partial<Toast>) =>
     dispatch({
       type: "UPDATE_TOAST",
       toast: { ...props, id },
