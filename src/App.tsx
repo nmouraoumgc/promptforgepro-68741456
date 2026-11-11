@@ -1,5 +1,6 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
+import { InstallAppReminder } from "@/components/InstallAppReminder";
 import { PromoCodeDialog } from '@/components/promo/PromoCodeDialog';
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -52,6 +53,7 @@ const App = () => (
       <BrowserRouter>
         <RouteMeta />
         <ThemeSync />
+        <InstallAppReminder />
         <PaddleRetain />
         <Suspense fallback={<RouteFallback />}>
         <Routes>
