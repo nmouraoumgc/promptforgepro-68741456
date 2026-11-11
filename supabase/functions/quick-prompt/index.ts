@@ -70,7 +70,7 @@ CRITICAL LANGUAGE RULE:
         model: Deno.env.get('AI_MODEL') ?? 'openai/gpt-oss-120b',
         ...(Deno.env.get('AI_REASONING_EFFORT') ? { reasoning_effort: Deno.env.get('AI_REASONING_EFFORT') } : {}),
         messages: [
-          { role: 'system', content: (systemPrompt + outputLanguageRules(language)) + brandInstructions(brand, isEnglish) + plainTextRules(isEnglish ? 'en' : 'pt') },
+          { role: 'system', content: (systemPrompt + outputLanguageRules(isEnglish ? 'en' : 'pt')) + brandInstructions(brand, isEnglish) + plainTextRules(isEnglish ? 'en' : 'pt') },
           { role: 'user', content: userRequest }
         ],
       }),
