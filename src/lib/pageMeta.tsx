@@ -9,7 +9,7 @@ const BRAND = 'PromptForge Pro';
 const SITE = 'https://promptforgepro.me';
 const OG_IMAGE = `${SITE}/og-image.png`;
 // App-only screens: useful to members, not to search results.
-const NOINDEX = /^\/(app|create|library|brand|settings|checkout|purchase-success|subscription-success|account|admin|unsubscribe|forgot-password|reset-password|builder|quick|optimizer|versions|tester)(\/|$)/;
+const NOINDEX = /^\/(app|create|library|brand|settings|checkout|purchase-success|subscription-success|account|admin|unsubscribe|forgot-password|reset-password|builder|quick|optimizer|versions|tester|login|planos|packs)(\/|$)/;
 
 const META: Record<string, { pt: Meta; en: Meta }> = {
   '/': {
@@ -167,6 +167,7 @@ export function applyMeta(meta: Meta, isEnglish: boolean, path?: string) {
   setMetaTag('meta[property="og:title"]', 'property', 'og:title', full);
   setMetaTag('meta[property="og:description"]', 'property', 'og:description', meta.description);
   setMetaTag('meta[property="og:image"]', 'property', 'og:image', OG_IMAGE);
+  setMetaTag('meta[property="og:locale"]', 'property', 'og:locale', isEnglish ? 'en_US' : 'pt_PT');
   setMetaTag('meta[name="twitter:title"]', 'name', 'twitter:title', full);
   setMetaTag('meta[name="twitter:description"]', 'name', 'twitter:description', meta.description);
   setMetaTag('meta[name="twitter:image"]', 'name', 'twitter:image', OG_IMAGE);
