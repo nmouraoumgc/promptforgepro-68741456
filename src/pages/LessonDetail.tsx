@@ -88,7 +88,20 @@ export default function LessonDetail() {
       </header>
 
       {locked ? (
-        <Card className="border-primary/30 bg-gradient-to-br from-primary/10 to-transparent" data-testid="lesson-locked">
+        <>
+          <section className="space-y-3" data-testid="lesson-public-preview">
+            <h2 className="text-lg font-semibold">{isEnglish ? 'What you will learn' : 'O que vai aprender'}</h2>
+            <p className="text-foreground/90 leading-relaxed">{lesson.summary}</p>
+            <p className="text-sm text-muted-foreground">
+              {isEnglish
+                ? 'Learn how to give AI clear context, specify the intended audience and output, and check important facts before using the result. The complete method, worked examples and practical exercise are reserved for members with access.'
+                : 'Aprenda a dar contexto claro à IA, a definir o público e o formato pretendido e a verificar os factos importantes antes de utilizar o resultado. O método completo, os exemplos desenvolvidos e o exercício prático estão reservados aos membros com acesso.'}
+            </p>
+            <p className="text-sm">
+              <Link to="/learn" className="text-primary underline">{isEnglish ? 'Explore free lessons and examples' : 'Explorar lições e exemplos gratuitos'}</Link>
+            </p>
+          </section>
+          <Card className="border-primary/30 bg-gradient-to-br from-primary/10 to-transparent" data-testid="lesson-locked">
           <CardContent className="p-5 sm:p-6 space-y-4 text-center">
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/15"><Lock className="h-6 w-6 text-primary" /></div>
             <div className="space-y-1">
@@ -118,7 +131,8 @@ export default function LessonDetail() {
               </div>
             )}
           </CardContent>
-        </Card>
+          </Card>
+        </>
       ) : (
         <>
           <section className="space-y-2" data-testid="lesson-problem">
