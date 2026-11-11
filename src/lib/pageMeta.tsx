@@ -138,6 +138,17 @@ function setLink(rel: string, href: string) {
   el.setAttribute('href', href);
 }
 
+function setAlternate(lang: string, href: string) {
+  let el = document.head.querySelector<HTMLLinkElement>(`link[rel="alternate"][hreflang="${lang}"]`);
+  if (!el) {
+    el = document.createElement('link');
+    el.rel = 'alternate';
+    el.hreflang = lang;
+    document.head.appendChild(el);
+  }
+  el.href = href;
+}
+
 function setMetaTag(selector: string, attr: 'name' | 'property', key: string, value: string) {
   let el = document.head.querySelector<HTMLMetaElement>(selector);
   if (!el) {
@@ -161,8 +172,16 @@ export function applyMeta(meta: Meta, isEnglish: boolean, path?: string) {
   setMetaTag('meta[name="twitter:image"]', 'name', 'twitter:image', OG_IMAGE);
   if (path !== undefined) {
     const clean = path.length > 1 ? path.replace(/\/+$/, '') : '/';
-    const url = `${SITE}${clean === '/' ? '/' : clean}`;
+    const baseUrl = `${SITE}${clean === '/' ? '/' : clean}`;
+    const url = isEnglish ? `${baseUrl}?lang=en` : baseUrl;
     setLink('canonical', url);
+    if (!NOINDEX.test(clean) && !meta.noindex) {
+      setAlternate('pt-PT', baseUrl);
+      setAlternate('en', `${baseUrl}?lang=en`);
+      setAlternate('x-default', baseUrl);
+    } else {
+      document.head.querySelectorAll('link[rel="alternate"][hreflang]').forEach((el) => el.remove());
+    }
     setMetaTag('meta[property="og:url"]', 'property', 'og:url', url);
     const noindex = meta.noindex || NOINDEX.test(clean);
     setMetaTag('meta[name="robots"]', 'name', 'robots', noindex ? 'noindex, follow' : 'index, follow');
