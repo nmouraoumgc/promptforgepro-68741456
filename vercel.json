@@ -21,14 +21,6 @@
       "destination": "/$1/index.html"
     },
     {
-      "source": "/learn",
-      "destination": "/learn/index.html"
-    },
-    {
-      "source": "/learn/(anatomia-prompt|contexto-negocio|formato-certo|iterar)",
-      "destination": "/learn/$1/index.html"
-    },
-    {
       "source": "/(app|create|brand|builder|quick|optimizer|versions|tester|settings|checkout|purchase-success|subscription-success|account|admin|unsubscribe|forgot-password|reset-password)(/?)",
       "destination": "/spa.html"
     },
