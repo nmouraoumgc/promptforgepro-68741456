@@ -6,7 +6,7 @@ import { authenticateRequest, corsHeaders } from "../_shared/auth.ts";
 import { outputLanguageRules, isEnglishLang } from '../_shared/ptpt.ts';
 import { plainTextRules, toPlainText } from '../_shared/plaintext.ts';
 import { chat, AiError } from '../_shared/ai.ts';
-import { loadActiveBrand, brandInstructions } from '../_shared/brand.ts';
+import { resolveTaskBrand, brandInstructions } from '../_shared/brand.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -17,9 +17,9 @@ serve(async (req) => {
     const auth = await authenticateRequest(req);
     if (auth instanceof Response) return auth;
 
-    const { prompt, language: reqLanguage, peek, useBrand } = await req.json().catch(() => ({}));
+    const { prompt, language: reqLanguage, peek, useBrand, brandId } = await req.json().catch(() => ({}));
     // Brand is opt-in here (pack templates send useBrand: true); the run answer then follows the brand.
-    const brand = !peek && useBrand === true ? await loadActiveBrand(auth.userId) : null;
+    const brand = !peek && useBrand === true ? await resolveTaskBrand(auth.userId, { useBrand, brandId }) : null;
     // The language explicitly selected for this task takes precedence over the brand's default language.
     // Brand settings still supply tone, audience and other context, never a forced translation.
     const language = (typeof reqLanguage === 'string' && /^(en|pt)(?:-[a-z]{2})?$/i.test(reqLanguage.trim()))

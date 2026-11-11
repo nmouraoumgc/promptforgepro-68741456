@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { BrandSelector } from '@/components/brand/BrandSelector';
+import { TaskBrandSelector } from '@/components/brand/TaskBrandSelector';
+import { TaskBrandContext, useLocalTaskBrand } from '@/components/brand/taskBrandContext';
 import { motion } from 'framer-motion';
 import { Zap, CheckCircle, Lock } from 'lucide-react';
 import { TemplateFiller } from '@/components/templates/TemplateFiller';
@@ -214,6 +215,7 @@ const getPackCopy = (packSlug: string, isEnglish: boolean) => {
 
 export function PackPreview({ pack, onUnlock }: PackPreviewProps) {
   const navigate = useNavigate();
+  const taskBrand = useLocalTaskBrand();
   const { toast } = useToast();
   const { canAccess } = usePlanStore();
   const { i18n } = useTranslation();
@@ -240,6 +242,7 @@ export function PackPreview({ pack, onUnlock }: PackPreviewProps) {
           packSlug: pack.slug,
           isPremium: hasAccess,
           language: isEnglish ? 'en' : 'pt',
+          ...taskBrand.requestBrand,
         }
       });
 
@@ -287,7 +290,7 @@ export function PackPreview({ pack, onUnlock }: PackPreviewProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <TaskBrandContext.Provider value={taskBrand}><div className="space-y-6">
       {/* Header Section */}
       <div className="text-center space-y-3">
         <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{pack.name}</h1>
@@ -348,7 +351,7 @@ export function PackPreview({ pack, onUnlock }: PackPreviewProps) {
                 onChange={(e) => setTema(e.target.value)}
                 disabled={hasGenerated}
               />
-              <BrandSelector className="pt-2" />
+              <TaskBrandSelector className="pt-2" request={tema} />
             </div>
 
             {/* Generate Button or Results */}
@@ -487,6 +490,6 @@ export function PackPreview({ pack, onUnlock }: PackPreviewProps) {
           {copy.trustNote}
         </p>
       )}
-    </div>
+    </div></TaskBrandContext.Provider>
   );
 }

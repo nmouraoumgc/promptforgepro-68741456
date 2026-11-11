@@ -11,6 +11,8 @@ import { useIsEnglish } from '@/i18n/lang';
 import { useToast } from '@/hooks/use-toast';
 import { toPlainText } from '@/lib/plainText';
 import { cn } from '@/lib/utils';
+import { TaskBrandSelector } from '@/components/brand/TaskBrandSelector';
+import { TaskBrandContext, useLocalTaskBrand } from '@/components/brand/taskBrandContext';
 
 type Quota = { used: number; limit: number } | null;
 
@@ -32,6 +34,7 @@ export function RunPrompt({ prompt, compact = false, className, withBrand = fals
   const user = useAuthStore((s) => s.user);
   const plan = useAuthStore((s) => s.profile?.current_plan ?? 'free');
   const { toast } = useToast();
+  const taskBrand = useLocalTaskBrand();
   const [result, setResultState] = useState(initialResult);
   const setResult = (r: string) => { setResultState(r); onResult?.(r); };
   const [running, setRunning] = useState(false);
@@ -52,7 +55,7 @@ export function RunPrompt({ prompt, compact = false, className, withBrand = fals
     if (!prompt.trim()) return;
     setRunning(true); setResult('');
     try {
-      const d = await invokeRun({ prompt, language: isEnglish ? 'en' : 'pt', ...(withBrand ? { useBrand: true } : {}) }) as Awaited<ReturnType<typeof invokeRun>> & { brand?: { name: string } | null };
+      const d = await invokeRun({ prompt, language: isEnglish ? 'en' : 'pt', ...(withBrand ? taskBrand.requestBrand : { useBrand: false, brandId: null }) }) as Awaited<ReturnType<typeof invokeRun>> & { brand?: { name: string } | null };
       setBrandUsed(d?.brand?.name ?? null);
       if (typeof d?.limit === 'number') setQuota({ used: d.used ?? 0, limit: d.limit });
       if (d?.code === 'RUN_LIMIT') { setLimitHit(true); return; }
@@ -65,7 +68,7 @@ export function RunPrompt({ prompt, compact = false, className, withBrand = fals
     } finally { setRunning(false); }
   };
 
-  useEffect(() => { if (autoRun && !autoDone && user && prompt.trim()) { setAutoDone(true); run(); } }, [autoRun, autoDone, user, prompt]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (autoRun && !autoDone && user && prompt.trim() && !taskBrand.isLoading) { setAutoDone(true); run(); } }, [autoRun, autoDone, user, prompt, taskBrand.isLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const copy = async () => {
     await navigator.clipboard.writeText(result);
@@ -85,7 +88,8 @@ export function RunPrompt({ prompt, compact = false, className, withBrand = fals
   const left = quota ? Math.max(0, quota.limit - quota.used) : null;
 
   return (
-    <div className={cn('space-y-3', className)} data-testid="run-prompt">
+    <TaskBrandContext.Provider value={taskBrand}><div className={cn('space-y-3', className)} data-testid="run-prompt">
+      {withBrand && <TaskBrandSelector request={prompt} />}
       <div className="flex flex-wrap items-center gap-3">
         <Button onClick={run} disabled={running || !prompt.trim() || limitHit} size={compact ? 'sm' : 'default'} className={cn('h-auto gap-2 whitespace-normal py-2 text-center leading-snug', compact ? 'min-h-9' : 'min-h-10')} data-testid="run-button">
           {running ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
@@ -118,7 +122,7 @@ export function RunPrompt({ prompt, compact = false, className, withBrand = fals
           </CardContent>
         </Card>
       )}
-    </div>
+    </div></TaskBrandContext.Provider>
   );
 }
 
@@ -137,7 +141,7 @@ export function RunPromptDialogButton({ prompt, disabled, withBrand = true }: { 
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{isEnglish ? 'Run this prompt' : 'Executar este prompt'}</DialogTitle></DialogHeader>
           <p className="text-xs text-muted-foreground line-clamp-3 whitespace-pre-wrap">{prompt}</p>
-          {open && <RunPrompt prompt={prompt} withBrand={withBrand} autoRun />}
+          {open && <RunPrompt prompt={prompt} withBrand={withBrand} />}
         </DialogContent>
       </Dialog>
     </>

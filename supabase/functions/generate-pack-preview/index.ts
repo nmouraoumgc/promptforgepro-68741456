@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { authenticateRequest, corsHeaders } from "../_shared/auth.ts";
-import { loadActiveBrand, brandInstructions } from "../_shared/brand.ts";
+import { resolveTaskBrand, brandInstructions } from "../_shared/brand.ts";
 import { outputLanguageRules, isEnglishLang } from '../_shared/ptpt.ts';
 import { plainTextRules, toPlainText } from '../_shared/plaintext.ts';
 
@@ -98,8 +98,8 @@ serve(async (req) => {
     // Full pack previews for anyone with premium Prompt Packs access (Pro, Premium, Prompt Packs, admin).
     const isPremium = auth.canAccessPacks;
 
-    const { tema, packSlug, language: reqLanguage, useBrand } = await req.json();
-    const brand = useBrand === false ? null : await loadActiveBrand(auth.userId);
+    const { tema, packSlug, language: reqLanguage, useBrand, brandId } = await req.json();
+    const brand = useBrand === false ? null : await resolveTaskBrand(auth.userId, { useBrand, brandId });
     // The language explicitly selected for this task takes precedence over the brand's default language.
     // Brand settings still supply tone, audience and other context, never a forced translation.
     const language = (typeof reqLanguage === 'string' && /^(en|pt)(?:-[a-z]{2})?$/i.test(reqLanguage.trim()))
