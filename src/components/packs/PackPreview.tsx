@@ -43,14 +43,14 @@ const getPackCopy = (packSlug: string, isEnglish: boolean) => {
       generateMicrocopy: 'Pré-visualização limitada. Sem cartão.',
       successMessage: '⚡ Preview gerado com sucesso',
       lockedLabel: '🔒 Conteúdo premium oculto',
-      limitedViewNote: 'Estás a ver uma versão limitada do pack completo.',
+      limitedViewNote: 'Esta é uma versão limitada do pack completo.',
       unlockBenefits: [
         'Estruturas completas prontas a usar',
         'Variações otimizadas para diferentes objetivos',
         'CTAs e exemplos aplicáveis imediatamente',
       ],
       limitTitle: '🔒 Limite gratuito atingido',
-      limitSubtext: 'Desbloqueia o pack para acesso completo e uso ilimitado.',
+      limitSubtext: 'O pack completo oferece acesso integral e utilização ilimitada.',
       ctaMicrocopy: 'Inclui todo o conteúdo do Instagram Reels Prompt Pack.',
       trustNote: 'Criado para quem quer resultados consistentes, não apenas experimentar IA.',
     },
@@ -58,17 +58,17 @@ const getPackCopy = (packSlug: string, isEnglish: boolean) => {
       inputLabel: 'Tema do vídeo',
       inputPlaceholder: 'Ex: Big Brother, fitness, dinheiro, produtividade',
       generateButton: '⚡ Gerar hooks grátis',
-      generateMicrocopy: 'Gera 2 hooks gratuitamente. Sem cartão.',
+      generateMicrocopy: 'Estão disponíveis 2 hooks gratuitos. Sem cartão.',
       successMessage: '⚡ Hooks gerados com sucesso',
       lockedLabel: '🔒 Hook premium oculto',
-      limitedViewNote: 'Estás a ver 2 de 5 hooks possíveis para este tema.',
+      limitedViewNote: 'Esta pré-visualização apresenta 2 dos 5 hooks possíveis para este tema.',
       unlockBenefits: [
         '3 hooks com maior taxa de retenção',
         'Scripts completos prontos a gravar',
         'CTAs que aumentam comentários e follows',
       ],
       limitTitle: '🔒 Limite gratuito atingido',
-      limitSubtext: 'Desbloqueia o pack para gerar hooks ilimitados e aceder a todo o conteúdo.',
+      limitSubtext: 'O pack completo permite gerar hooks ilimitados e aceder a todo o conteúdo.',
       ctaMicrocopy: 'Inclui todos os hooks, scripts, estruturas e CTAs do TikTok Viral.',
       trustNote: 'Criado para quem quer publicar com consistência, não apenas "experimentar IA".',
     },
@@ -79,14 +79,14 @@ const getPackCopy = (packSlug: string, isEnglish: boolean) => {
       generateMicrocopy: 'Pré-visualização limitada. Sem cartão.',
       successMessage: '⚡ Preview gerado com sucesso',
       lockedLabel: '🔒 Conteúdo premium oculto',
-      limitedViewNote: 'Estás a ver uma versão limitada do pack completo.',
+      limitedViewNote: 'Esta é uma versão limitada do pack completo.',
       unlockBenefits: [
         'Estruturas completas prontas a usar',
         'Variações otimizadas para diferentes objetivos',
         'CTAs e exemplos aplicáveis imediatamente',
       ],
       limitTitle: '🔒 Limite gratuito atingido',
-      limitSubtext: 'Desbloqueia o pack para acesso completo e uso ilimitado.',
+      limitSubtext: 'O pack completo oferece acesso integral e utilização ilimitada.',
       ctaMicrocopy: 'Inclui todo o conteúdo do YouTube Growth Prompt Pack.',
       trustNote: 'Criado para quem quer resultados consistentes, não apenas experimentar IA.',
     },
@@ -97,14 +97,14 @@ const getPackCopy = (packSlug: string, isEnglish: boolean) => {
       generateMicrocopy: 'Pré-visualização limitada. Sem cartão.',
       successMessage: '⚡ Preview gerado com sucesso',
       lockedLabel: '🔒 Conteúdo premium oculto',
-      limitedViewNote: 'Estás a ver uma versão limitada do pack completo.',
+      limitedViewNote: 'Esta é uma versão limitada do pack completo.',
       unlockBenefits: [
         'Estruturas completas prontas a usar',
         'Variações otimizadas para diferentes objetivos',
         'CTAs e exemplos aplicáveis imediatamente',
       ],
       limitTitle: '🔒 Limite gratuito atingido',
-      limitSubtext: 'Desbloqueia o pack para acesso completo e uso ilimitado.',
+      limitSubtext: 'O pack completo oferece acesso integral e utilização ilimitada.',
       ctaMicrocopy: 'Inclui todo o conteúdo do Copywriting de Vendas Prompt Pack.',
       trustNote: 'Criado para quem quer resultados consistentes, não apenas experimentar IA.',
     },
@@ -113,19 +113,19 @@ const getPackCopy = (packSlug: string, isEnglish: boolean) => {
   // Default copy for other packs
   const defaultCopy = {
     inputLabel: 'Tema do conteúdo',
-    inputPlaceholder: 'Ex: o teu tema ou nicho',
+    inputPlaceholder: 'Ex.: tema ou nicho de atividade',
     generateButton: '⚡ Gerar preview grátis',
     generateMicrocopy: 'Pré-visualização limitada. Sem cartão.',
     successMessage: '⚡ Preview gerado com sucesso',
     lockedLabel: '🔒 Conteúdo premium oculto',
-    limitedViewNote: 'Estás a ver uma versão limitada do pack completo.',
+    limitedViewNote: 'Esta é uma versão limitada do pack completo.',
     unlockBenefits: [
       'Acesso a todo o conteúdo do pack',
       'Templates prontos a usar',
       'Atualizações futuras incluídas',
     ],
     limitTitle: '🔒 Limite gratuito atingido',
-    limitSubtext: 'Desbloqueia o pack para acesso completo e uso ilimitado.',
+    limitSubtext: 'O pack completo oferece acesso integral e utilização ilimitada.',
     ctaMicrocopy: `Inclui todo o conteúdo do pack.`,
     trustNote: 'Criado para quem quer resultados consistentes, não apenas experimentar IA.',
   };
@@ -140,7 +140,7 @@ const getPackCopy = (packSlug: string, isEnglish: boolean) => {
       generateMicrocopy: 'Limited preview. No card required.',
       successMessage: '⚡ Preview generated successfully',
       lockedLabel: '🔒 Premium content hidden',
-      limitedViewNote: 'You are viewing a limited version of the full pack.',
+      limitedViewNote: 'This is a limited preview of the full pack.',
       limitTitle: '🔒 Free limit reached',
       limitSubtext: 'Unlock this pack for full access and unlimited use.',
       ctaMicrocopy: 'Includes all content from the Instagram Reels Prompt Pack.',
@@ -153,7 +153,7 @@ const getPackCopy = (packSlug: string, isEnglish: boolean) => {
       generateMicrocopy: 'Generate 2 hooks for free. No card required.',
       successMessage: '⚡ Hooks generated successfully',
       lockedLabel: '🔒 Premium hook hidden',
-      limitedViewNote: 'You are viewing 2 of 5 possible hooks for this topic.',
+      limitedViewNote: 'This preview shows 2 of the 5 possible hooks for this topic.',
       limitTitle: '🔒 Free limit reached',
       limitSubtext: 'Unlock this pack to generate unlimited hooks and access all content.',
       ctaMicrocopy: 'Includes all TikTok Viral hooks, scripts, structures and CTAs.',
@@ -166,7 +166,7 @@ const getPackCopy = (packSlug: string, isEnglish: boolean) => {
       generateMicrocopy: 'Limited preview. No card required.',
       successMessage: '⚡ Preview generated successfully',
       lockedLabel: '🔒 Premium content hidden',
-      limitedViewNote: 'You are viewing a limited version of the full pack.',
+      limitedViewNote: 'This is a limited preview of the full pack.',
       limitTitle: '🔒 Free limit reached',
       limitSubtext: 'Unlock this pack for full access and unlimited use.',
       ctaMicrocopy: 'Includes all content from the YouTube Growth Prompt Pack.',
@@ -179,7 +179,7 @@ const getPackCopy = (packSlug: string, isEnglish: boolean) => {
       generateMicrocopy: 'Limited preview. No card required.',
       successMessage: '⚡ Preview generated successfully',
       lockedLabel: '🔒 Premium content hidden',
-      limitedViewNote: 'You are viewing a limited version of the full pack.',
+      limitedViewNote: 'This is a limited preview of the full pack.',
       limitTitle: '🔒 Free limit reached',
       limitSubtext: 'Unlock this pack for full access and unlimited use.',
       ctaMicrocopy: 'Includes all content from the Sales Copywriting Prompt Pack.',
@@ -192,12 +192,12 @@ const getPackCopy = (packSlug: string, isEnglish: boolean) => {
     ...copyConfigs[packSlug],
     ...{
       inputLabel: 'Content topic',
-      inputPlaceholder: 'Ex: your topic or niche',
+      inputPlaceholder: 'E.g. content topic or niche',
       generateButton: '⚡ Generate free preview',
       generateMicrocopy: 'Limited preview. No card required.',
       successMessage: '⚡ Preview generated successfully',
       lockedLabel: '🔒 Premium content hidden',
-      limitedViewNote: 'You are viewing a limited version of the full pack.',
+      limitedViewNote: 'This is a limited preview of the full pack.',
       unlockBenefits: [
         'Access to all pack content',
         'Ready-to-use templates',
@@ -247,7 +247,7 @@ export function PackPreview({ pack, onUnlock }: PackPreviewProps) {
         console.error('Error generating preview:', error);
         toast({
           title: isEnglish ? 'Generation error' : 'Erro ao gerar',
-          description: isEnglish ? 'Could not generate the content. Try again.' : 'Não foi possível gerar o conteúdo. Tenta novamente.',
+          description: isEnglish ? 'Could not generate the content. Try again.' : 'Não foi possível gerar o conteúdo. Volte a tentar.',
           variant: 'destructive',
         });
         setIsGenerating(false);
@@ -270,7 +270,7 @@ export function PackPreview({ pack, onUnlock }: PackPreviewProps) {
       console.error('Error:', err);
       toast({
         title: isEnglish ? 'Error' : 'Erro',
-        description: isEnglish ? 'An unexpected error occurred. Try again.' : 'Ocorreu um erro inesperado. Tenta novamente.',
+        description: isEnglish ? 'An unexpected error occurred. Try again.' : 'Ocorreu um erro inesperado. Volte a tentar.',
         variant: 'destructive',
       });
     } finally {
@@ -330,7 +330,7 @@ export function PackPreview({ pack, onUnlock }: PackPreviewProps) {
             {/* Preview Header */}
             <div>
               <h3 className="font-semibold text-lg text-foreground mb-1">
-                {isEnglish ? 'Try before you unlock' : 'Experimenta antes de desbloquear'}
+                {isEnglish ? 'Preview the content' : 'Pré-visualização dos conteúdos'}
               </h3>
               <Badge variant="secondary" className="text-xs">
                 {pack.name}
@@ -435,7 +435,7 @@ export function PackPreview({ pack, onUnlock }: PackPreviewProps) {
         >
           <Card className="p-4 border-primary/20 bg-primary/5">
             <div className="space-y-3">
-              <h4 className="font-semibold text-foreground">{isEnglish ? 'When you unlock, you get:' : 'Ao desbloquear recebes:'}</h4>
+              <h4 className="font-semibold text-foreground">{isEnglish ? 'The full pack includes:' : 'O pack completo inclui:'}</h4>
               <ul className="space-y-2">
                 {copy.unlockBenefits.map((benefit, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
