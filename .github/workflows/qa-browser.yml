@@ -1,0 +1,50 @@
+name: Isolated QA browser (Playwright)
+on:
+  workflow_dispatch:
+  push:
+    branches: [qa/isolated-lessons-20261111]
+    paths:
+      - 'e2e/qa_browser.spec.ts'
+      - '.github/workflows/qa-browser.yml'
+      - 'src/**'
+jobs:
+  qa-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      VITE_SUPABASE_URL: https://nzhjzdmuevwsaldpqlxd.supabase.co
+      VITE_SUPABASE_PROJECT_ID: nzhjzdmuevwsaldpqlxd
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.QA_SUPABASE_PUBLISHABLE_KEY }}
+      QA_LOGIN_EMAIL: ${{ secrets.QA_LOGIN_EMAIL }}
+      QA_LOGIN_PASSWORD: ${{ secrets.QA_LOGIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Require QA-only credentials
+        run: |
+          test -n "$VITE_SUPABASE_PUBLISHABLE_KEY" || { echo "Missing QA_SUPABASE_PUBLISHABLE_KEY"; exit 1; }
+          test -n "$QA_LOGIN_EMAIL" || { echo "Missing QA_LOGIN_EMAIL"; exit 1; }
+          test -n "$QA_LOGIN_PASSWORD" || { echo "Missing QA_LOGIN_PASSWORD"; exit 1; }
+      - run: npm ci
+      - run: npm install --no-save @playwright/test
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build
+      - name: Start local QA app
+        run: |
+          npm run preview -- --host 127.0.0.1 --port 4173 > /tmp/qa-vite.log 2>&1 &
+          for i in $(seq 1 45); do curl -fsS http://127.0.0.1:4173/login >/dev/null && exit 0; sleep 2; done
+          cat /tmp/qa-vite.log
+          exit 1
+      - name: Run real browser tests
+        run: npx playwright test e2e/qa_browser.spec.ts --browser chromium --reporter=line
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:4173
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: qa-playwright-results
+          path: test-results/
+          retention-days: 7
