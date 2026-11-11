@@ -20,6 +20,9 @@ for (const slug of slugs) {
     assert.match(html, /hreflang="en"/i);
     assert.match(html, /data-testid="lesson-steps"/, `Lesson body not in static HTML: ${file}`);
     assert.doesNotMatch(html, /data-testid="lesson-locked"/, `Locked content leaked: ${file}`);
+    assert.match(html, /<div id="root"><\/div>/, `Missing React mount: ${file}`);
+    assert.match(html, /<script[^>]+type="module"[^>]+src="\/assets\//, `Missing interactive app: ${file}`);
+    assert.match(html, /<div id="seo-fallback">/, `Missing crawlable fallback: ${file}`);
     checks.push(file);
   }
 }
