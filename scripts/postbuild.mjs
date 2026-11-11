@@ -38,11 +38,13 @@ function checkCspHashes() {
 
 if (process.env.PRERENDER === '0') { console.log('postbuild: prerender skipped'); checkCspHashes(); process.exit(0); }
 
-const ROUTES = ['/', '/pricing', '/terms', '/privacy', '/refunds', '/signup', '/login'];
+const FREE_LESSONS = ['/learn/anatomia-prompt', '/learn/contexto-negocio', '/learn/formato-certo', '/learn/iterar'];
+const ROUTES = ['/', '/pricing', '/terms', '/privacy', '/refunds', '/signup', '/login', '/learn', ...FREE_LESSONS];
 const CHROME = process.env.CHROME_PATH || ['/usr/bin/google-chrome', '/usr/bin/chromium', '/usr/bin/chromium-browser'].find((p) => fs.existsSync(p));
 let puppeteer;
 try { puppeteer = (await import('puppeteer-core')).default; } catch { /* optional */ }
 if (!CHROME || !puppeteer) {
+  if (process.env.PRERENDER !== '0') throw new Error('Chrome is required to prerender public learning pages; refusing to ship empty SEO pages');
   // Public rewrites target /<route>/index.html even when the builder has no browser.
   // Keep these routes usable as SPAs; do not pretend this is a prerendered page.
   for (const route of ROUTES.filter((r) => r !== '/')) {
@@ -73,10 +75,22 @@ try {
     await page.setViewport({ width: 1280, height: 900 });
     await page.setRequestInterception(true);
     // Render logged out, without analytics/payments/backend side effects.
-    page.on('request', (r) => (new URL(r.url()).origin === base || r.url().startsWith('data:') ? r.continue() : r.abort()));
+    // Only the public learning pages may read the Supabase API. No auth token is supplied:
+    // RLS must keep paid lesson bodies inaccessible to anonymous visitors.
+    page.on('request', (r) => {
+      const url = new URL(r.url());
+      const publicLessonRead = route.startsWith('/learn') && url.hostname === 'cwrxbxxfaemcvliasycz.supabase.co'
+        && url.pathname.startsWith('/rest/v1/learn_') && r.method() === 'GET';
+      return url.origin === base || r.url().startsWith('data:') || publicLessonRead ? r.continue() : r.abort();
+    });
     await page.evaluateOnNewDocument(() => { try { localStorage.setItem('pf_lang', 'pt'); } catch { /* ignore */ } });
     await page.goto(base + route, { waitUntil: 'networkidle0', timeout: 60000 });
     await page.waitForFunction(() => document.getElementById('root')?.children.length > 0 && !document.querySelector('[aria-busy="true"]'), { timeout: 30000 });
+    if (FREE_LESSONS.includes(route)) {
+      await page.waitForFunction(() => document.querySelector('[data-testid="lesson"][data-locked="0"]') && document.querySelector('[data-testid="lesson-steps"]'), { timeout: 30000 });
+    } else if (route === '/learn') {
+      await page.waitForFunction(() => document.querySelector('[data-testid="lesson-card"]'), { timeout: 30000 });
+    }
     await new Promise((r) => setTimeout(r, 1200)); // let entry animations settle
     const html = await page.evaluate(() => {
       // Make the DOM look like React server output, so hydrateRoot can claim it:
@@ -129,6 +143,7 @@ try {
     });
     const out = route === '/' ? path.join(DIST, 'index.html') : path.join(DIST, route.slice(1), 'index.html');
     fs.mkdirSync(path.dirname(out), { recursive: true });
+    if (FREE_LESSONS.includes(route) && (!html.includes('data-testid="lesson-steps"') || !html.includes('data-locked="0"'))) throw new Error(`Free lesson ${route} was not rendered; refusing empty SEO output`);
     fs.writeFileSync(out, html);
     console.log(`postbuild: prerendered ${route} -> ${path.relative(DIST, out)} (${html.length} bytes)`);
     await page.close();
