@@ -16,7 +16,7 @@ test('prompt generation and optimization apply the shared voice rules for both l
   for (const name of ['generate-prompt', 'quick-prompt', 'optimize-prompt']) {
     const file = read(`supabase/functions/${name}/index.ts`);
     assert.match(file, /import \{ outputLanguageRules \} from ['"]\.\.\/_shared\/ptpt\.ts['"]/);
-    assert.match(file, /systemPrompt \+ outputLanguageRules\(language\)/);
+    assert.match(file, name === 'quick-prompt' ? /systemPrompt \+ outputLanguageRules\(isEnglish \? 'en' : 'pt'\)/ : /systemPrompt \+ outputLanguageRules\(language\)/);
     assert.doesNotMatch(file, /systemPrompt \+ PT_PT_RULES/);
   }
 });
