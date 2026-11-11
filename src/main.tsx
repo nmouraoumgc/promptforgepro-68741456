@@ -15,6 +15,17 @@ trackCampaignLanding();
 registerServiceWorker();
 
 const rootEl = document.getElementById("root")!;
+// SEO fallback is visible to crawlers and before JS loads. Replace it only after React commits.
+const seoFallback = document.getElementById("seo-fallback");
+if (seoFallback) {
+  const observer = new MutationObserver(() => {
+    if (rootEl.hasChildNodes()) {
+      seoFallback.remove();
+      observer.disconnect();
+    }
+  });
+  observer.observe(rootEl, { childList: true });
+}
 
 /** Public pages are prerendered to static HTML (PT, logged out) at build time. Hydrate that markup when the
  *  first client render will match it; otherwise (English UI, or a member landing on "/") render fresh. */

@@ -10,6 +10,9 @@ const cfg = JSON.parse(fs.readFileSync('vercel.json', 'utf8'));
 for (const k of ['$schema', 'framework', 'buildCommand', 'outputDirectory', 'installCommand']) delete cfg[k];
 fs.writeFileSync(path.join(DIST, 'vercel.json'), JSON.stringify(cfg, null, 2) + '\n');
 console.log('postbuild: wrote dist/vercel.json');
+// Build public lesson HTML from anonymous RLS reads, without a browser.
+await import('./build-learn-seo.mjs');
+await import('./check-learn-seo.mjs');
 
 // The untouched SPA shell for app routes (index.html becomes the prerendered landing).
 // Guard: when re-run on an already prerendered dist, keep the existing shell.
