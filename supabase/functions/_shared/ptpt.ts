@@ -1,22 +1,33 @@
-// Regras de Português Europeu (pt-PT) anexadas aos system prompts quando a saída é em português.
+// European Portuguese (pt-PT) language and editorial rules for generated content.
 export const PT_PT_RULES = `
 
-REGRAS OBRIGATÓRIAS DE LÍNGUA (Português de Portugal, pt-PT):
+REGRAS OBRIGATÓRIAS DE LÍNGUA E TOM (Português de Portugal, pt-PT):
 - Escreve exclusivamente em português europeu (de Portugal), nunca em português do Brasil.
-- Trata o leitor por "tu" (ex.: "tens", "podes", "queres") ou usa construções impessoais. NUNCA uses "você" para te dirigires ao leitor (no plural, "vocês" é aceitável).
-- Usa o gerúndio à portuguesa: "estou a fazer", "continua a escrever" — nunca "estou fazendo".
-- Pronomes à portuguesa: ênclise por defeito ("diz-me", "envia-lhe", "reavê-lo"), nunca "me diga" no início da frase.
+- Adota um registo profissional, rigoroso, neutro e impessoal em prompts gerados, guiões, textos de packs, hooks, avaliações e explicações.
+- Os textos dirigidos ao público devem ser redigidos na terceira pessoa ou com construções impessoais. Não trates o leitor por "tu", "teu", "tua", "tens", "podes", "queres", "és" ou expressões semelhantes; não substituas esse tratamento por "você".
+- Quando for necessário identificar alguém, refere "o utilizador", "o cliente", "a equipa", "a organização", "a marca" ou "o público", conforme o contexto.
+- Nos prompts escritos para outra IA, descreve o papel e as tarefas na terceira pessoa: "O assistente deverá atuar como especialista..." e "A resposta deverá apresentar...", em vez de "És...", "A tua tarefa..." ou "Tu deves...".
+- Evita a primeira pessoa ("eu", "nós", "meu", "nosso") na narrativa padrão; utiliza-a apenas quando expressamente necessária num diálogo, testemunho, citação, fala de personagem ou conteúdo solicitado pelo utilizador.
+- Mantém os objetivos, dados, variáveis e a estrutura solicitados. O tratamento impessoal não deve alterar a intenção da tarefa.
+- Usa construções verbais naturais em português europeu: "está a realizar", nunca "está realizando".
+- Pronomes e sintaxe de Portugal: ênclise nos contextos adequados (por exemplo, "apresenta-se", "envia-lhe"), nunca construções brasileiras como "me diga" em início de frase.
 - Ortografia e vocabulário europeus: "equipa" (não "time"), "telemóvel" (não "celular"), "ecrã" (não "tela"), "utilizador" (não "usuário"), "registo", "facto", "contacto", "receção", "autocarro", "pequeno-almoço", "casa de banho", "ficheiro" (não "arquivo"), "descarregar" (não "baixar").
 - Não mistures línguas nem acrescentes traduções.`;
 
-// Used when the user's UI language is English: the (Portuguese) instructions stay, but the output must be English.
+// English output requires the same professional, third-person editorial style.
 export const EN_OUTPUT_RULES = `
 
-MANDATORY LANGUAGE RULE: Write your entire answer in natural, fluent English, even though these instructions are written in Portuguese. Do not use any Portuguese words, and do not add translations.`;
+MANDATORY LANGUAGE AND VOICE RULES:
+- Write the entire response in natural, fluent English, without Portuguese words or translations.
+- Use a polished, professional, neutral, third-person or impersonal style for generated prompts, scripts, guides, pack content, and explanations.
+- Avoid addressing the audience directly as "you" or "your"; avoid first-person narration ("I", "we", "our") by default. Prefer "the reader", "the customer", "the organisation", "the brand" or "the assistant", as appropriate.
+- In reusable prompts for AI, phrase instructions as "The assistant should..." or "The output must..." rather than "You are..." or "Your task is...".
+- Preserve explicitly requested first-person quotations, dialogues, testimonials, character speech, and intentional brand voice when required by the task.
+- Do not change the intended meaning, variables, facts, formatting requirements, or purpose of the original request.`;
 
 export const isEnglishLang = (language?: unknown): boolean =>
   String(language ?? '').toLowerCase().startsWith('en');
 
-/** Language rules to append to a system prompt, picked from the request's language. */
+/** Shared language and editorial voice rules for all model-generated content. */
 export const outputLanguageRules = (language?: unknown): string =>
   isEnglishLang(language) ? EN_OUTPUT_RULES : PT_PT_RULES;

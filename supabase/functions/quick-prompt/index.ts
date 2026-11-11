@@ -2,7 +2,7 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { authenticateRequest, corsHeaders } from "../_shared/auth.ts";
 import { resolveTaskBrand, BrandSelectionError, brandInstructions } from "../_shared/brand.ts";
-import { PT_PT_RULES } from '../_shared/ptpt.ts';
+import { outputLanguageRules } from '../_shared/ptpt.ts';
 import { plainTextRules, toPlainText } from '../_shared/plaintext.ts';
 
 serve(async (req) => {
@@ -70,7 +70,7 @@ CRITICAL LANGUAGE RULE:
         model: Deno.env.get('AI_MODEL') ?? 'openai/gpt-oss-120b',
         ...(Deno.env.get('AI_REASONING_EFFORT') ? { reasoning_effort: Deno.env.get('AI_REASONING_EFFORT') } : {}),
         messages: [
-          { role: 'system', content: (isEnglish ? systemPrompt : systemPrompt + PT_PT_RULES) + brandInstructions(brand, isEnglish) + plainTextRules(isEnglish ? 'en' : 'pt') },
+          { role: 'system', content: (systemPrompt + outputLanguageRules(isEnglish ? 'en' : 'pt')) + brandInstructions(brand, isEnglish) + plainTextRules(isEnglish ? 'en' : 'pt') },
           { role: 'user', content: userRequest }
         ],
       }),
