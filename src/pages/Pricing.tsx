@@ -357,7 +357,51 @@ export default function Pricing() {
         </div>
       </div>
 
-      <div className="mb-8"><UsageLimits /></div>
+      <section className="max-w-5xl mx-auto mb-8 space-y-4" aria-labelledby="pricing-compare-heading">
+        <div className="text-center">
+          <h2 id="pricing-compare-heading" className="text-xl font-semibold">
+            {isEnglish ? 'Compare plans at a glance' : 'Compara os planos num instante'}
+          </h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            {isEnglish ? 'Choose free tools, a one-time content purchase, or the complete Pro toolkit.' : 'Escolhe ferramentas gratuitas, conteúdos numa compra única ou o conjunto completo de ferramentas Pro.'}
+          </p>
+        </div>
+        <div className="overflow-x-auto rounded-xl border border-border" data-testid="pricing-comparison">
+          <table className="w-full min-w-[540px] text-sm text-left">
+            <caption className="sr-only">{isEnglish ? 'Free, Prompt Packs and Pro plan comparison' : 'Comparação dos planos Free, Prompt Packs e Pro'}</caption>
+            <thead className="bg-muted/50">
+              <tr>
+                <th scope="col" className="px-4 py-3 font-semibold">{isEnglish ? 'Included' : 'Incluído'}</th>
+                <th scope="col" className="px-3 py-3 font-semibold text-center">Free</th>
+                <th scope="col" className="px-3 py-3 font-semibold text-center">Prompt Packs</th>
+                <th scope="col" className="px-3 py-3 font-semibold text-center text-primary">Pro</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {([
+                [isEnglish ? 'Price' : 'Preço', '0€', isEnglish ? '19€ once' : '19€ único', isAnnual ? (isEnglish ? '90€/year' : '90€/ano') : (isEnglish ? '9€/month' : '9€/mês')],
+                [isEnglish ? 'Prompt optimizations' : 'Otimizações de prompts', isEnglish ? '3/prompt · 20/day' : '3/prompt · 20/dia', isEnglish ? '3/prompt · 20/day' : '3/prompt · 20/dia', isEnglish ? 'Unlimited' : 'Ilimitadas'],
+                [isEnglish ? 'AI runs per day' : 'Execuções de IA por dia', '5', '5', '100'],
+                [isEnglish ? 'Premium prompt packs' : 'Prompt Packs premium', '—', isEnglish ? 'Included' : 'Incluídos', isEnglish ? 'Included' : 'Incluídos'],
+                [isEnglish ? 'Learn lessons' : 'Lições Aprender', isEnglish ? '4 free' : '4 gratuitas', isEnglish ? 'All' : 'Todas', isEnglish ? 'All' : 'Todas'],
+                [isEnglish ? 'A/B tests and version history' : 'Testes A/B e histórico', '—', '—', isEnglish ? 'Included' : 'Incluídos'],
+              ] as string[][]).map((cells) => (
+                <tr key={cells[0]} className="bg-card">
+                  <th scope="row" className="px-4 py-3 font-medium">{cells[0]}</th>
+                  {cells.slice(1).map((value, index) => <td key={index} className={`px-3 py-3 text-center ${index === 2 ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>{value}</td>)}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="text-xs text-muted-foreground text-center">
+          {isEnglish ? 'Prompt Packs add content, not Pro tool limits. Unlimited optimizations do not include unlimited AI runs.' : 'Os Prompt Packs acrescentam conteúdos, não limites Pro. Otimizações ilimitadas não incluem execuções de IA ilimitadas.'}
+        </p>
+        <details className="rounded-lg border border-border bg-muted/20 p-4" data-testid="pricing-usage-details">
+          <summary className="cursor-pointer font-medium text-sm">{isEnglish ? 'How do optimizations and AI runs work?' : 'Como funcionam as otimizações e execuções?'}</summary>
+          <div className="mt-3"><UsageLimits /></div>
+        </details>
+      </section>
       <div className="flex justify-center mb-8">{billingToggle('billing')}</div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
