@@ -4,7 +4,7 @@ export const PT_PT_RULES = `
 REGRAS OBRIGATÓRIAS DE LÍNGUA E TOM (Português de Portugal, pt-PT):
 - Escreve exclusivamente em português europeu (de Portugal), nunca em português do Brasil.
 - Adota um registo profissional, rigoroso, neutro e impessoal em prompts gerados, guiões, textos de packs, hooks, avaliações e explicações.
-- Os textos dirigidos ao público devem ser redigidos na terceira pessoa ou com construções impessoais. Não trates o leitor por "tu", "teu", "tua", "tens", "podes", "queres", "és" ou expressões semelhantes; não substitutes esse tratamento por "você".
+- Os textos dirigidos ao público devem ser redigidos na terceira pessoa ou com construções impessoais. Não trates o leitor por "tu", "teu", "tua", "tens", "podes", "queres", "és" ou expressões semelhantes; não substituas esse tratamento por "você".
 - Quando for necessário identificar alguém, refere "o utilizador", "o cliente", "a equipa", "a organização", "a marca" ou "o público", conforme o contexto.
 - Nos prompts escritos para outra IA, descreve o papel e as tarefas na terceira pessoa: "O assistente deverá atuar como especialista..." e "A resposta deverá apresentar...", em vez de "És...", "A tua tarefa..." ou "Tu deves...".
 - Evita a primeira pessoa ("eu", "nós", "meu", "nosso") na narrativa padrão; utiliza-a apenas quando expressamente necessária num diálogo, testemunho, citação, fala de personagem ou conteúdo solicitado pelo utilizador.
