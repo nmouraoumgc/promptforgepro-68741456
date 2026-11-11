@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { authenticateRequest, corsHeaders } from "../_shared/auth.ts";
-import { PT_PT_RULES } from '../_shared/ptpt.ts';
+import { outputLanguageRules, isEnglishLang } from '../_shared/ptpt.ts';
 import { plainTextRules, toPlainText } from '../_shared/plaintext.ts';
 
 serve(async (req) => {
@@ -13,11 +13,13 @@ serve(async (req) => {
     if (auth instanceof Response) return auth;
     const isPremium = auth.isPremium;
 
-    const { tema } = await req.json();
+    const { tema, language: reqLanguage } = await req.json();
+    const language = typeof reqLanguage === 'string' && isEnglishLang(reqLanguage) ? 'en' : 'pt';
+    const en = language === 'en';
 
     if (!tema || tema.trim().length === 0) {
       return new Response(
-        JSON.stringify({ error: "O tema é obrigatório" }),
+        JSON.stringify({ error: en ? "The topic is required" : "O tema é obrigatório" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -29,22 +31,30 @@ serve(async (req) => {
 
     // Hook de choque controlado prompt
     const hookCount = isPremium ? 5 : 2;
-    const systemPrompt = `És um especialista em criação de conteúdo viral para TikTok. 
-Geras hooks curtos, impactantes e em português de Portugal.
-Os hooks devem parar o scroll nos primeiros 3 segundos.
-Usa linguagem simples, direta e curiosa.
-Não reveles tudo no início - deixa suspense.`;
+    const systemPrompt = en
+      ? `The assistant is a specialist in viral TikTok content. Generate concise, impactful hooks in English.
+The hooks should capture attention within the first three seconds.
+Use direct, clear and intriguing language without revealing everything at the beginning.`
+      : `O assistente é especialista em conteúdo viral para TikTok.
+Os hooks devem ser curtos, impactantes e escritos em português de Portugal.
+Devem captar a atenção nos primeiros três segundos, com linguagem clara e intrigante.
+Não revelar tudo no início, mantendo o suspense.`;
 
-    const userPrompt = `Cria ${hookCount} hooks curtos para um vídeo de TikTok sobre "${tema}", pensados para parar o scroll nos primeiros 3 segundos.
-
+    const userPrompt = en
+      ? `Create ${hookCount} short TikTok hooks about "${tema}".
+Rules:
+- Start each hook with a strong or unexpected line
+- Use clear, direct language
+- Keep some suspense
+- Maximum 15 words per hook
+Format: Return ONLY numbered hooks, one per line. No introduction or explanation.`
+      : `Criar ${hookCount} hooks curtos para um vídeo de TikTok sobre "${tema}".
 Regras:
-- Começa cada hook com uma frase forte ou inesperada
-- Usa linguagem simples e direta
-- Não reveles tudo no início
-- Máximo 15 palavras por hook
-
-Formato:
-Responde APENAS com os hooks numerados, um por linha. Sem introdução nem explicação.`;
+- Cada hook deve começar com uma frase forte ou inesperada
+- Usar linguagem simples e direta
+- Manter algum suspense
+- Máximo de 15 palavras por hook
+Formato: Apresentar APENAS os hooks numerados, um por linha. Sem introdução nem explicação.`;
 
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
@@ -56,7 +66,7 @@ Responde APENAS com os hooks numerados, um por linha. Sem introdução nem expli
         model: Deno.env.get('AI_MODEL') ?? 'openai/gpt-oss-120b',
         ...(Deno.env.get('AI_REASONING_EFFORT') ? { reasoning_effort: Deno.env.get('AI_REASONING_EFFORT') } : {}),
         messages: [
-          { role: "system", content: systemPrompt + PT_PT_RULES + plainTextRules('pt') },
+          { role: "system", content: systemPrompt + outputLanguageRules(language) + plainTextRules(language) },
           { role: "user", content: userPrompt },
         ],
         max_tokens: 1500, // was 500; raised because reasoning models (gpt-oss) count reasoning tokens here
