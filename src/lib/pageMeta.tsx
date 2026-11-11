@@ -13,8 +13,8 @@ const NOINDEX = /^\/(app|create|library|brand|settings|checkout|purchase-success
 
 const META: Record<string, { pt: Meta; en: Meta }> = {
   '/': {
-    pt: { title: 'PromptForge Pro', description: 'Cria, otimiza e guarda prompts profissionais para ChatGPT, Gemini e Claude, em português de Portugal. Começa grátis.' },
-    en: { title: 'PromptForge Pro', description: 'Create, optimise and save professional prompts for ChatGPT, Gemini and Claude. Start free.' },
+    pt: { title: 'Criar e Otimizar Prompts para IA', description: 'Cria, otimiza e guarda prompts profissionais para ChatGPT, Gemini e Claude. Melhora os resultados da IA em português de Portugal. Começa grátis.' },
+    en: { title: 'AI Prompt Generator & Optimizer', description: 'Create, optimize and save professional AI prompts for ChatGPT, Gemini and Claude. Get clearer, more useful results. Start for free.' },
   },
   '/app': {
     pt: { title: 'Painel', description: 'Cria, otimiza e testa prompts profissionais com IA, em português de Portugal.' },
