@@ -52,7 +52,18 @@ export function TemplateFiller({ template, isEnglish, idPrefix, labels, extraAct
   const missing = vars.filter((v) => !(values[v] ?? '').trim());
 
   const copy = async () => {
-    await navigator.clipboard.writeText(toPlainText(fillTemplate(template, values, isEnglish, labels)));
+    try {
+      await navigator.clipboard.writeText(toPlainText(fillTemplate(template, values, isEnglish, labels)));
+    } catch {
+      setCopied(false);
+      setHint(isEnglish ? 'Copy failed. Please allow clipboard access and try again.' : 'Não foi possível copiar. Autoriza o acesso à área de transferência e tenta novamente.');
+      toast({
+        variant: 'destructive',
+        title: isEnglish ? 'Could not copy' : 'Não foi possível copiar',
+        description: isEnglish ? 'Allow clipboard access and try again.' : 'Autoriza o acesso à área de transferência e tenta novamente.',
+      });
+      return;
+    }
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
     const h = missing.length
