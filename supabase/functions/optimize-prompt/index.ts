@@ -4,7 +4,7 @@ import { withOptimizationQuota } from "../_shared/optimizationQuota.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { authenticateRequest, corsHeaders } from "../_shared/auth.ts";
 import { resolveTaskBrand, BrandSelectionError, brandInstructions } from "../_shared/brand.ts";
-import { PT_PT_RULES } from '../_shared/ptpt.ts';
+import { outputLanguageRules } from '../_shared/ptpt.ts';
 import { plainTextRules, toPlainText } from '../_shared/plaintext.ts';
 
 serve(async (req) => {
@@ -156,7 +156,7 @@ Formato da resposta:
         model: Deno.env.get('AI_MODEL') ?? 'openai/gpt-oss-120b',
         ...(Deno.env.get('AI_REASONING_EFFORT') ? { reasoning_effort: Deno.env.get('AI_REASONING_EFFORT') } : {}),
         messages: [
-          { role: 'system', content: (isEnglish ? systemPrompt : systemPrompt + PT_PT_RULES) + brandInstructions(brand, isEnglish) + (isEnglish
+          { role: 'system', content: (systemPrompt + outputLanguageRules(language)) + brandInstructions(brand, isEnglish) + (isEnglish
             ? '\n\nThe "content" of each variation is a plain-text prompt (use \\n for line breaks inside the JSON string).'
             : '\n\nO "content" de cada variação é um prompt em texto simples (usa \\n para quebras de linha dentro da string JSON).') + plainTextRules(isEnglish ? 'en' : 'pt') },
           { role: 'user', content: isEnglish ? `Analyze and optimize this prompt:\n\n"${prompt}"` : `Analisa e otimiza este prompt:\n\n"${prompt}"` }
