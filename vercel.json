@@ -17,6 +17,21 @@
   ],
   "rewrites": [
     {
+      "source": "/learn/:slug(anatomia-prompt|contexto-negocio|formato-certo|iterar)",
+      "has": [
+        {
+          "type": "query",
+          "key": "lang",
+          "value": "en"
+        }
+      ],
+      "destination": "/learn/:slug/en.html"
+    },
+    {
+      "source": "/learn/:slug(anatomia-prompt|contexto-negocio|formato-certo|iterar)",
+      "destination": "/learn/:slug/index.html"
+    },
+    {
       "source": "/(pricing|terms|privacy|refunds|signup|login)(/?)",
       "destination": "/$1/index.html"
     },
