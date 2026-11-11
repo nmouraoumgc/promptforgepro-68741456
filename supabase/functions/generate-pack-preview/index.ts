@@ -100,7 +100,11 @@ serve(async (req) => {
 
     const { tema, packSlug, language: reqLanguage, useBrand } = await req.json();
     const brand = useBrand === false ? null : await loadActiveBrand(auth.userId);
-    const language = brand?.language ?? reqLanguage;
+    // The language explicitly selected for this task takes precedence over the brand's default language.
+    // Brand settings still supply tone, audience and other context, never a forced translation.
+    const language = (typeof reqLanguage === 'string' && /^(en|pt)(?:-[a-z]{2})?$/i.test(reqLanguage.trim()))
+      ? reqLanguage.trim().toLowerCase()
+      : (brand?.language ?? 'pt');
     const en = isEnglishLang(language);
 
     console.log(`Generating preview for pack: ${packSlug}, tema: ${tema}, isPremium: ${isPremium}`);
