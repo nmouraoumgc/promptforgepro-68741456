@@ -1,14 +1,76 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://promptforgepro.me/</loc><lastmod>2026-10-30</lastmod><priority>1.0</priority></url>
-  <url><loc>https://promptforgepro.me/pricing</loc><lastmod>2026-10-30</lastmod><priority>0.9</priority></url>
-  <url><loc>https://promptforgepro.me/signup</loc><lastmod>2026-10-30</lastmod><priority>0.6</priority></url>
-  <url><loc>https://promptforgepro.me/terms</loc><lastmod>2026-10-30</lastmod><priority>0.3</priority></url>
-  <url><loc>https://promptforgepro.me/privacy</loc><lastmod>2026-10-30</lastmod><priority>0.3</priority></url>
-  <url><loc>https://promptforgepro.me/refunds</loc><lastmod>2026-10-30</lastmod><priority>0.3</priority></url>
-  <url><loc>https://promptforgepro.me/learn</loc><priority>0.8</priority></url>
-  <url><loc>https://promptforgepro.me/learn/anatomia-prompt</loc><priority>0.7</priority></url>
-  <url><loc>https://promptforgepro.me/learn/contexto-negocio</loc><priority>0.7</priority></url>
-  <url><loc>https://promptforgepro.me/learn/formato-certo</loc><priority>0.7</priority></url>
-  <url><loc>https://promptforgepro.me/learn/iterar</loc><priority>0.7</priority></url>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url><loc>https://promptforgepro.me/</loc>
+    <xhtml:link rel="alternate" hreflang="pt-PT" href="https://promptforgepro.me/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://promptforgepro.me/?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://promptforgepro.me/"/>
+  </url>
+  <url><loc>https://promptforgepro.me/?lang=en</loc>
+    <xhtml:link rel="alternate" hreflang="pt-PT" href="https://promptforgepro.me/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://promptforgepro.me/?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://promptforgepro.me/"/>
+  </url>
+  <url><loc>https://promptforgepro.me/pricing</loc>
+    <xhtml:link rel="alternate" hreflang="pt-PT" href="https://promptforgepro.me/pricing"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://promptforgepro.me/pricing?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://promptforgepro.me/pricing"/>
+  </url>
+  <url><loc>https://promptforgepro.me/pricing?lang=en</loc>
+    <xhtml:link rel="alternate" hreflang="pt-PT" href="https://promptforgepro.me/pricing"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://promptforgepro.me/pricing?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://promptforgepro.me/pricing"/>
+  </url>
+  <url><loc>https://promptforgepro.me/learn</loc>
+    <xhtml:link rel="alternate" hreflang="pt-PT" href="https://promptforgepro.me/learn"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://promptforgepro.me/learn?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://promptforgepro.me/learn"/>
+  </url>
+  <url><loc>https://promptforgepro.me/learn?lang=en</loc>
+    <xhtml:link rel="alternate" hreflang="pt-PT" href="https://promptforgepro.me/learn"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://promptforgepro.me/learn?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://promptforgepro.me/learn"/>
+  </url>
+  <url><loc>https://promptforgepro.me/learn/anatomia-prompt</loc>
+    <xhtml:link rel="alternate" hreflang="pt-PT" href="https://promptforgepro.me/learn/anatomia-prompt"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://promptforgepro.me/learn/anatomia-prompt?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://promptforgepro.me/learn/anatomia-prompt"/>
+  </url>
+  <url><loc>https://promptforgepro.me/learn/anatomia-prompt?lang=en</loc>
+    <xhtml:link rel="alternate" hreflang="pt-PT" href="https://promptforgepro.me/learn/anatomia-prompt"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://promptforgepro.me/learn/anatomia-prompt?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://promptforgepro.me/learn/anatomia-prompt"/>
+  </url>
+  <url><loc>https://promptforgepro.me/learn/contexto-negocio</loc>
+    <xhtml:link rel="alternate" hreflang="pt-PT" href="https://promptforgepro.me/learn/contexto-negocio"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://promptforgepro.me/learn/contexto-negocio?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://promptforgepro.me/learn/contexto-negocio"/>
+  </url>
+  <url><loc>https://promptforgepro.me/learn/contexto-negocio?lang=en</loc>
+    <xhtml:link rel="alternate" hreflang="pt-PT" href="https://promptforgepro.me/learn/contexto-negocio"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://promptforgepro.me/learn/contexto-negocio?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://promptforgepro.me/learn/contexto-negocio"/>
+  </url>
+  <url><loc>https://promptforgepro.me/learn/formato-certo</loc>
+    <xhtml:link rel="alternate" hreflang="pt-PT" href="https://promptforgepro.me/learn/formato-certo"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://promptforgepro.me/learn/formato-certo?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://promptforgepro.me/learn/formato-certo"/>
+  </url>
+  <url><loc>https://promptforgepro.me/learn/formato-certo?lang=en</loc>
+    <xhtml:link rel="alternate" hreflang="pt-PT" href="https://promptforgepro.me/learn/formato-certo"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://promptforgepro.me/learn/formato-certo?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://promptforgepro.me/learn/formato-certo"/>
+  </url>
+  <url><loc>https://promptforgepro.me/learn/iterar</loc>
+    <xhtml:link rel="alternate" hreflang="pt-PT" href="https://promptforgepro.me/learn/iterar"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://promptforgepro.me/learn/iterar?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://promptforgepro.me/learn/iterar"/>
+  </url>
+  <url><loc>https://promptforgepro.me/learn/iterar?lang=en</loc>
+    <xhtml:link rel="alternate" hreflang="pt-PT" href="https://promptforgepro.me/learn/iterar"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://promptforgepro.me/learn/iterar?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://promptforgepro.me/learn/iterar"/>
+  </url>
+  <url><loc>https://promptforgepro.me/terms</loc></url>
+  <url><loc>https://promptforgepro.me/privacy</loc></url>
+  <url><loc>https://promptforgepro.me/refunds</loc></url>
 </urlset>
