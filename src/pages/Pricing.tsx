@@ -366,15 +366,16 @@ export default function Pricing() {
             {isEnglish ? 'Choose free tools, a one-time content purchase, or the complete Pro toolkit.' : 'Escolhe ferramentas gratuitas, conteúdos numa compra única ou o conjunto completo de ferramentas Pro.'}
           </p>
         </div>
+        <div className="flex justify-center">{billingToggle('billing')}</div>
         <div className="overflow-x-auto rounded-xl border border-border" data-testid="pricing-comparison">
           <table className="w-full min-w-[540px] text-sm text-left">
             <caption className="sr-only">{isEnglish ? 'Free, Prompt Packs and Pro plan comparison' : 'Comparação dos planos Free, Prompt Packs e Pro'}</caption>
-            <thead className="bg-muted/50">
-              <tr>
-                <th scope="col" className="px-4 py-3 font-semibold">{isEnglish ? 'Included' : 'Incluído'}</th>
-                <th scope="col" className="px-3 py-3 font-semibold text-center">Free</th>
-                <th scope="col" className="px-3 py-3 font-semibold text-center">Prompt Packs</th>
-                <th scope="col" className="px-3 py-3 font-semibold text-center text-primary">Pro</th>
+            <thead>
+              <tr className="border-b-2 border-border">
+                <th scope="col" className="bg-muted/70 px-4 py-5 text-left text-sm font-bold">{isEnglish ? 'Included' : 'Incluído'}</th>
+                <th scope="col" className="bg-muted/70 px-3 py-5 text-center text-base font-bold">Free</th>
+                <th scope="col" className="bg-muted/70 px-3 py-5 text-center text-base font-bold">Prompt Packs</th>
+                <th scope="col" className="bg-primary/15 border-l border-primary/40 px-3 py-5 text-center text-base font-extrabold text-primary">Pro<span className="mt-1 block text-[11px] font-semibold">{isEnglish ? 'Recommended' : 'Recomendado'}</span></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -402,8 +403,6 @@ export default function Pricing() {
           <div className="mt-3"><UsageLimits /></div>
         </details>
       </section>
-      <div className="flex justify-center mb-8">{billingToggle('billing')}</div>
-
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
         {[mainPlans[0], premiumPlan, mainPlans[1]].map((plan) => {
           const isPacks = plan.id === 'packs';
@@ -451,19 +450,14 @@ export default function Pricing() {
                 </div>
               </CardHeader>
 
-              <CardContent className="flex-1 flex flex-col space-y-6">
-                <ul className="space-y-3 flex-1">
-                  {plan.features.map((feature) => (
-                    <li key={feature} className="flex items-start gap-2.5 text-sm">
-                      <Check
-                        className={`h-4 w-4 shrink-0 mt-0.5 ${
-                          plan.highlight ? 'text-primary' : 'text-muted-foreground'
-                        }`}
-                      />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
+              <CardContent className="flex-1 flex flex-col space-y-4">
+                <p className="flex-1 text-center text-sm text-muted-foreground">
+                  {plan.id === 'free'
+                    ? (isEnglish ? 'Explore the essentials at no cost.' : 'Experimenta as ferramentas essenciais sem custos.')
+                    : plan.id === 'packs'
+                      ? (isEnglish ? 'Ready-to-use content in one purchase.' : 'Conteúdos prontos a usar numa compra única.')
+                      : (isEnglish ? 'The complete toolkit for daily work.' : 'Todas as ferramentas para o trabalho diário.')}
+                </p>
 
                 <Button
                   className={`w-full ${plan.highlight ? 'shadow-md' : ''}`}
