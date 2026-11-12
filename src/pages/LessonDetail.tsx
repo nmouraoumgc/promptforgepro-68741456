@@ -81,7 +81,7 @@ export default function LessonDetail() {
           <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" />{lesson.durationMin} min</span>
           <span>·</span>
           <span>{isEnglish ? lv.en : lv.pt}</span>
-          {lesson.isFree ? <Badge variant="secondary">{isEnglish ? 'Free' : 'Grátis'}</Badge> : <Badge variant="outline" className="gap-1 border-primary/40 text-primary">{!entitled && <Lock className="h-3 w-3" />}Pro</Badge>}
+          {lesson.isFree ? <Badge variant="secondary">{isEnglish ? 'Free' : 'Grátis'}</Badge> : <Badge variant="outline" className="gap-1 border-primary/40 text-primary">{!entitled && <Lock className="h-3 w-3" />}Packs / Pro</Badge>}
         </div>
         <h1 className="text-2xl sm:text-3xl font-bold text-foreground leading-tight">{lesson.title}</h1>
         <p className="text-muted-foreground">{lesson.summary}</p>
@@ -105,16 +105,17 @@ export default function LessonDetail() {
           <CardContent className="p-5 sm:p-6 space-y-4 text-center">
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/15"><Lock className="h-6 w-6 text-primary" /></div>
             <div className="space-y-1">
-              <p className="font-semibold text-foreground">{isEnglish ? 'This lesson is part of Pro' : 'Esta lição faz parte do plano Pro'}</p>
+              <p className="font-semibold text-foreground">{isEnglish ? 'This lesson is included in Prompt Packs and Pro' : 'Esta lição está incluída nos Prompt Packs e no Pro'}</p>
               <p className="text-sm text-muted-foreground max-w-md mx-auto">
                 {isEnglish
-                  ? 'Get the 3 steps, the before-and-after example, a ready template to try and the checklist. Plus every industry and advanced lesson, unlimited optimisations and A/B testing.'
-                  : 'Inclui os 3 passos, o exemplo de antes e depois, um template pronto a experimentar e a checklist. E ainda todas as lições por setor e avançadas, otimizações ilimitadas e testes A/B.'}
+                  ? 'Get all lessons and premium packs with a one-time Prompt Packs purchase, or subscribe to Pro for the same content and additional tools.'
+                  : 'Aceda a todas as lições e packs premium com a compra única dos Prompt Packs, ou subscreva o Pro para os mesmos conteúdos e ferramentas adicionais.'}
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 justify-center">
-              <Button asChild data-testid="lesson-upsell"><Link to="/pricing"><Sparkles className="h-4 w-4 mr-2" />{isEnglish ? 'Unlock with Pro: 9€/month' : 'Desbloquear com o Pro: 9€/mês'}</Link></Button>
-              {!user && <Button asChild variant="outline"><Link to="/login">{isEnglish ? 'I already have Pro: sign in' : 'Já tenho Pro: iniciar sessão'}</Link></Button>}
+              <Button asChild variant="outline"><Link to="/checkout">{isEnglish ? 'Buy Prompt Packs' : 'Comprar Prompt Packs'}</Link></Button>
+              <Button asChild data-testid="lesson-upsell"><Link to="/pricing"><Sparkles className="h-4 w-4 mr-2" />{isEnglish ? 'See Pro' : 'Ver Pro'}</Link></Button>
+              {!user && <Button asChild variant="outline"><Link to="/login">{isEnglish ? 'I already have access: sign in' : 'Já tenho acesso: iniciar sessão'}</Link></Button>}
             </div>
             {!entitled && freeLessons.length > 0 && (
               <div className="space-y-2 pt-2 border-t border-primary/20" data-testid="lesson-free-alternatives">

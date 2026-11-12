@@ -1,3 +1,4 @@
+import { FirstPromptExamples } from '@/components/FirstPromptExamples';
 import { useState, useRef, useMemo } from 'react';
 import { toPlainText } from '@/lib/plainText';
 import { useTranslation } from 'react-i18next';
@@ -199,8 +200,10 @@ export default function QuickPrompt({ embedded = false, initialRequest = '' }: {
           <TaskBrandSelector className="pt-2" request={request} />
         </CardHeader>
         <CardContent className="space-y-4">
+          {!request && !generatedPrompt && <FirstPromptExamples isEnglish={isEn} onSelect={setRequest} />}
           <div className="relative">
             <Textarea
+              aria-label={isEn ? 'Describe your idea' : 'Descreva a sua ideia'}
               placeholder={t('quickPrompt.placeholder')}
               value={request}
               onChange={(e) => setRequest(e.target.value)}
