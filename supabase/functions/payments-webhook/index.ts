@@ -359,6 +359,12 @@ async function handleTransactionCompleted(data: any, env: PaddleEnv) {
   // so we filter by price external id.
   const { id, customData, items, currencyCode, discount } = data;
   const userId = customData?.userId;
+  // Signed Paddle completion event: flag for human review only, never refund or revoke access.
+  if (typeof id === 'string' && typeof userId === 'string' && UUID_RE.test(userId)) {
+    const { error } = await getSupabase().rpc('flag_suspicious_payment', { _transaction_id: id, _user_id: userId, _environment: env });
+    // Alert errors must not prevent paying customers receiving access.
+    if (error) console.error('fraud alert recording failed', error.message);
+  }
   if (!userId) {
     console.warn('transaction.completed: no userId in customData, skipping');
     return;
@@ -427,7 +433,7 @@ async function handleTransactionPaymentFailed(data: any, env: PaddleEnv) {
     const attemptId = await findAttemptId(data);
     let attempt: any = null;
     if (attemptId) {
-      ({ data: attempt } = await sb.from('checkout_attempts').select('id, user_id, ip_hash').eq('id', attemptId).maybeSingle());
+      ({ data: attempt } = await sb.from('checkout_attempts').select('id, user_id, ip_hash, status').eq('id', attemptId).maybeSingle());
     }
     const cdUser = typeof data?.customData?.userId === 'string' && UUID_RE.test(data.customData.userId) ? data.customData.userId : null;
     const userId: string | null = attempt?.user_id ?? cdUser;
@@ -442,7 +448,12 @@ async function handleTransactionPaymentFailed(data: any, env: PaddleEnv) {
         user_id: userId, attempt_id: attempt?.id ?? null, ip_hash: attempt?.ip_hash ?? null, transaction_id: txnId,
         source: 'webhook', ref, error: [p?.errorCode, p?.status].filter(Boolean).join(' | ').slice(0, 200) || null, environment: env,
       });
-      if (error && error.code !== '23505') console.warn('payment_failures insert failed', error.message);
+      if (error && error.code !== '23505') throw new Error(`payment_failures insert failed: ${error.message}`);
+    }
+    // Paddle events may arrive out of order: a late failure must also flag a completed checkout.
+    if (attempt?.status === 'completed' && txnId) {
+      const { error } = await sb.rpc('flag_suspicious_payment', { _transaction_id: txnId, _user_id: userId, _environment: env });
+      if (error) throw new Error(`fraud alert recording failed: ${error.message}`);
     }
   } catch (e) {
     console.warn('record payment failure failed', e instanceof Error ? e.message : String(e));
