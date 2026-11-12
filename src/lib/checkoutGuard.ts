@@ -3,6 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 /** User-facing PT/EN text for pre-checkout-check rejection reasons. */
 export function checkoutBlockMessage(reason: string | null | undefined, en: boolean): string {
   const map: Record<string, [string, string]> = {
+    buyer_blocked: [
+      "Não foi possível iniciar o pagamento. Contacta o apoio ao cliente.",
+      "Unable to start checkout. Please contact customer support.",
+    ],
     disposable_email: [
       "Emails temporários não são permitidos. Usa um email permanente.",
       "Disposable email addresses are not allowed. Please use a permanent email.",
