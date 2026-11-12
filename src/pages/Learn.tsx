@@ -26,7 +26,7 @@ function LessonCard({ lesson, done, locked, isEnglish }: { lesson: Lesson; done:
               <Badge variant="secondary">{isEnglish ? 'Free' : 'Grátis'}</Badge>
             ) : (
               <Badge variant="outline" className="gap-1 border-primary/40 text-primary">
-                {locked && <Lock className="h-3 w-3" />}Pro
+                {locked && <Lock className="h-3 w-3" />}Packs / Pro
               </Badge>
             )}
             <span className="inline-flex items-center gap-1 text-muted-foreground"><Clock className="h-3 w-3" />{lesson.durationMin} min</span>
@@ -154,15 +154,18 @@ export default function Learn() {
             <Sparkles className="h-6 w-6 text-primary shrink-0" />
             <div className="flex-1">
               <p className="font-semibold text-foreground">
-                {isEnglish ? `Unlock ${lockedCount} more lessons with Pro` : `Desbloqueia mais ${lockedCount} lições com o Pro`}
+                {isEnglish ? `Unlock ${lockedCount} more lessons with Prompt Packs or Pro` : `Desbloqueie mais ${lockedCount} lições com Prompt Packs ou Pro`}
               </p>
               <p className="text-sm text-muted-foreground">
                 {isEnglish
-                  ? 'More Fundamentals, industry cases and advanced techniques, plus unlimited optimisations. 9€/month, cancel anytime.'
-                  : 'Mais Fundamentos, casos por setor e técnicas avançadas, com otimizações ilimitadas. 9€/mês, cancela quando quiseres.'}
+                  ? 'All lessons and premium packs with a one-time purchase, or subscribe to Pro for these contents and additional tools.'
+                  : 'Todas as lições e packs premium numa compra única, ou subscreva o Pro para estes conteúdos e ferramentas adicionais.'}
               </p>
             </div>
-            <Button asChild className="w-full sm:w-auto"><Link to="/pricing">{isEnglish ? 'See Pro' : 'Ver o Pro'}</Link></Button>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button asChild variant="outline"><Link to="/checkout">{isEnglish ? 'Buy Prompt Packs' : 'Comprar Prompt Packs'}</Link></Button>
+              <Button asChild><Link to="/pricing">{isEnglish ? 'See Pro' : 'Ver Pro'}</Link></Button>
+            </div>
           </CardContent>
         </Card>
       )}

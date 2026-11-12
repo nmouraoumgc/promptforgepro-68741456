@@ -398,6 +398,13 @@ export default function Pricing() {
         <p className="text-xs text-muted-foreground text-center">
           {isEnglish ? 'Prompt Packs add content, not Pro tool limits. Unlimited optimizations do not include unlimited AI runs.' : 'Os Prompt Packs acrescentam conteúdos, não limites Pro. Otimizações ilimitadas não incluem execuções de IA ilimitadas.'}
         </p>
+        <section className="grid gap-3 sm:grid-cols-3" aria-label={isEnglish ? 'How the tools work' : 'Como funcionam as ferramentas'}>
+          {[
+            [isEnglish ? 'Generate' : 'Gerar', isEnglish ? 'Turn an idea into a prompt. Example: a restaurant lunch post.' : 'Transformar uma ideia num prompt. Exemplo: uma publicação sobre o almoço de um restaurante.'],
+            [isEnglish ? 'Optimise' : 'Otimizar', isEnglish ? 'Evaluate and improve a prompt. Example: add the audience and tone.' : 'Avaliar e melhorar um prompt. Exemplo: acrescentar o público e o tom.'],
+            [isEnglish ? 'Run' : 'Executar', isEnglish ? 'Ask AI for an answer using the prompt. Example: generate the finished caption.' : 'Pedir à IA uma resposta a partir do prompt. Exemplo: gerar a legenda final.'],
+          ].map(([title, description]) => <div key={title} className="rounded-lg border border-border bg-card p-4"><h3 className="font-semibold">{title}</h3><p className="mt-1 text-sm text-muted-foreground">{description}</p></div>)}
+        </section>
         <details className="rounded-lg border border-border bg-muted/20 p-4" data-testid="pricing-usage-details">
           <summary className="cursor-pointer font-medium text-sm">{isEnglish ? 'How do optimizations and AI runs work?' : 'Como funcionam as otimizações e execuções?'}</summary>
           <div className="mt-3"><UsageLimits /></div>

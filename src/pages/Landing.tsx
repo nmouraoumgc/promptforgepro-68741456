@@ -11,16 +11,16 @@ import { useIsEnglish } from '@/i18n/lang';
 import { Wordmark } from '@/components/brand/Wordmark';
 
 const BEFORE = {
-  pt: 'Escreve um post para o Instagram sobre o meu restaurante.',
+  pt: 'Uma publicação de Instagram para divulgar o almoço de um restaurante.',
   en: 'Write an Instagram post about my restaurant.',
 };
 const AFTER = {
-  pt: `Age como gestor de redes sociais de um restaurante familiar em Lisboa.
+  pt: `Atue como gestor de redes sociais de um restaurante familiar em Lisboa.
 Objetivo: atrair clientes para o almoço de sexta-feira.
 Público: pessoas que trabalham na zona, 25 a 45 anos.
 Tom: próximo e descontraído, sem exageros.
 Formato: legenda com até 80 palavras, 1 pergunta no fim e 3 hashtags locais.
-Evita: promessas de preço e emojis em excesso.`,
+Evite: promessas de preço e emojis em excesso.`,
   en: `Act as the social media manager of a family restaurant in Lisbon.
 Goal: bring in customers for Friday lunch.
 Audience: people who work nearby, aged 25 to 45.
@@ -124,15 +124,19 @@ export default function Landing() {
         </div>
 
         <section className="mx-auto max-w-5xl px-4 pb-16" aria-labelledby="exemplo">
-          <h2 id="exemplo" className="mb-6 text-center text-2xl font-semibold">{L('Antes e depois', 'Before and after')}</h2>
-          <div className="grid gap-4 md:grid-cols-2">
+          <h2 id="exemplo" className="mb-6 text-center text-2xl font-semibold">{L('Da ideia ao resultado', 'From idea to result')}</h2>
+          <div className="grid gap-4 md:grid-cols-3">
             <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-5 text-left">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-destructive">{L('Antes: prompt vago', 'Before: vague prompt')}</p>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-destructive">{L('1. Ideia inicial', '1. Initial idea')}</p>
               <p className="font-mono text-sm">{en ? BEFORE.en : BEFORE.pt}</p>
             </div>
             <div className="rounded-xl border border-success/20 bg-success/5 p-5 text-left">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-success">{L('Depois: prompt estruturado', 'After: structured prompt')}</p>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-success">{L('2. Prompt estruturado', '2. Structured prompt')}</p>
               <p className="whitespace-pre-line font-mono text-sm">{en ? AFTER.en : AFTER.pt}</p>
+            </div>
+            <div className="rounded-xl border border-primary/30 bg-primary/5 p-5 text-left">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-primary">{L('3. Resultado final — exemplo ilustrativo', '3. Final result — illustrative example')}</p>
+              <p className="text-sm">{L('Sexta-feira é dia de uma pausa à mesa. O nosso restaurante familiar espera por si para o almoço. Qual é o seu prato favorito para terminar a semana? #Lisboa #AlmoçoEmLisboa #RestauranteLisboa', 'Friday is a good day to take a break at the table. Our family restaurant welcomes you for lunch. What is your favourite dish to end the week? #Lisbon #LunchInLisbon #LisbonRestaurant')}</p>
             </div>
           </div>
         </section>

@@ -53,7 +53,7 @@ export default function Dashboard() {
   const learnAction = nextLesson
     ? { to: `/learn/${nextLesson.slug}`, desc: nextLesson.title }
     : accessible.length && lockedLeft > 0
-      ? { to: '/pricing', desc: L(`Concluíste as lições grátis. Mais ${lockedLeft} com o Pro.`, `You finished the free lessons. ${lockedLeft} more with Pro.`) }
+      ? { to: '/pricing', desc: L(`Concluíste as lições grátis. Mais ${lockedLeft} com Prompt Packs ou Pro.`, `You finished the free lessons. ${lockedLeft} more with Prompt Packs or Pro.`) }
       : { to: '/learn', desc: accessible.length ? L('Todas concluídas. Revê quando quiseres.', 'All done. Review any time.') : L('Lições curtas e práticas', 'Short, practical lessons') };
 
   const actions = [
