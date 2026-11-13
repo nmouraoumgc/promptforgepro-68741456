@@ -23,6 +23,7 @@ function withPostHog(fn: (p: PostHog) => void) {
 
 export function initAnalytics() {
   if (started || typeof window === 'undefined') return;
+  return; // QA visual-only: disable all analytics transmission.
   started = true;
   const load = () => import('posthog-js').then(({ default: posthog }) => {
     try {
