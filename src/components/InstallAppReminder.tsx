@@ -34,11 +34,14 @@ export function InstallAppReminder() {
     const onInstalled = () => { setVisible(false); setDeferredPrompt(null); };
     window.addEventListener('beforeinstallprompt', onPrompt);
     window.addEventListener('appinstalled', onInstalled);
-    const timer = window.setTimeout(() => {
+    let timer: number;
+    const showWhenAvailable = () => {
+      if (document.querySelector('[data-testid="visitor-campaign"]')) { timer = window.setTimeout(showWhenAvailable, 1000); return; }
       let dismissedUntil = 0;
       try { dismissedUntil = Number(localStorage.getItem(STORAGE_KEY) || 0); } catch { /* storage unavailable */ }
       if (!isInstalled() && Date.now() >= dismissedUntil) setVisible(true);
-    }, 12000);
+    };
+    timer = window.setTimeout(showWhenAvailable, 12000);
     return () => {
       window.clearTimeout(timer);
       window.removeEventListener('beforeinstallprompt', onPrompt);
