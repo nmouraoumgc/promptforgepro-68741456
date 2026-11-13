@@ -1,4 +1,5 @@
 import { UsageLimits } from '@/components/UsageLimits';
+import { VisitorCampaign } from '@/components/marketing/VisitorCampaign';
 // Public landing page for logged-out visitors at "/". Signed-in users are sent to the app (/app) by Home.
 // Kept free of heavy dependencies (no animation library) so it paints fast on mobile.
 import { useEffect } from 'react';
@@ -87,6 +88,7 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <VisitorCampaign />
       <header className="border-b border-border">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-2 px-3 sm:px-4">
           <Link to="/" className="flex items-center gap-2" aria-label="PromptForge Pro">
