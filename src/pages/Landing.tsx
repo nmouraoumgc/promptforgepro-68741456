@@ -208,6 +208,7 @@ export default function Landing() {
       <footer className="border-t border-border py-6">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-6 gap-y-2 px-4 text-xs text-muted-foreground">
           <span>© {new Date().getFullYear()} PromptForge Pro</span>
+                <a href="https://www.saashub.com/promptforgepro-me?utm_source=badge&utm_campaign=badge&utm_content=promptforgepro-me&badge_variant=dark&badge_kind=approved" target="_blank" rel="noopener noreferrer" aria-label="PromptForge Pro on SaaSHub (opens in a new tab)"><img src="https://cdn-b.saashub.com/img/badges/approved-dark.png?v=1" alt="SaaSHub approved" style={{ maxWidth: '150px', height: 'auto' }} loading="lazy" /></a>
           <Link to="/pricing" className="hover:text-foreground">{L('Preços', 'Pricing')}</Link>
           <Link to="/learn" className="hover:text-foreground">{L('Aprender', 'Learn')}</Link>
           <Link to="/terms" className="hover:text-foreground">{L('Termos e Condições', 'Terms and Conditions')}</Link>
