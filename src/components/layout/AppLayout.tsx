@@ -27,6 +27,7 @@ export function AppLayout() {
             <footer className="border-t border-border mt-12 py-6 px-6">
               <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-muted-foreground">
                 <span>© {new Date().getFullYear()} PromptForge Pro</span>
+                <a href="https://www.saashub.com/promptforgepro-me?utm_source=badge&utm_campaign=badge&utm_content=promptforgepro-me&badge_variant=dark&badge_kind=approved" target="_blank" rel="noopener noreferrer" aria-label="PromptForge Pro on SaaSHub (opens in a new tab)"><img src="https://cdn-b.saashub.com/img/badges/approved-dark.png?v=1" alt="SaaSHub approved" style={{ maxWidth: '150px', height: 'auto' }} loading="lazy" /></a>
                 <Link to="/terms" className="hover:text-foreground transition-colors">{isEnglish ? 'Terms & Conditions' : 'Termos & Condições'}</Link>
                 <Link to="/refunds" className="hover:text-foreground transition-colors">{isEnglish ? 'Refunds' : 'Reembolsos'}</Link>
                 <Link to="/privacy" className="hover:text-foreground transition-colors">{isEnglish ? 'Privacy' : 'Privacidade'}</Link>
