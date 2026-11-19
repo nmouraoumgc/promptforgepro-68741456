@@ -3,6 +3,9 @@ import { useIsEnglish } from "@/i18n/lang";
 
 const SELLER = "Prompt Forge Pro";
 const SUPPORT_EMAIL = "geral@promptforgepro.me";
+const LEGAL_NAME = "Nuno Mourão";
+const LEGAL_NIF = "227550293";
+const LEGAL_ADDRESS = "Rua do Cabo 6, 2755-669 Cascais, Portugal";
 
 function TermsPt() {
   return (
@@ -12,15 +15,16 @@ function TermsPt() {
           ← Voltar
         </Link>
         <h1 className="text-3xl md:text-4xl font-bold mt-4 mb-2">Termos & Condições</h1>
-        <p className="text-sm text-muted-foreground mb-8">Última atualização: 30 de abril de 2026</p>
+        <p className="text-sm text-muted-foreground mb-8">Última atualização: 19 de novembro de 2026</p>
 
         <div className="prose prose-invert max-w-none space-y-6 text-foreground/90 leading-relaxed">
           <section>
             <h2 className="text-xl font-semibold mb-2">1. Quem somos</h2>
             <p>
               Estes Termos & Condições regem o uso do serviço {SELLER} ("nós", "nosso", o "Serviço"),
-              acessível em promptforgepro.me. Ao usar o Serviço, está a celebrar um contrato com {SELLER}.
+              acessível em promptforgepro.me. O Serviço é disponibilizado por {LEGAL_NAME}, pessoa singular, sob a designação comercial {SELLER}. Ao utilizar o Serviço, está a celebrar um contrato com {LEGAL_NAME}.
             </p>
+            <p className="mt-2">Identificação do prestador: {LEGAL_NAME} · NIF: {LEGAL_NIF} · Morada: {LEGAL_ADDRESS} · Contacto: <a className="text-primary underline" href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>.</p>
           </section>
 
           <section>
@@ -186,13 +190,14 @@ function TermsEn() {
           ← Back
         </Link>
         <h1 className="text-3xl md:text-4xl font-bold mt-4 mb-2">Terms & Conditions</h1>
-        <p className="text-sm text-muted-foreground mb-8">Last updated: April 30, 2026</p>
+        <p className="text-sm text-muted-foreground mb-8">Last updated: November 19, 2026</p>
         <div className="prose prose-invert max-w-none space-y-6 text-foreground/90 leading-relaxed">
           <section>
             <h2 className="text-xl font-semibold mb-2">1. Who we are</h2>
             <p>
-              These Terms & Conditions govern the use of the {SELLER} service ("we", "our", the "Service"), available at promptforgepro.me. By using the Service, you are entering into an agreement with {SELLER}.
+              These Terms & Conditions govern the use of the {SELLER} service ("we", "our", the "Service"), available at promptforgepro.me. The Service is operated by {LEGAL_NAME}, an individual trading as {SELLER}. By using the Service, you are entering into an agreement with {LEGAL_NAME}.
             </p>
+            <p className="mt-2">Service provider: {LEGAL_NAME} · Portuguese tax identification number (NIF): {LEGAL_NIF} · Business address: {LEGAL_ADDRESS} · Contact: <a className="text-primary underline" href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>.</p>
           </section>
           <section>
             <h2 className="text-xl font-semibold mb-2">2. Acceptance of the terms</h2>
