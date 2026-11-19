@@ -5,7 +5,7 @@
   "outputDirectory": "dist",
   "redirects": [
     {
-      "source": "/((?!maintenance\\.(?:html|js)$|api/|assets/|favicon\\.ico$|robots\\.txt$|sw\\.js$|manifest\\.webmanifest$|version\\.json$).*)",
+      "source": "/((?!maintenance\\.(?:html|js)$|api/|assets/|favicon\\.(?:ico|svg)$|robots\\.txt$|sw\\.js$|manifest\\.webmanifest$|version\\.json$).*)",
       "destination": "/maintenance.html",
       "statusCode": 307
     },
