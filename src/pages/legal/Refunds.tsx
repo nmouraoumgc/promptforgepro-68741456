@@ -12,7 +12,7 @@ function RefundsPt() {
           ← Voltar
         </Link>
         <h1 className="text-3xl md:text-4xl font-bold mt-4 mb-2">Política de Reembolsos</h1>
-        <p className="text-sm text-muted-foreground mb-8">Última atualização: 30 de abril de 2026</p>
+        <p className="text-sm text-muted-foreground mb-8">Última atualização: 19 de novembro de 2026</p>
 
         <div className="space-y-6 text-foreground/90 leading-relaxed">
           <section>
@@ -27,28 +27,19 @@ function RefundsPt() {
           <section>
             <h2 className="text-xl font-semibold mb-2">Como pedir reembolso</h2>
             <p>
-              Os reembolsos são processados pelo nosso parceiro de pagamentos, a <strong>Paddle</strong>,
-              que é o Merchant of Record das nossas vendas. Para pedir um reembolso:
+              Para solicitar um reembolso, envia um email para{" "}
+              <a className="text-primary underline" href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>{" "}
+              com o email utilizado na compra, a data da encomenda e, se disponível, o número da encomenda.
+              Confirmaremos a receção do pedido e indicaremos os passos seguintes.
             </p>
-            <ol className="list-decimal pl-6 space-y-1 mt-2">
-              <li>
-                Acede a{" "}
-                <a
-                  href="https://paddle.net"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary underline"
-                >
-                  paddle.net
-                </a>{" "}
-                e introduz o email usado na compra para gerir a tua encomenda; ou
-              </li>
-              <li>
-                Contacta-nos por email em{" "}
-                <a className="text-primary underline" href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>{" "}
-                com o teu número de encomenda e indicaremos os próximos passos.
-              </li>
-            </ol>
+            <p className="mt-2">
+              Para compras anteriormente processadas pela Paddle, o reembolso poderá ter de ser
+              concluído por essa entidade, enquanto comerciante registado da transação original.
+              Podes também consultar{" "}
+              <a href="https://paddle.net" target="_blank" rel="noopener noreferrer" className="text-primary underline">paddle.net</a>{" "}
+              para obter apoio relativo a essas compras. Ajudaremos a encaminhar o pedido, sem garantir
+              acesso direto ao processamento de pagamentos efetuados por terceiros.
+            </p>
           </section>
 
           <section>
@@ -64,8 +55,10 @@ function RefundsPt() {
           <section>
             <h2 className="text-xl font-semibold mb-2">Processamento</h2>
             <p>
-              Após aprovação, o reembolso é creditado no método de pagamento original. O tempo de
-              processamento depende da Paddle e da tua instituição financeira (tipicamente 5–10 dias úteis).
+              Após aprovação, o reembolso será efetuado, sempre que possível, através do método de
+              pagamento original, pela entidade responsável pela transação. O prazo para o crédito
+              depende do processador de pagamentos e da instituição financeira. Informaremos o cliente
+              sobre o estado do pedido e eventuais passos adicionais.
             </p>
           </section>
 
@@ -90,7 +83,7 @@ function RefundsEn() {
           ← Back
         </Link>
         <h1 className="text-3xl md:text-4xl font-bold mt-4 mb-2">Refund Policy</h1>
-        <p className="text-sm text-muted-foreground mb-8">Last updated: April 30, 2026</p>
+        <p className="text-sm text-muted-foreground mb-8">Last updated: November 19, 2026</p>
         <div className="space-y-6 text-foreground/90 leading-relaxed">
           <section>
             <h2 className="text-xl font-semibold mb-2">30-day guarantee</h2>
@@ -101,19 +94,18 @@ function RefundsEn() {
           <section>
             <h2 className="text-xl font-semibold mb-2">How to request a refund</h2>
             <p>
-              Refunds are processed by our payment partner, <strong>Paddle</strong>, which is the Merchant of Record for our sales. To request a refund:
+              To request a refund, email{" "}
+              <a className="text-primary underline" href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>{" "}
+              with the email address used for the purchase, the order date and, if available, the order number.
+              We will acknowledge your request and explain the next steps.
             </p>
-            <ol className="list-decimal pl-6 space-y-1 mt-2">
-              <li>
-                Go to{" "}
-                <a href="https://paddle.net" target="_blank" rel="noopener noreferrer" className="text-primary underline">paddle.net</a>{" "}
-                and enter the email used for the purchase to manage your order; or
-              </li>
-              <li>
-                Email us at{" "}<a className="text-primary underline" href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>{" "}
-                with your order number and we will tell you the next steps.
-              </li>
-            </ol>
+            <p className="mt-2">
+              For purchases previously processed by Paddle, refunds may need to be completed by Paddle
+              as the merchant of record for the original transaction. You can also visit{" "}
+              <a href="https://paddle.net" target="_blank" rel="noopener noreferrer" className="text-primary underline">paddle.net</a>{" "}
+              for support with those purchases. We will help direct your request but cannot guarantee
+              direct access to refunds for payments handled by third parties.
+            </p>
           </section>
           <section>
             <h2 className="text-xl font-semibold mb-2">Subscriptions</h2>
@@ -124,7 +116,10 @@ function RefundsEn() {
           <section>
             <h2 className="text-xl font-semibold mb-2">Processing</h2>
             <p>
-              Once approved, the refund is credited to the original payment method. Processing time depends on Paddle and your financial institution (typically 5–10 business days).
+              Once approved, refunds will be issued to the original payment method where possible
+              by the entity responsible for the transaction. The time taken for funds to appear
+              depends on the payment processor and financial institution. We will provide updates
+              on your request and any additional steps required.
             </p>
           </section>
           <section>
