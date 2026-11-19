@@ -93,24 +93,30 @@ function TermsPt() {
           <section>
             <h2 className="text-xl font-semibold mb-2">8. Pagamentos e subscrições</h2>
             <p>
-              O processamento das encomendas é feito pelo nosso revendedor online Paddle.com. A
-              Paddle.com é o Merchant of Record (Comerciante Registado) de todas as nossas encomendas.
-              A Paddle trata de todas as questões de apoio ao cliente relacionadas com pagamentos e
-              gere as devoluções.
+              Os preços, a periodicidade de faturação, a eventual duração de períodos experimentais
+              e as condições de renovação são apresentados antes da confirmação de cada compra.
+              As subscrições com renovação automática são cobradas de acordo com as condições
+              aceites no momento da contratação, enquanto o respetivo processamento de pagamentos
+              estiver disponível.
             </p>
             <p>
-              Os termos de pagamento, faturação, impostos, renovação automática, cancelamento e reembolso
-              regem-se pelos{" "}
-              <a
-                href="https://www.paddle.com/legal/checkout-buyer-terms"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary underline"
-              >
+              As compras anteriormente realizadas através da Paddle foram processadas por essa
+              entidade na qualidade de comerciante registado (Merchant of Record).
+              Os direitos e condições aplicáveis a essas transações mantêm-se sujeitos aos
+              termos aceites na data da compra, incluindo, quando aplicável, os{" "}
+              <a href="https://www.paddle.com/legal/checkout-buyer-terms" target="_blank" rel="noopener noreferrer" className="text-primary underline">
                 Termos de Comprador da Paddle
-              </a>
-              . Consulta ainda a nossa{" "}
+              </a>.
+              Esta referência histórica não significa que a Paddle esteja disponível para
+              processar novas compras.
+            </p>
+            <p>
+              Para questões de faturação, renovação ou cancelamento, contacta{" "}
+              <a className="text-primary underline" href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>.
+              Para pedidos de reembolso, consulta a nossa{" "}
               <Link to="/refunds" className="text-primary underline">Política de Reembolsos</Link>.
+              Se o processamento de novos pagamentos estiver indisponível, não será possível
+              concluir novas compras até ser disponibilizado um método de pagamento válido.
             </p>
           </section>
 
@@ -245,22 +251,27 @@ function TermsEn() {
           <section>
             <h2 className="text-xl font-semibold mb-2">8. Payments and subscriptions</h2>
             <p>
-              Our order process is conducted by our online reseller Paddle.com. Paddle.com is the
-              Merchant of Record for all our orders. Paddle provides all customer service inquiries
-              related to payments and handles returns.
+              Prices, billing frequency, any trial period and renewal terms are displayed before
+              each purchase is confirmed. Automatically renewing subscriptions are billed under
+              the terms accepted at checkout while the relevant payment processing remains available.
             </p>
             <p>
-              Payment, billing, taxes, automatic renewal, cancellation and refund terms are governed by the{" "}
-              <a
-                href="https://www.paddle.com/legal/checkout-buyer-terms"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary underline"
-              >
+              Purchases previously made through Paddle were processed by Paddle as the Merchant
+              of Record. The rights and conditions applicable to those transactions remain
+              subject to the terms accepted at the time of purchase, including, where applicable,
+              the{" "}
+              <a href="https://www.paddle.com/legal/checkout-buyer-terms" target="_blank" rel="noopener noreferrer" className="text-primary underline">
                 Paddle Buyer Terms
-              </a>
-              . Please also see our{" "}
+              </a>.
+              This historical reference does not mean Paddle is available to process new purchases.
+            </p>
+            <p>
+              For billing, renewal or cancellation enquiries, email{" "}
+              <a className="text-primary underline" href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>.
+              For refund requests, please see our{" "}
               <Link to="/refunds" className="text-primary underline">Refund Policy</Link>.
+              If new payment processing is unavailable, new purchases cannot be completed until
+              a valid payment method is offered.
             </p>
           </section>
           <section>
