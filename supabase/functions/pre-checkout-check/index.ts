@@ -1,3 +1,7 @@
+// P0 billing freeze (2026-11-19): fail closed before any Paddle API call.
+// Existing signed webhooks and customer-portal remain operational.
+const NEW_PURCHASES_ENABLED = false;
+
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { gatewayFetch, resolvePriceId, type PaddleEnv } from '../_shared/paddle.ts';
 
@@ -72,6 +76,13 @@ async function paddleJson(env: PaddleEnv, path: string, init?: RequestInit) {
 }
 
 Deno.serve(async (req) => {
+  if (!NEW_PURCHASES_ENABLED) {
+    return new Response(JSON.stringify({ allowed: false, error: 'PAYMENTS_TEMPORARILY_UNAVAILABLE', reason: 'maintenance' }), {
+      status: 503,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+    });
+  }
+
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
