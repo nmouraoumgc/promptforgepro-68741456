@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/lib/sonner-toast';
+import { AdminFraudControls } from './AdminFraudControls';
 
 type DiscountFlag = {
   id: string;
@@ -104,6 +105,7 @@ export function AdminFraudFlags({ isEnglish }: { isEnglish: boolean }) {
 
   return (
     <div className="space-y-6">
+      <AdminFraudControls isEnglish={isEnglish} />
       <Card>
         <CardHeader className="flex flex-row items-start justify-between gap-4">
           <div>

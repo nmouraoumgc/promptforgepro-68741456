@@ -142,6 +142,13 @@ Deno.serve(async (req) => {
       return json({ allowed: false, reason });
     };
 
+    // Only server-verified account data is used; never accept a buyer identifier from the browser.
+    const { data: buyerBlocked, error: buyerCheckError } = await admin.rpc('is_checkout_buyer_blocked', {
+      _email: email, _user_id: userId, _environment: environment,
+    });
+    if (buyerCheckError) return json({ allowed: false, reason: 'checkout_unavailable' }, 503);
+    if (buyerBlocked) return await block('buyer_blocked');
+
     // 1. Disposable email check (maintained DB blocklist, fallback to a small static list)
     const { data: disp, error: dispErr } = await admin.rpc('is_disposable_email', { _email: email });
     const domain = email.split('@')[1]?.toLowerCase().trim();
