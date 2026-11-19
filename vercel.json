@@ -5,6 +5,11 @@
   "outputDirectory": "dist",
   "redirects": [
     {
+      "source": "/((?!maintenance\\.html$|api/|assets/|favicon\\.ico$|robots\\.txt$|sw\\.js$|manifest\\.webmanifest$|version\\.json$).*)",
+      "destination": "/maintenance.html",
+      "statusCode": 307
+    },
+    {
       "source": "/planos",
       "destination": "/pricing",
       "permanent": true
