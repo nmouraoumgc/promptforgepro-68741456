@@ -1,7 +1,10 @@
 import { Link } from "react-router-dom";
 import { useIsEnglish } from "@/i18n/lang";
 
-const SELLER = "Prompt Forge Pro";
+const SELLER = "PromptForge Pro";
+const CONTROLLER = "Nuno Mourão";
+const CONTROLLER_NIF = "227550293";
+const CONTROLLER_ADDRESS = "Rua do Cabo 6, 2755-669 Cascais, Portugal";
 const SUPPORT_EMAIL = "geral@promptforgepro.me";
 
 function PrivacyPt() {
@@ -12,14 +15,15 @@ function PrivacyPt() {
           ← Voltar
         </Link>
         <h1 className="text-3xl md:text-4xl font-bold mt-4 mb-2">Política de Privacidade</h1>
-        <p className="text-sm text-muted-foreground mb-8">Última atualização: 30 de abril de 2026</p>
+        <p className="text-sm text-muted-foreground mb-8">Última atualização: 19 de novembro de 2026</p>
 
         <div className="space-y-6 text-foreground/90 leading-relaxed">
           <section>
             <h2 className="text-xl font-semibold mb-2">1. Quem somos</h2>
             <p>
-              {SELLER} ("nós") é responsável pelo tratamento dos teus dados pessoais ("controller") quando
-              utilizas o nosso serviço em promptforgepro.me. Para questões de privacidade contacta:{" "}
+              {SELLER} é o nome comercial do serviço disponibilizado em promptforgepro.me. O responsável pelo tratamento dos dados pessoais é{" "}
+              <strong>{CONTROLLER}</strong>, NIF {CONTROLLER_NIF}, com morada em {CONTROLLER_ADDRESS}, nos termos do RGPD.
+              Para questões de privacidade ou exercício dos teus direitos, contacta:{" "}
               <a className="text-primary underline" href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>.
             </p>
           </section>
@@ -32,7 +36,7 @@ function PrivacyPt() {
               <li><strong>Dados de utilização:</strong> ações no produto, métricas de qualidade dos prompts, telemetria de funcionalidade.</li>
               <li><strong>Dados técnicos:</strong> endereço IP, identificadores de dispositivo, navegador, logs de acesso.</li>
               <li><strong>Comunicações:</strong> mensagens enviadas ao apoio ao cliente.</li>
-              <li><strong>Dados de pagamento:</strong> tratados diretamente pela Paddle (não armazenamos dados de cartão).</li>
+              <li><strong>Dados de pagamento e faturação:</strong> dados de transações, subscrições, estado de pagamento e informações de faturação necessárias à gestão do serviço. As compras históricas processadas pela Paddle seguem o tratamento aplicável a essas transações; eventuais compras futuras poderão ser processadas por outro fornecedor, identificado no momento da compra. Não armazenamos números completos de cartões nem códigos de segurança.</li>
             </ul>
           </section>
 
@@ -53,7 +57,8 @@ function PrivacyPt() {
             <h2 className="text-xl font-semibold mb-2">4. Partilha de dados</h2>
             <p>Partilhamos dados, na medida do necessário, com:</p>
             <ul className="list-disc pl-6 space-y-1">
-              <li><strong>Paddle</strong>: Merchant of Record, para processar pagamentos, subscrições, faturação, impostos e cumprimento legal.</li>
+              <li><strong>Paddle (transações históricas):</strong> atuou como Merchant of Record nas compras anteriormente realizadas através da Paddle, tratando os dados necessários a pagamentos, subscrições, faturação, impostos, reembolsos e obrigações legais dessas transações, de acordo com as suas próprias responsabilidades e política de privacidade. Esta referência não significa que a Paddle processe novas compras.</li>
+              <li><strong>Futuros fornecedores de pagamentos:</strong> caso seja disponibilizado um novo método de pagamento, os dados estritamente necessários poderão ser partilhados com o fornecedor indicado no checkout, de acordo com a sua função e política de privacidade. Não identificamos antecipadamente um fornecedor ainda não confirmado.</li>
               <li><strong>Subprocessadores de infraestrutura</strong>: alojamento (Supabase), envio de emails transacionais, análise e monitorização.</li>
               <li><strong>Fornecedores de IA</strong>: modelos de IA generativa (incluindo OpenAI/Google) para processar os teus prompts e devolver outputs. Estes fornecedores tratam os dados como subprocessadores nossos.</li>
               <li><strong>Consultores profissionais</strong>: jurídicos e contabilísticos quando necessário.</li>
@@ -137,12 +142,14 @@ function PrivacyEn() {
           ← Back
         </Link>
         <h1 className="text-3xl md:text-4xl font-bold mt-4 mb-2">Privacy Policy</h1>
-        <p className="text-sm text-muted-foreground mb-8">Last updated: April 30, 2026</p>
+        <p className="text-sm text-muted-foreground mb-8">Last updated: November 19, 2026</p>
         <div className="space-y-6 text-foreground/90 leading-relaxed">
           <section>
             <h2 className="text-xl font-semibold mb-2">1. Who we are</h2>
             <p>
-              {SELLER} ("we") is the controller of your personal data when you use our service at promptforgepro.me. For privacy questions, contact:{" "}
+              {SELLER} is the trading name of the service available at promptforgepro.me. The data controller under the GDPR is{" "}
+              <strong>{CONTROLLER}</strong>, Portuguese tax identification number (NIF) {CONTROLLER_NIF}, at {CONTROLLER_ADDRESS}.
+              For privacy enquiries or to exercise your rights, contact:{" "}
               <a className="text-primary underline" href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>.
             </p>
           </section>
@@ -154,7 +161,7 @@ function PrivacyEn() {
               <li><strong>Usage data:</strong> in-product actions, prompt quality metrics, feature telemetry.</li>
               <li><strong>Technical data:</strong> IP address, device identifiers, browser, access logs.</li>
               <li><strong>Communications:</strong> messages sent to customer support.</li>
-              <li><strong>Payment data:</strong> handled directly by Paddle (we do not store card data).</li>
+              <li><strong>Payment and billing data:</strong> transaction, subscription and payment-status information, and billing details needed to administer the service. Historical purchases processed by Paddle remain subject to the arrangements applicable to those transactions; any future purchases may be handled by another provider, identified at checkout. We do not store full card numbers or card security codes.</li>
             </ul>
           </section>
           <section>
@@ -173,7 +180,8 @@ function PrivacyEn() {
             <h2 className="text-xl font-semibold mb-2">4. Data sharing</h2>
             <p>We share data, to the extent necessary, with:</p>
             <ul className="list-disc pl-6 space-y-1">
-              <li><strong>Paddle</strong>: Merchant of Record, to process payments, subscriptions, invoicing, taxes and legal compliance.</li>
+              <li><strong>Paddle (historical transactions):</strong> acted as Merchant of Record for purchases previously made through Paddle, processing data needed for payments, subscriptions, invoices, taxes, refunds and legal obligations relating to those transactions, under its own responsibilities and privacy policy. This does not mean Paddle processes new purchases.</li>
+              <li><strong>Future payment providers:</strong> if a new payment method becomes available, only the data necessary for processing may be shared with the provider identified at checkout, according to its role and privacy policy. No unconfirmed provider is represented here as active.</li>
               <li><strong>Infrastructure sub-processors</strong>: hosting (Supabase), transactional email delivery, analytics and monitoring.</li>
               <li><strong>AI providers</strong>: generative AI models (including OpenAI/Google) to process your prompts and return outputs. These providers process data as our sub-processors.</li>
               <li><strong>Professional advisers</strong>: legal and accounting, when necessary.</li>
