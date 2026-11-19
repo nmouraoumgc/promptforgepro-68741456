@@ -1,3 +1,7 @@
+// P0 billing freeze (2026-11-19): fail closed before any Paddle API call.
+// Existing signed webhooks and customer-portal remain operational.
+const NEW_PURCHASES_ENABLED = false;
+
 import { gatewayFetch, resolvePriceId, type PaddleEnv } from '../_shared/paddle.ts';
 
 const corsHeaders = {
@@ -22,6 +26,13 @@ async function resolvePaddleDiscount(discountCode: string, environment: PaddleEn
 }
 
 Deno.serve(async (req) => {
+  if (!NEW_PURCHASES_ENABLED) {
+    return new Response(JSON.stringify({ allowed: false, error: 'PAYMENTS_TEMPORARILY_UNAVAILABLE', reason: 'maintenance' }), {
+      status: 503,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+    });
+  }
+
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
