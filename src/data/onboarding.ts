@@ -60,14 +60,16 @@ export function useOnboarding(derived: OnboardingStep[]) {
         remoteDone = data?.completed_steps || [];
         remoteDismissed = !!data?.dismissed;
       }
-      const merged = uniq([...local, ...remoteDone, ...derived]);
+      // Authenticated progress is server-authoritative. Never upload stale local
+      // progress on login; that resurrects completed steps after a reset.
+      const merged = userId ? uniq([...remoteDone, ...derived]) : uniq([...local, ...derived]);
       const isDismissed = userId ? remoteDismissed : readLocalDismissed(userId);
       if (cancelled) return;
       localStorage.setItem(scopedKey(DONE_KEY, userId), JSON.stringify(merged));
       setDone(merged);
       setDismissed(isDismissed);
       setReady(true);
-      if (userId && merged.some((s) => !remoteDone.includes(s))) saveRemote({ completed_steps: merged }).catch(() => {});
+      // Persist only explicit user actions via markOnboardingStep, not hydration.
     };
     sync().catch(() => setReady(true));
     const onChange = () => setDone(readLocalDone(userId));
