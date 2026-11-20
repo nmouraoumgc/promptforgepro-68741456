@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { usePromptStore } from '@/stores/promptStore';
+import { useAuthStore } from '@/stores/authStore';
 import { usePlanStore } from '@/stores/planStore';
 import { useIsEnglish } from '@/i18n/lang';
 import { FIRST_LESSON_SLUG, useLessonProgress, useLessons } from '@/data/learnDb';
@@ -31,7 +32,11 @@ const STEPS: Record<OnboardingStep, StepDef> = {
 
 export default function OnboardingChecklist() {
   const isEnglish = useIsEnglish();
-  const { prompts } = usePromptStore();
+  const { prompts, syncUserId, libraryStatus } = usePromptStore();
+  const userId = useAuthStore((s) => s.user?.id ?? null);
+  // Do not count prompts left in the browser by another account while the
+  // authenticated user's library is still loading.
+  const ownLibraryReady = !userId || (syncUserId === userId && libraryStatus === 'ready');
   const canCompare = usePlanStore((s) => s.canAccess('canAccessABTesting'));
   const { lessons } = useLessons(isEnglish);
   const { done: lessonsDone } = useLessonProgress(lessons);
@@ -39,8 +44,8 @@ export default function OnboardingChecklist() {
 
   const derived: OnboardingStep[] = [];
   if (first && lessonsDone.has(first.id)) derived.push('learn');
-  if (prompts.length > 0) derived.push('create');
-  if (prompts.some((p) => p.isFavorite)) derived.push('favorite');
+  if (ownLibraryReady && prompts.length > 0) derived.push('create');
+  if (ownLibraryReady && prompts.some((p) => p.isFavorite)) derived.push('favorite');
   const { done, dismissed, dismiss, ready } = useOnboarding(derived);
 
   const steps = (['learn', 'create', 'optimize', canCompare ? 'compare' : 'favorite'] as OnboardingStep[]).map((id) => STEPS[id]);
