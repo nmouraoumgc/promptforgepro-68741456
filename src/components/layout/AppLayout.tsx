@@ -31,6 +31,7 @@ export function AppLayout() {
                 <Link to="/terms" className="hover:text-foreground transition-colors">{isEnglish ? 'Terms & Conditions' : 'Termos & Condições'}</Link>
                 <Link to="/refunds" className="hover:text-foreground transition-colors">{isEnglish ? 'Refunds' : 'Reembolsos'}</Link>
                 <Link to="/privacy" className="hover:text-foreground transition-colors">{isEnglish ? 'Privacy' : 'Privacidade'}</Link>
+                <a href="mailto:geral@promptforgepro.me" className="hover:text-foreground transition-colors" aria-label={isEnglish ? "Email customer support" : "Email de apoio ao cliente"}>{isEnglish ? "Support: " : "Apoio: "}geral@promptforgepro.me</a>
               </div>
             </footer>
           </main>
