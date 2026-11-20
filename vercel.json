@@ -5,18 +5,13 @@
   "outputDirectory": "dist",
   "redirects": [
     {
-      "source": "/",
-      "destination": "/maintenance.html",
+      "source": "/checkout",
+      "destination": "/pricing",
       "statusCode": 307
     },
     {
-      "source": "/index.html",
-      "destination": "/maintenance.html",
-      "statusCode": 307
-    },
-    {
-      "source": "/((?!(?:terms|privacy|refunds)(?:/|/index\\.html)?$|maintenance\\.(?:html|js)$|api/|assets/|favicon\\.(?:ico|svg)$|robots\\.txt$|sw\\.js$|manifest\\.webmanifest$|version\\.json$).*)",
-      "destination": "/maintenance.html",
+      "source": "/checkout/",
+      "destination": "/pricing",
       "statusCode": 307
     },
     {

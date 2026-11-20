@@ -1,4 +1,5 @@
 import { UsageLimits } from '@/components/UsageLimits';
+import { PaymentReopeningNotice } from '@/components/payments/PaymentReopeningNotice';
 import { useEffect, useState } from 'react';
 import { Check, Sparkles, Zap, Lightbulb, Loader2, Ticket, X } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -39,6 +40,7 @@ const searchParamsInit = () => {
 };
 
 // Pro prices (EUR). Annual = 10 x monthly (2 months free).
+const PAID_CHECKOUT_ENABLED = false; // Explicit maintenance safeguard.
 const PRO_MONTHLY_PRICE = 9;
 const PRO_ANNUAL_PRICE = 90;
 
@@ -79,7 +81,7 @@ export default function Pricing() {
   };
   const [autoOpened, setAutoOpened] = useState(false);
   useEffect(() => {
-    if (!urlCode || autoOpened || authLoading || !user || currentPlan === 'pro') return;
+    if (!PAID_CHECKOUT_ENABLED || !urlCode || autoOpened || authLoading || !user || currentPlan === 'pro') return;
     setAutoOpened(true);
     setProPromoInput(urlCode);
     setShowProPromoDialog(true);
@@ -129,6 +131,7 @@ export default function Pricing() {
   const ownsPacksProduct = currentPlan === 'packs' || currentPlan === 'premium';
 
   const handleSelectPlan = async (planId: PlanType) => {
+    if (planId !== 'free') return; // Paid checkout suspended during payment maintenance.
     if (planId === 'packs' || planId === 'premium') {
       navigate('/checkout');
       return;
@@ -469,7 +472,7 @@ export default function Pricing() {
                 <Button
                   className={`w-full ${plan.highlight ? 'shadow-md' : ''}`}
                   variant={plan.highlight ? 'default' : 'outline'}
-                  disabled={isActive || includedInPro}
+                  disabled={isActive || includedInPro || plan.id !== 'free'}
                   onClick={() => handleSelectPlan(plan.id)}
                 >
                   {includedInPro ? (
@@ -495,6 +498,7 @@ export default function Pricing() {
         })}
       </div>
 
+      <div className="max-w-2xl mx-auto mt-8" data-testid="payment-reopening-notice"><PaymentReopeningNotice /></div>
       <footer className="text-center mt-12 md:mt-16 max-w-lg mx-auto">
         <p className="text-sm text-muted-foreground leading-relaxed">
           {isEnglish
