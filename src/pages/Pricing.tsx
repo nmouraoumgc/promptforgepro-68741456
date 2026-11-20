@@ -1,5 +1,6 @@
 import { UsageLimits } from '@/components/UsageLimits';
 import { PaymentReopeningNotice } from '@/components/payments/PaymentReopeningNotice';
+import { ProductHuntProReservation } from '@/components/payments/ProductHuntProReservation';
 import { useEffect, useState } from 'react';
 import { Check, Sparkles, Zap, Lightbulb, Loader2, Ticket, X } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -499,6 +500,7 @@ export default function Pricing() {
       </div>
 
       <div className="max-w-2xl mx-auto mt-8" data-testid="payment-reopening-notice"><PaymentReopeningNotice /></div>
+      <div className="max-w-2xl mx-auto mt-4"><ProductHuntProReservation billing={billing} /></div>
       <footer className="text-center mt-12 md:mt-16 max-w-lg mx-auto">
         <p className="text-sm text-muted-foreground leading-relaxed">
           {isEnglish
