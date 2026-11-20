@@ -1,6 +1,6 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 const allowed = new Set(['https://promptforgepro.me','https://www.promptforgepro.me']);
-const headers = (origin:string) => ({'Content-Type':'application/json','Access-Control-Allow-Origin':origin,'Access-Control-Allow-Methods':'POST, OPTIONS','Access-Control-Allow-Headers':'authorization, apikey, content-type','Vary':'Origin','Cache-Control':'no-store'});
+const headers = (origin:string) => ({'Content-Type':'application/json','Access-Control-Allow-Origin':origin,'Access-Control-Allow-Methods':'POST, OPTIONS','Access-Control-Allow-Headers':'authorization, apikey, content-type, x-client-info, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version','Vary':'Origin','Cache-Control':'no-store'});
 const respond=(status:number,body:object,origin:string)=>new Response(JSON.stringify(body),{status,headers:headers(origin)});
 Deno.serve(async(req)=>{
  const origin=req.headers.get('origin')||'';
