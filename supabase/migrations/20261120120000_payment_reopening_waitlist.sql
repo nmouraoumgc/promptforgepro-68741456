@@ -38,7 +38,7 @@ begin
  values (p_fingerprint,v_window,1)
  on conflict (fingerprint,window_start) do update set attempts = payment_waitlist_rate_limits.attempts+1
  returning attempts into v_count;
- if v_count > 5 then raise exception 'RATE_LIMITED'; end if;
+ if v_count > 5 then return false; end if;
  insert into public.payment_reopening_waitlist(email,language,source)
  values (v_email,case when p_language='en' then 'en' else 'pt' end,'pricing')
  on conflict (email) do nothing;
