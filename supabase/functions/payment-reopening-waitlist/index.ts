@@ -17,7 +17,7 @@ Deno.serve(async(req)=>{
  // IP is read from edge infrastructure, never from user-submitted JSON.
  const ip=req.headers.get('cf-connecting-ip')||req.headers.get('x-real-ip')||req.headers.get('x-forwarded-for')?.split(',')[0]?.trim();
  if(!ip) return respond(503,{error:'RATE_LIMIT_UNAVAILABLE'},origin);
- const secret=Deno.env.get('WAITLIST_RATE_LIMIT_SECRET');
+ const secret=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
  const url=Deno.env.get('SUPABASE_URL'),key=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
  if(!secret||!url||!key) return respond(503,{error:'NOT_CONFIGURED'},origin);
  const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(secret+':'+ip));
