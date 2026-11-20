@@ -40,6 +40,7 @@ const searchParamsInit = () => {
 };
 
 // Pro prices (EUR). Annual = 10 x monthly (2 months free).
+const PAID_CHECKOUT_ENABLED = false; // Explicit maintenance safeguard.
 const PRO_MONTHLY_PRICE = 9;
 const PRO_ANNUAL_PRICE = 90;
 
@@ -80,7 +81,7 @@ export default function Pricing() {
   };
   const [autoOpened, setAutoOpened] = useState(false);
   useEffect(() => {
-    if (true || !urlCode || autoOpened || authLoading || !user || currentPlan === 'pro') return;
+    if (!PAID_CHECKOUT_ENABLED || !urlCode || autoOpened || authLoading || !user || currentPlan === 'pro') return;
     setAutoOpened(true);
     setProPromoInput(urlCode);
     setShowProPromoDialog(true);
