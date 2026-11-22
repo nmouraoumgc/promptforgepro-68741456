@@ -48,7 +48,7 @@ Deno.serve(async req => {
       if (code) {
         const discount = await creemRequest('discounts?discount_code=' + encodeURIComponent(code));
         if (discount.code !== code || discount.status !== 'active' || discount.type !== 'percentage' ||
-            discount.percentage !== 20 || !discount.applies_to_products?.includes(product)) {
+            discount.duration !== 'once' || discount.percentage !== 20 || !discount.applies_to_products?.includes(product)) {
           throw new Error('Discount configuration mismatch');
         }
       }
