@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Check, Zap, History, TestTube, BarChart3, Download, Loader2 } from "lucide-react";
@@ -11,7 +11,7 @@ import { track } from "@/lib/analytics";
 
 const SubscriptionSuccess = () => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [verified, setVerified] = useState(false);
   const { fetchProfile } = useAuthStore();
   const { i18n } = useTranslation();
   const isEnglish = (i18n.resolvedLanguage || i18n.language || "pt").startsWith("en");
@@ -24,7 +24,7 @@ const SubscriptionSuccess = () => {
     { icon: Download, label: isEnglish ? "Prompt export available" : "Exportação de prompts disponível" },
   ];
 
-  useEffect(() => { clearCampaignCode(); }, []);
+
 
   useEffect(() => {
     let cancelled = false;
@@ -38,7 +38,10 @@ const SubscriptionSuccess = () => {
       }
       if (!cancelled) {
         const plan = useAuthStore.getState().profile?.current_plan ?? null;
-        track("subscription_success", { plan, verified: plan === "pro" || plan === "premium" });
+        const active = plan === 'pro' || plan === 'premium';
+        if (active) clearCampaignCode();
+        setVerified(active);
+        track("subscription_success", { plan, verified: active });
         setIsVerifying(false);
       }
     };
@@ -55,6 +58,14 @@ const SubscriptionSuccess = () => {
         </div>
       </div>
     );
+  }
+
+  if (!verified) {
+    return <main className="min-h-screen grid place-content-center gap-4 p-6 text-center">
+      <h1 className="text-2xl font-bold">{isEnglish ? 'Awaiting payment confirmation' : 'A aguardar confirmação do pagamento'}</h1>
+      <p>{isEnglish ? 'Check your account in a moment.' : 'Consulta a tua conta dentro de instantes.'}</p>
+      <Button onClick={() => navigate('/account')}>{isEnglish ? 'View my account' : 'Ver a minha conta'}</Button>
+    </main>;
   }
 
   return (

@@ -47,3 +47,9 @@ verify_jwt = false
 
 [functions.admin-metrics]
 verify_jwt = true
+
+[functions.creem-checkout]
+verify_jwt = false
+
+[functions.creem-webhook]
+verify_jwt = false

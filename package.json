@@ -9,7 +9,7 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test:p0": "node --experimental-vm-modules --test e2e/p0_entitlements.test.mjs",
+    "test:p0": "node --experimental-vm-modules --test e2e/p0_entitlements.test.mjs e2e/creem-billing.test.mjs",
     "test:p1": "vitest run --config vitest.config.ts",
     "test:toasts": "vitest run --config vitest.config.ts e2e/toasts.test.tsx",
     "test:override-cron": "node --test e2e/expired_override_cron.test.mjs",

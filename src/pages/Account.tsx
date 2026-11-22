@@ -405,7 +405,7 @@ export default function Account() {
                     t('account.openBillingPortal')
                   )}
                 </Button>
-                <p className="text-xs text-muted-foreground">{L('As faturas estão disponíveis no portal de faturação (Paddle), na secção de pagamentos.', 'Invoices are available in the billing portal (Paddle), under payments.')}</p>
+                <p className="text-xs text-muted-foreground">{L('As faturas estão disponíveis no portal de faturação, na secção de pagamentos.', 'Invoices are available in the billing portal, under payments.')}</p>
               </CardContent>
             </Card>
 

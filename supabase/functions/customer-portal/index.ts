@@ -1,4 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { creemEnvironment, creemRequest, hostedUrl } from '../_shared/creem.ts';
 import { gatewayFetch, type PaddleEnv } from '../_shared/paddle.ts';
 
 const corsHeaders = {
@@ -42,12 +43,22 @@ Deno.serve(async (req) => {
 
     const { data: sub, error: subError } = await supabase
       .from('subscriptions')
-      .select('paddle_subscription_id, paddle_customer_id, environment')
+      .select('paddle_subscription_id, paddle_customer_id, creem_customer_id, environment')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
     if (subError) throw subError;
+
+    if (sub?.creem_customer_id) {
+      if (sub.environment !== creemEnvironment()) return json({error:'Billing environment mismatch'},503);
+      const customer = await creemRequest('customers?customer_id=' + encodeURIComponent(sub.creem_customer_id));
+      if (!user.email_confirmed_at || !user.email || customer.email?.toLowerCase() !== user.email.toLowerCase()) {
+        return json({error:'Billing email verification required'},403);
+      }
+      const portal = await creemRequest('customers/billing', {customer_id:sub.creem_customer_id});
+      return json({url:hostedUrl(portal.customer_portal_link)});
+    }
 
     const env: PaddleEnv = (sub?.environment as PaddleEnv) ?? 'live';
     let customerId: string | null = sub?.paddle_customer_id ?? null;

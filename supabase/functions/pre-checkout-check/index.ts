@@ -1,3 +1,4 @@
+import { ipHash } from '../_shared/checkout-ip.ts';
 // P0 billing freeze (2026-11-19): fail closed before any Paddle API call.
 // Existing signed webhooks and customer-portal remain operational.
 const NEW_PURCHASES_ENABLED = false;
@@ -55,17 +56,6 @@ function failureBlockReason(c: { account: number; ip: number }): string | null {
   if (c.account >= MAX_FAILED_PER_ACCOUNT) return 'too_many_attempts';
   if (c.ip >= MAX_FAILED_PER_IP) return 'too_many_attempts_ip';
   return null;
-}
-
-async function ipHash(req: Request): Promise<string | null> {
-  const raw = (req.headers.get('cf-connecting-ip') || req.headers.get('x-forwarded-for')?.split(',')[0] ||
-    req.headers.get('x-real-ip') || '').trim();
-  if (!raw) return null;
-  // Keyed hash: the raw IP is never stored or logged.
-  const secret = Deno.env.get('IP_HASH_SECRET') || Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
-  const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode('pfp-ip:' + raw.toLowerCase()));
-  return Array.from(new Uint8Array(sig)).map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
 async function paddleJson(env: PaddleEnv, path: string, init?: RequestInit) {
