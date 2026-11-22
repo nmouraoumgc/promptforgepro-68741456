@@ -1,7 +1,7 @@
 import { UsageLimits } from '@/components/UsageLimits';
 import { PaymentReopeningNotice } from '@/components/payments/PaymentReopeningNotice';
 import { useEffect, useState } from 'react';
-import { Check, Sparkles, Zap, Lightbulb, Loader2, Ticket, X } from 'lucide-react';
+import { Check, Sparkles, Zap, Lightbulb, Loader2, Ticket } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,7 +14,8 @@ import { PlanType } from '@/types/plans';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
-import { saveCampaignCode, getCampaignCode, getCampaignAttribution } from '@/lib/campaignCode';
+import { saveCampaignCode, getCampaignCode } from '@/lib/campaignCode';
+import { checkoutBlockMessage } from '@/lib/checkoutGuard';
 import { track } from '@/lib/analytics';
 
 type PricingPlan = {
@@ -28,19 +29,12 @@ type PricingPlan = {
   highlight?: boolean;
 };
 
-type ProPromo = {
-  code: string;
-  discount_type: 'percentage' | 'fixed' | 'free_days';
-  discount_value: number;
-  duration_months: number;
-};
-
 const searchParamsInit = () => {
   try { return new URLSearchParams(window.location.search); } catch { return new URLSearchParams(); }
 };
 
 // Pro prices (EUR). Annual = 10 x monthly (2 months free).
-const PAID_CHECKOUT_ENABLED = false; // Explicit maintenance safeguard.
+const PAID_CHECKOUT_ENABLED = import.meta.env.VITE_CREEM_CHECKOUT_ENABLED === 'true';
 const PRO_MONTHLY_PRICE = 9;
 const PRO_ANNUAL_PRICE = 90;
 
@@ -57,11 +51,9 @@ export default function Pricing() {
     (searchParamsInit().get('billing') || '').toLowerCase().startsWith('annual') ? 'annual' : 'monthly');
   const isAnnual = billing === 'annual';
 
-  // Promo dialog state (mínimo para compilar + funcionar)
+  // Optional checkout discount.
   const [showProPromoDialog, setShowProPromoDialog] = useState(false);
   const [proPromoInput, setProPromoInput] = useState('');
-  const [proPromoError, setProPromoError] = useState('');
-  const [proAppliedPromo, setProAppliedPromo] = useState<ProPromo | null>(null);
   // Campaign links: /pricing?code=WELCOME100. Kept in localStorage (30 days) + sessionStorage so it survives
   // signup, email confirmation in a new tab and login (see lib/campaignCode).
   const [searchParams] = useSearchParams();
@@ -75,13 +67,9 @@ export default function Pricing() {
     if (/^[A-Z0-9-]{3,32}$/.test(c)) { saveCampaignCode(c); setUrlCode(c); }
   }, [searchParams]);
 
-  // Campaign/channel that brought the user here (set by trackCampaignLanding), passed to Paddle for attribution.
-  const campaignAttribution = (): Record<string, string> => {
-    try { const v = getCampaignAttribution(); return v?.c ? { campaign: String(v.c).slice(0, 40), ...(v.r ? { campaignSend: String(v.r) } : {}) } : {}; } catch { return {}; }
-  };
   const [autoOpened, setAutoOpened] = useState(false);
   useEffect(() => {
-    if (!PAID_CHECKOUT_ENABLED || !urlCode || autoOpened || authLoading || !user || currentPlan === 'pro') return;
+    if (!PAID_CHECKOUT_ENABLED || !urlCode || autoOpened || authLoading || !user || currentPlan === 'pro' || currentPlan === 'premium') return;
     setAutoOpened(true);
     setProPromoInput(urlCode);
     setShowProPromoDialog(true);
@@ -131,12 +119,7 @@ export default function Pricing() {
   const ownsPacksProduct = currentPlan === 'packs' || currentPlan === 'premium';
 
   const handleSelectPlan = async (planId: PlanType) => {
-    if (planId !== 'free') return; // Paid checkout suspended during payment maintenance.
-    if (planId === 'packs' || planId === 'premium') {
-      navigate('/checkout');
-      return;
-    }
-
+    if (planId !== 'free' && (planId !== 'pro' || !PAID_CHECKOUT_ENABLED)) return;
     if (planId === 'pro') {
       if (!authLoading && !user) {
         toast({
@@ -144,13 +127,13 @@ export default function Pricing() {
           description: isEnglish ? 'You must sign in to subscribe to Pro.' : 'Tens de iniciar sessão para subscrever o plano Pro.',
           variant: 'destructive',
         });
-        navigate('/login?redirect=/pricing');
+        navigate('/login?redirect=' + encodeURIComponent('/pricing?billing=' + billing));
         return;
       }
       if (authLoading) return;
       // Show confirmation dialog (optional promo code; ?code= from a campaign link is prefilled).
-      setProAppliedPromo(null);
-      if (urlCode) setProPromoInput(urlCode);
+
+      setProPromoInput(urlCode);
       setShowProPromoDialog(true);
       return;
     }
@@ -159,123 +142,26 @@ export default function Pricing() {
     navigate('/app');
   };
 
-  const removeProPromo = () => {
-    setProAppliedPromo(null);
-    setProPromoError('');
-    setProPromoInput('');
-  };
-
-  const handleApplyProPromo = async () => {
-    const code = proPromoInput.trim().toUpperCase();
-    if (!code) return;
-
-    setProPromoError('');
-
-    const { data, error } = await supabase.rpc('validate_promo_code', {
-      _code: code,
-      _plan: 'pro',
-    });
-
-    if (error) {
-      const msg = error.message || '';
-      const map: Record<string, string> = {
-        PROMO_NOT_FOUND: isEnglish ? 'Invalid code.' : 'Código inválido.',
-        PROMO_INACTIVE: isEnglish ? 'Inactive code.' : 'Código inativo.',
-        PROMO_EXPIRED: isEnglish ? 'Expired code.' : 'Código expirado.',
-        PROMO_LIMIT_REACHED: isEnglish ? 'Code usage limit reached.' : 'Código atingiu o limite de utilizações.',
-        PROMO_NOT_APPLICABLE: isEnglish ? 'Code not valid for this plan.' : 'Código não aplicável a este plano.',
-      };
-      if (msg.includes('PROMO_NOT_FOUND')) {
-        // Not an in-app promo: may be a Paddle discount code (e.g. campaign codes). Paddle validates it at checkout.
-        setProPromoError(isEnglish ? 'This code will be checked and applied at checkout.' : 'Este código será verificado e aplicado no checkout.');
-        return;
-      }
-      const key = Object.keys(map).find((k) => msg.includes(k));
-      setProPromoError(key ? map[key] : (isEnglish ? 'Could not verify the code.' : 'Não foi possível verificar o código.'));
-      return;
-    }
-
-    const promo = (data as any[])?.[0];
-    if (!promo) {
-      setProPromoError(isEnglish ? 'Invalid code.' : 'Código inválido.');
-      return;
-    }
-
-    setProAppliedPromo({
-      code: promo.code,
-      discount_type: promo.discount_type as ProPromo['discount_type'],
-      discount_value: Number(promo.discount_value),
-      duration_months: promo.duration_months ?? 0,
-    });
-    setProPromoError('');
-  };
-
   const handleConfirmProSubscription = async () => {
     setShowProPromoDialog(false);
     setIsLoadingPro(true);
 
     try {
       if (!user) {
-        navigate('/login?redirect=/pricing');
+        navigate('/login?redirect=' + encodeURIComponent('/pricing?billing=' + billing));
         return;
       }
 
-      // Pre-checkout anti-fraud / trial-redemption / velocity check. Discount codes (typed, in-app promo or
-      // /pricing?code=XXX campaign links) are validated server-side (confirmed email, once per account) and the
-      // Paddle transaction with the discount is created there; we only open it.
-      const intent = isAnnual ? 'pro_annual' : 'pro_normal';
-      const priceKey = isAnnual ? 'pro_annual' : 'pro_monthly';
-      const code = (proAppliedPromo?.code || proPromoInput.trim() || urlCode || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); // Paddle codes are alphanumeric (EARLY-A1 -> EARLYA1)
-      const { initializePaddle, getPaddlePriceId, getPaddleEnvironment, setCheckoutAttemptId } = await import('@/lib/paddle');
-      const { runPreCheckoutCheck, checkoutBlockMessage, checkoutRetryMessage } = await import('@/lib/checkoutGuard');
-      const attribution = campaignAttribution();
-      // Fail closed: the checkout only opens on an explicit allowed=true from pre-checkout-check.
-      const check = await runPreCheckoutCheck({
-        intent, environment: getPaddleEnvironment(), ...(code ? { discountCode: code, ...attribution } : {}),
+      const code = proPromoInput.trim().toUpperCase();
+      const {data,error} = await supabase.functions.invoke('creem-checkout', {
+        body: {billing, discountCode: code || undefined},
       });
-      if (check.status === 'blocked') {
-        toast({
-          title: isEnglish ? 'Checkout blocked' : 'Pagamento bloqueado',
-          description: checkoutBlockMessage(check.reason, isEnglish),
-          variant: 'destructive',
-        });
+      if (error || !data?.url) {
+        toast({title:checkoutBlockMessage(data?.reason || 'checkout_unavailable',isEnglish),variant:'destructive'});
         return;
       }
-      if (check.status === 'error') {
-        toast({ ...checkoutRetryMessage(isEnglish), variant: 'destructive' });
-        return;
-      }
-      const { attemptId, transactionId } = check;
-      if (code && !transactionId) {
-        toast({ ...checkoutRetryMessage(isEnglish), variant: 'destructive' });
-        return;
-      }
-
-      await initializePaddle();
-      setCheckoutAttemptId(attemptId);
-      const attemptData: Record<string, string> = attemptId ? { attemptId } : {};
-      const settings = {
-        displayMode: 'overlay',
-        successUrl: `${window.location.origin}/subscription-success`,
-        allowLogout: false,
-        variant: 'one-page',
-        showAddTaxId: false,
-      };
-
-      if (transactionId) {
-        // Discount flow: transaction (price + discount + customer + customData) created server-side.
-        window.Paddle.Checkout.open({ transactionId, settings });
-      } else {
-        // Default flow: Pro monthly (9€/month) or Pro annual (90€/year).
-        const subscriptionId = await getPaddlePriceId(priceKey);
-        window.Paddle.Checkout.open({
-          items: [{ priceId: subscriptionId, quantity: 1 }],
-          customer: { email: user.email! },
-          customData: { userId: user.id, billing, ...attribution, ...attemptData },
-          settings,
-        });
-      }
-      track('checkout_opened', { plan: priceKey, has_campaign_code: !!code, ...(code ? { campaign_code: code } : {}) });
+      track('checkout_opened', {plan:'pro_' + billing, has_campaign_code:!!code});
+      window.location.assign(data.url);
     } catch (err) {
       console.error('Subscription error:', err);
       toast({
@@ -290,14 +176,6 @@ export default function Pricing() {
 
   const BASE_PRO_PRICE = isAnnual ? PRO_ANNUAL_PRICE : PRO_MONTHLY_PRICE;
   const perUnit = isAnnual ? (isEnglish ? 'year' : 'ano') : (isEnglish ? 'month' : 'mês');
-  const proIsFreeDays = proAppliedPromo?.discount_type === 'free_days';
-  const proDiscount = proAppliedPromo && !proIsFreeDays
-    ? proAppliedPromo.discount_type === 'percentage'
-      ? Math.min(BASE_PRO_PRICE, (BASE_PRO_PRICE * proAppliedPromo.discount_value) / 100)
-      : Math.min(BASE_PRO_PRICE, proAppliedPromo.discount_value)
-    : 0;
-  const proFinalPrice = Math.max(0, BASE_PRO_PRICE - proDiscount);
-
   const billingToggle = (testIdPrefix: string) => (
     <div
       role="radiogroup"
@@ -472,7 +350,7 @@ export default function Pricing() {
                 <Button
                   className={`w-full ${plan.highlight ? 'shadow-md' : ''}`}
                   variant={plan.highlight ? 'default' : 'outline'}
-                  disabled={isActive || includedInPro || plan.id !== 'free'}
+                  disabled={isActive || includedInPro || isPacks || (plan.id === 'pro' && (!PAID_CHECKOUT_ENABLED || currentPlan === 'premium' || isLoadingPro))}
                   onClick={() => handleSelectPlan(plan.id)}
                 >
                   {includedInPro ? (
@@ -488,7 +366,7 @@ export default function Pricing() {
                   ) : (
                     <>
                       {plan.highlight && <Sparkles className="h-4 w-4 mr-2" />}
-                      {plan.cta}
+                      {isPacks && PAID_CHECKOUT_ENABLED ? (isEnglish ? 'Temporarily unavailable' : 'Temporariamente indisponível') : plan.cta}
                     </>
                   )}
                 </Button>
@@ -498,7 +376,7 @@ export default function Pricing() {
         })}
       </div>
 
-      <div className="max-w-2xl mx-auto mt-8" data-testid="payment-reopening-notice"><PaymentReopeningNotice /></div>
+      {!PAID_CHECKOUT_ENABLED && <div className="max-w-2xl mx-auto mt-8" data-testid="payment-reopening-notice"><PaymentReopeningNotice /></div>}
       <footer className="text-center mt-12 md:mt-16 max-w-lg mx-auto">
         <p className="text-sm text-muted-foreground leading-relaxed">
           {isEnglish
@@ -526,102 +404,15 @@ export default function Pricing() {
           <div className="space-y-4 pt-2">
             <div className="flex justify-center">{billingToggle('dialog-billing')}</div>
             <div className="text-center">
-              {proAppliedPromo && proIsFreeDays ? (
-                <div className="flex flex-col items-center gap-1">
-                  <span className="text-2xl font-bold text-foreground">
-                    {BASE_PRO_PRICE}€/{perUnit}
-                  </span>
-                  <span className="text-xs text-primary font-medium">
-                    {isEnglish
-                      ? `${proAppliedPromo.discount_value} free days with ${proAppliedPromo.code}, then normal price`
-                      : `${proAppliedPromo.discount_value} dias grátis com ${proAppliedPromo.code}, depois preço normal`}
-                  </span>
-                </div>
-              ) : proAppliedPromo && proDiscount > 0 ? (
-                <div className="flex flex-col items-center gap-1">
-                  <span className="text-sm text-muted-foreground line-through">
-                    {BASE_PRO_PRICE}€/{perUnit}
-                  </span>
-                  <span className="text-2xl font-bold text-primary">
-                    {proFinalPrice.toFixed(2)}€ <span className="text-sm font-medium">{isAnnual ? (isEnglish ? 'first year' : 'no primeiro ano') : (isEnglish ? 'first month' : 'no primeiro mês')}</span>
-                  </span>
-                  <span className="text-xs text-primary font-medium">
-                    {isAnnual
-                      ? (isEnglish
-                        ? `From the second year, ${BASE_PRO_PRICE}€/year. Cancel anytime.`
-                        : `A partir do segundo ano, ${BASE_PRO_PRICE}€/ano. Cancela quando quiseres.`)
-                      : (isEnglish
-                        ? `From the second month, ${BASE_PRO_PRICE}€/month. Cancel anytime.`
-                        : `A partir do segundo mês, ${BASE_PRO_PRICE}€/mês. Cancela quando quiseres.`)}
-                  </span>
-                </div>
-              ) : (
-                <span className="text-2xl font-bold text-foreground">
-                  {BASE_PRO_PRICE}€/{perUnit}
-                </span>
-              )}
+              <span className="text-2xl font-bold">{BASE_PRO_PRICE}€/{perUnit}</span>
             </div>
-
             <div className="space-y-2">
-              <Label>
-                <span className="inline-flex items-center gap-2">
-                  <Ticket className="h-4 w-4" />
-                  {isEnglish ? 'Promo code (optional)' : 'Código de promoção (opcional)'}
-                </span>
+              <Label htmlFor="pro-promo"><Ticket className="inline h-4 w-4 mr-1" />
+                {isEnglish ? 'Promo code (optional)' : 'Código promocional (opcional)'}
               </Label>
-
-              {proAppliedPromo ? (
-                <div className="flex items-center justify-between gap-2 px-3 h-10 rounded-md border border-primary/40 bg-primary/10">
-                  <div className="flex items-center gap-2 text-sm">
-                    <Check className="h-4 w-4 text-primary" />
-                    <span className="font-medium text-foreground">{proAppliedPromo.code}</span>
-                    <span className="text-muted-foreground">
-                      ({proAppliedPromo.discount_type === 'percentage'
-                        ? `-${proAppliedPromo.discount_value}%`
-                        : proAppliedPromo.discount_type === 'fixed'
-                        ? `-${proAppliedPromo.discount_value}€`
-                        : `${proAppliedPromo.discount_value} ${isEnglish ? 'free days' : 'dias grátis'}`}
-                      {proAppliedPromo.discount_type !== 'free_days' && proAppliedPromo.duration_months > 0
-                        ? ` · ${proAppliedPromo.duration_months} ${isEnglish ? 'months' : 'meses'}`
-                        : ''})
-                    </span>
-                  </div>
-                  <Button type="button" variant="ghost" size="icon" aria-label={isEnglish ? 'Remove code' : 'Remover código'} onClick={removeProPromo}>
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              ) : (
-                <div className="flex gap-2">
-                  <Input
-                    type="text"
-                    placeholder="EX: SUMMER20"
-                    value={proPromoInput}
-                    onChange={(e) => {
-                      setProPromoInput(e.target.value.toUpperCase());
-                      setProPromoError('');
-                    }}
-                    className="h-10"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleApplyProPromo}
-                    disabled={!proPromoInput.trim()}
-                    className="h-10"
-                  >
-                    {isEnglish ? 'Apply' : 'Aplicar'}
-                  </Button>
-                </div>
-              )}
-
-              {proPromoError && <p className={`text-xs ${/checkout/.test(proPromoError) ? 'text-primary' : 'text-destructive'}`} data-testid="promo-msg">{proPromoError}</p>}
-              {!proAppliedPromo && !proPromoError && proPromoInput.trim() && proPromoInput.trim().toUpperCase() === urlCode && (
-                <p className="text-xs text-primary" data-testid="promo-url-code">
-                  {isEnglish ? `Code ${urlCode} will be applied at checkout.` : `O código ${urlCode} será aplicado no checkout.`}
-                </p>
-              )}
+              <Input id="pro-promo" value={proPromoInput} onChange={e => setProPromoInput(e.target.value.toUpperCase())} maxLength={32} />
+              <p className="text-xs text-muted-foreground">{isEnglish ? 'Review the final price in Creem before paying.' : 'Confirma o preço final na Creem antes de pagar.'}</p>
             </div>
-
             <Button className="w-full" onClick={handleConfirmProSubscription} disabled={isLoadingPro}>
               {isLoadingPro ? (
                 <span className="flex items-center gap-2">

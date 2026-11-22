@@ -13,7 +13,8 @@ Deno.serve(async (req) => {
     const { data: subs } = await supabase
       .from('subscriptions')
       .select('paddle_subscription_id, user_id, updated_at')
-      .eq('status', 'past_due');
+      .eq('status', 'past_due')
+      .not('paddle_subscription_id', 'is', null);
 
     const results: any[] = [];
     const now = Date.now();

@@ -3,6 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 /** User-facing PT/EN text for pre-checkout-check rejection reasons. */
 export function checkoutBlockMessage(reason: string | null | undefined, en: boolean): string {
   const map: Record<string, [string, string]> = {
+    already_subscribed: ['Já tens acesso ao Pro.', 'You already have Pro access.'],
+    buyer_blocked: ['O pagamento foi bloqueado. Contacta o suporte.', 'Payment blocked. Please contact support.'],
     disposable_email: [
       "Emails temporários não são permitidos. Usa um email permanente.",
       "Disposable email addresses are not allowed. Please use a permanent email.",
@@ -20,8 +22,8 @@ export function checkoutBlockMessage(reason: string | null | undefined, en: bool
       "Too many payment attempts from this network. Please try again later.",
     ],
     email_not_confirmed: [
-      "Confirma o teu email antes de usar um código de desconto.",
-      "Please confirm your email address before using a discount code.",
+      "Confirma o teu email antes de subscrever.",
+      "Please confirm your email address before subscribing.",
     ],
     code_already_used: [
       "Este código de desconto já foi usado na tua conta.",
