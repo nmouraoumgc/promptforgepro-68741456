@@ -2,6 +2,19 @@
 
 Data de preparação: 2026-11-23. **Este documento não autoriza merge, deploy, alterações de produção ou ativação de Live.**
 
+## Preflight de produção autenticado — 2026-11-23 (READ ONLY)
+
+Consulta direta realizada no Supabase de produção `cwrxbxxfaemcvliasycz` através da ligação autenticada Primary; **a limitação HTTP 401 do executor Codex foi ultrapassada nesta revisão**. Nenhuma instrução DDL/DML foi executada.
+
+- PostgreSQL de produção 17.6; fixture Codex testada em PostgreSQL 17.12 (mesma versão major).
+- Histórico remoto: última migration `20261120104411_payment_reopening_waitlist`; as migrations Creem `20261122120000`, `20261123160000`, `20261123170000`, `20261123180000` **não estão aplicadas**.
+- Tabela `subscriptions`: 44 registos Paddle Live (38 `active`, 6 `canceled`); os 44 têm ambos os identificadores Paddle preenchidos, pelo que respeitam a nova constraint `subscription_billing_provider`. As colunas Paddle têm `NOT NULL` e a migration inicial retira essa obrigação apenas para aceitar linhas Creem; o índice UNIQUE Paddle mantém-se.
+- `checkout_attempts`: `id uuid` default `gen_random_uuid()`, `status` default `initiated`, `ip_hash` e `discount_code` presentes, respetivas constraints compatíveis. `payment_failures` inclui `source` e `ip_hash`.
+- `creem_checkouts`, `creem_sync_leases`, RPCs `reserve_creem_checkout` e `apply_creem_subscription` não existem ainda; não há colisões de definições.
+- Trigger `trg_sync_plan_from_subscription` executa `sync_profile_plan_from_subscription()` após INSERT/UPDATE/DELETE. A função `recompute_profile_plan(uuid)` existente tem a mesma estrutura de direitos prevista na migration de serialização e utiliza `plan_type`. `service_role` tem EXECUTE na função e escrita/leitura em `subscriptions`.
+- `pg_cron` instalado; nenhum job Creem/`expire-creem-pro` já existe (somente `recompute-expired-overrides-hourly` correspondeu ao filtro de expiração).
+- **Resultado: DDL/histórico e dependências de base compatíveis com a sequência de migrations proposta; bloqueio de leitura de produção resolvido.** Isto não equivale a aplicar migrations nem a aprovar cobranças Live. A análise de dados foi baseada em consultas reais de leitura, não apenas na fixture.
+
 ## Evidência disponível
 
 - PR #42 `d705734`: FINAL QA PASSED WITH OPERATIONAL LIMITATION. Reconciliação manual real não demonstrada por falta de credenciais no executor; compras, reentregas, cancelamentos e leases verificados no QA.
@@ -39,9 +52,9 @@ Data de preparação: 2026-11-23. **Este documento não autoriza merge, deploy, 
 
 ## Aceitação GO/NO-GO
 
-**NO-GO até**: migration de produção revista e testada contra cópia compatível do esquema real; proteção multi-provider provada; segredos e produtos Live confirmados; plano de proteção dos 38 ativos; revisão do código; autorização explícita para merge/deploy e para compra Live controlada.
+**DDL PREFLIGHT PASSED / DEPLOYMENT NOT AUTHORIZED**: o esquema real foi confrontado em leitura e mostrou compatibilidade estrutural com as migrations. Antes do deploy continuam obrigatórios revisão/aprovação da PR, backup/snapshot e autorização explícita para merge/deploy. Antes de qualquer compra Live são ainda obrigatórios credenciais e produtos Live confirmados, gates controlados e autorização da transação.
 
-**Não executado nesta PR**: migration, deploy, compras Live, comunicação a clientes, alterações em produção ou merge da PR #42.
+**Não executado em produção**: migrations, deploy, compras Live, comunicação a clientes, alterações de dados ou merge da PR #42.
 
 ## Implementação entregue
 
@@ -70,7 +83,7 @@ No rollback fechar ambos os gates e manter o webhook compatível com leases. A m
 
 As migrations foram exercitadas em base isolada PostgreSQL 17.12 e numa fixture automatizada com 44 subscrições Paddle, 38 ativas, preservando linhas e direitos. Os testes verificam que a revogação Creem não remove direitos Paddle válidos e que um perfil desatualizado não permite nova compra sobre uma subscrição paga. A evidência Sandbox anterior é reutilizada.
 
-O acesso de leitura autenticado ao Supabase de produção não está disponível nesta sessão. A API de gestão respondeu HTTP 401. Falta confrontar o DDL atual, histórico e funções reais com a fixture e com as quatro migrations. As contagens remotas neste documento vieram da evidência fornecida, não de uma nova consulta. A autorização para deployment e ativação é uma etapa posterior à revisão técnica.
+A sessão inicial do Codex recebeu HTTP 401, mas o preflight foi concluído posteriormente através da ligação Supabase autenticada, sem escrita, com resultados documentados na secção acima. A autorização para merge/deployment e a ativação Live continuam etapas distintas e pendentes.
 
 ## Resultado da revisão e testes
 
@@ -78,4 +91,4 @@ A suite completa executou 46 testes com sucesso. O teste adicional de duas liga�
 
 Falhas anteriores ao pedido de criação do checkout são registadas como failed, permitindo nova tentativa sujeita aos limites de segurança existentes. Falhas após o pedido ficam abandoned por poder existir um checkout no fornecedor. Para um link comprovadamente expirado, um operador deve confirmar na Creem que não houve pagamento e que a ligação está terminal e não pode voltar a cobrar. Só então pode atualizar a tentativa específica para failed, preservando o vínculo para auditoria. Não libertar tentativas cujo resultado ainda seja desconhecido.
 
-BLOCKED para aprovação de deployment nesta sessão exclusivamente pela falta de leitura autenticada do esquema e histórico atuais de produção. O preflight preparado permite resolver esse confronto sem escrita em produção. Segredos e produtos Live são configurações obrigatórias da fase de deployment, que continua com checkout desligado.
+O bloqueio anterior de leitura de produção foi resolvido em 2026-11-23. A compatibilidade estrutural do DDL e histórico foi confirmada em leitura; a PR permanece Draft e não está autorizada para merge/deploy. Segredos e produtos Live são configurações obrigatórias da fase de deployment, inicialmente com checkout desligado.
