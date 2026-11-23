@@ -94,7 +94,7 @@ for (const billing of ['monthly','annual']) {
       const plan = async () => (await db.query('select current_plan from profiles')).rows[0].current_plan;
       assert.equal(await plan(),'free');
       const notify = async (type,obj,time,secret=env.CREEM_WEBHOOK_SECRET) => {
-        const body = JSON.stringify({eventType:type,created_at:time,object:obj});
+        const body = JSON.stringify({id:'evt_delivery_'+time,eventType:type,created_at:time,object:obj});
         const signature = createHmac('sha256',secret).update(body).digest('hex');
         return (await webhook(new Request('https://qa.invalid',{method:'POST',body,headers:{'creem-signature':signature}}))).status;
       };
@@ -145,21 +145,29 @@ for (const billing of ['monthly','annual']) {
       assert.equal(await notify('subscription.scheduled_cancel',sub,5),204);
       assert.equal((await subscription()).cancel_at_period_end,true);
       assert.equal(await plan(),'pro');
-      sub.status='canceled';
-      assert.equal(await notify('subscription.canceled',sub,6),204);
-      assert.equal((await subscription()).cancel_at_period_end,false);
+      // Resend carries an old commercial payload with a new ID/time.
+      // The handler must use the current subscription fetched from Creem.
+      assert.equal(await notify('subscription.paid',{...sub,status:'active'},50),204);
+      assert.equal((await subscription()).cancel_at_period_end,true);
       assert.equal(await plan(),'pro');
+      assert.equal((await db.query('select creem_event_at from subscriptions')).rows[0].creem_event_at,50);
+      sub.status='canceled';
+      assert.equal(await notify('subscription.canceled',sub,51),204);
+      assert.equal((await subscription()).cancel_at_period_end,false);
+      assert.equal(await plan(),'free');
+      assert.equal(await notify('subscription.paid',{...sub,status:'active'},52),204);
+      assert.equal(await plan(),'free');
       const {rows:[job]} = await db.query("select * from cron.jobs where name='expire-creem-pro'");
       assert.equal(job.schedule,'*/5 * * * *');
       await db.exec(job.command);
-      assert.equal(await plan(),'pro');
+      assert.equal(await plan(),'free');
       sub.current_period_end_date='2000-01-01';
-      assert.equal(await notify('subscription.canceled',sub,7),204);
+      assert.equal(await notify('subscription.canceled',sub,52),204);
       await db.exec(job.command);
       assert.equal((await subscription()).status,'expired');
       assert.equal(await plan(),'free');
       sub.status='expired';
-      assert.equal(await notify('subscription.expired',sub,8),204);
+      assert.equal(await notify('subscription.expired',sub,53),204);
       sub.status='active';
       sub.current_period_end_date='2099-03-01';
       assert.equal(await notify('subscription.paid',sub,2),204);

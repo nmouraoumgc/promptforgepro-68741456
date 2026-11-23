@@ -32,7 +32,10 @@ Deno.serve(async req => {
     if (sub.id !== subId || entityId(sub.product) !== product || !customer || !sub.current_period_end_date) {
       throw new Error('Missing subscription details');
     }
-    const status = sub.status === 'scheduled_cancel' ? 'active' : sub.status;
+    // Scheduled cancellation retains the paid period. A fully canceled
+    // Creem subscription revokes access even when its period end is future.
+    const status = sub.status === 'scheduled_cancel' ? 'active'
+      : sub.status === 'canceled' ? 'expired' : sub.status;
     const admin = createClient(setting('SUPABASE_URL'), setting('SUPABASE_SERVICE_ROLE_KEY'));
     const result = await admin.rpc('apply_creem_subscription',{
       p_request:first ? obj.request_id : null, p_checkout:first ? obj.id : null,

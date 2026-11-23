@@ -34,7 +34,7 @@ export async function reconcileCheckout(checkoutId, request) {
     p_product: productId,
     p_env: 'sandbox',
     p_event_at: 0,
-    p_status: scheduled ? 'active' : subscription.status,
+    p_status: scheduled ? 'active' : subscription.status === 'canceled' ? 'expired' : subscription.status,
     p_start: subscription.current_period_start_date ?? null,
     p_end: subscription.current_period_end_date,
     p_cancel: scheduled,

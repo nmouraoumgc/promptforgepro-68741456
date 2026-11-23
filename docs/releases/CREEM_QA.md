@@ -118,3 +118,15 @@ Uma resposta de sucesso da RPC também pode representar uma operação repetida.
 - Demonstrar recuperação de falha de cobrança e de entrega, reentrega idempotente e manutenção do estado mais recente.
 - Confirmar o comportamento efetivo de ambos os cancelamentos e a remoção do acesso na expiração. Verificar o agendamento separadamente antes de Live.
 - Aprovar o procedimento operacional para a deteção e reconciliação de divergências. Obter aprovação explícita antes de qualquer alteração em produção ou ativação Live.
+
+## Evidência real de Resend e cancelamento
+
+O utilizador confirmou que scheduled_cancel conserva o período e Pro, enquanto canceled é apresentado pela Creem como revogação imediata. Confirmou também que Resend de subscription.paid cria aparentemente outro ID e timestamp e avança creem_event_at sem reverter o cancelamento.
+
+O handler não aplica o estado comercial do payload reenviado. Consulta GET subscriptions e grava o estado atual devolvido pela Creem. Isso explica a preservação do cancelamento. creem_event_at guarda created_at da entrega recebida e serve de filtro de ordenação das tentativas processadas. Com esta evidência, não pode ser interpretado como a versão comercial da subscrição. Aumentar o marcador num Resend é comportamento atual, não evidência de uma nova cobrança.
+
+Os testes passam agora um payload antigo ativo com novo ID e timestamp enquanto GET subscriptions devolve scheduled_cancel ou canceled. A correção converte canceled da Creem em expired internamente para revogar o acesso imediatamente, conservando a data paga. scheduled_cancel continua mapeado para active com cancel_at_period_end=true. Esta adaptação é exclusiva da integração Creem, incluindo a reconciliação manual.
+
+A proteção atual depende da atualidade da resposta GET da Creem. Uma leitura desatualizada ou duas entregas concorrentes com leituras em instantes diferentes podem persistir um snapshot antigo, pois o timestamp da entrega não é uma versão comercial. Antes de Live, validar a consistência da API e preparar sincronização serializada por subscrição ou uma versão comercial documentada pelo fornecedor. Não substituir o marcador por outro timestamp presumido sem confirmar a semântica do fornecedor.
+
+Falta recolher um payload e uma resposta GET redigidos dos dois cancelamentos, incluindo status, current_period_end_date e eventuais campos de término efetivo, para confirmar todos os campos reais. A evidência fornecida permite confirmar os estados e o efeito observado, mas não contém esses documentos completos. Renovação real, falha de cobrança, expiração e recuperação de primeira entrega continuam pendentes.
