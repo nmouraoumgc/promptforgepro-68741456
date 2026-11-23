@@ -1,4 +1,4 @@
-# Creem Live — release controlada (DRAFT / NO-GO)
+# Creem Live — implementação preparada, validação de DDL pendente
 
 Data de preparação: 2026-11-23. **Este documento não autoriza merge, deploy, alterações de produção ou ativação de Live.**
 
@@ -42,3 +42,40 @@ Data de preparação: 2026-11-23. **Este documento não autoriza merge, deploy, 
 **NO-GO até**: migration de produção revista e testada contra cópia compatível do esquema real; proteção multi-provider provada; segredos e produtos Live confirmados; plano de proteção dos 38 ativos; revisão do código; autorização explícita para merge/deploy e para compra Live controlada.
 
 **Não executado nesta PR**: migration, deploy, compras Live, comunicação a clientes, alterações em produção ou merge da PR #42.
+
+## Implementação entregue
+
+O branch inclui o protocolo de leases de d705734, reconciliação independente do ambiente e testes de coexistência de fornecedores. Não inclui bootstrap ou scripts exclusivos do QA.
+
+Aplicar após autorização, somente as migrations pendentes e nesta ordem, depois de executar a leitura scripts/billing/production-preflight.sql e confrontar o histórico real.
+
+1. 20261122120000_creem_pro.sql adiciona colunas e vínculos Creem e agenda expiração exclusiva de linhas Creem.
+2. 20261123160000_creem_serial_sync.sql instala leases e impede gravações diretas pela função antiga.
+3. 20261123170000_creem_paid_source_checkout_guard.sql verifica direitos pagos diretamente, reutiliza links abertos sem presumir expiração local e bloqueia outros produtos/cupões ou tentativas incertas enquanto existir uma ligação potencialmente pagável.
+4. 20261123180000_billing_plan_serialization.sql serializa a recomputação de planos por utilizador para ambos os fornecedores.
+
+Publicar creem-checkout, creem-webhook, customer-portal, pre-checkout-check e dunning-cron deste branch, conservando funções Paddle. Manter CREEM_CHECKOUT_ENABLED=false e VITE_CREEM_CHECKOUT_ENABLED=false durante todo o deployment inicial. O webhook mantém verify_jwt=false com assinatura validada no handler.
+
+Configurar CREEM_MODE=live, CREEM_API_KEY, CREEM_WEBHOOK_SECRET, CREEM_PRO_MONTHLY_ID, CREEM_PRO_ANNUAL_ID e CREEM_SITE_ORIGIN no secret store Supabase de produção. Confirmar produtos EUR 9/90 e PRODUCTHUNT20 de primeira cobrança no fornecedor. Credenciais nunca pertencem ao frontend. O checkout rejeita produtos e cupões incompatíveis antes de devolver a ligação.
+
+## Recuperação operacional
+
+Injetar CREEM_API_KEY e SUPABASE_SERVICE_ROLE_KEY no executor seguro. Selecionar explicitamente CREEM_MODE=live e SUPABASE_URL=https://cwrxbxxfaemcvliasycz.supabase.co e executar node scripts/billing/reconcile-checkout.mjs seguido do ID de checkout existente. O mesmo protocolo de lease serializa webhook e recuperação. Confirmar o vínculo, a subscrição, o perfil e a ausência de leases após sucesso. Uma falha deixa o lease expirar em 60 segundos.
+
+Monitorizar entregas não 2xx e divergências entre pagamentos confirmados e direitos. Reentregar primeiro e reconciliar se necessário. Uma tentativa incerta de criação de checkout bloqueia novos links até confirmar no fornecedor que o anterior não pode produzir outra cobrança. Não eliminar vínculos para contornar esse bloqueio.
+
+No rollback fechar ambos os gates e manter o webhook compatível com leases. A migração retira o acesso direto à RPC antiga, pelo que restaurar o webhook anterior quebraria o processamento. Preservar subscrições e corrigir por migrations aditivas.
+
+## Evidência e limite de aprovação
+
+As migrations foram exercitadas em base isolada PostgreSQL 17.12 e numa fixture automatizada com 44 subscrições Paddle, 38 ativas, preservando linhas e direitos. Os testes verificam que a revogação Creem não remove direitos Paddle válidos e que um perfil desatualizado não permite nova compra sobre uma subscrição paga. A evidência Sandbox anterior é reutilizada.
+
+O acesso de leitura autenticado ao Supabase de produção não está disponível nesta sessão. A API de gestão respondeu HTTP 401. Falta confrontar o DDL atual, histórico e funções reais com a fixture e com as quatro migrations. As contagens remotas neste documento vieram da evidência fornecida, não de uma nova consulta. A autorização para deployment e ativação é uma etapa posterior à revisão técnica.
+
+## Resultado da revisão e testes
+
+A suite completa executou 46 testes com sucesso. O teste adicional de duas ligações PostgreSQL 17.12 confirmou que a segunda fonte paga espera pelo lock da primeira e que o plano final permanece Pro. A fixture conserva os 44 registos Paddle completos após as migrations e a expiração Creem. Também verifica a reutilização do mesmo link após duas horas, a recusa de outro produto/cupão e o bloqueio de tentativas incertas.
+
+Falhas anteriores ao pedido de criação do checkout são registadas como failed, permitindo nova tentativa sujeita aos limites de segurança existentes. Falhas após o pedido ficam abandoned por poder existir um checkout no fornecedor. Para um link comprovadamente expirado, um operador deve confirmar na Creem que não houve pagamento e que a ligação está terminal e não pode voltar a cobrar. Só então pode atualizar a tentativa específica para failed, preservando o vínculo para auditoria. Não libertar tentativas cujo resultado ainda seja desconhecido.
+
+BLOCKED para aprovação de deployment nesta sessão exclusivamente pela falta de leitura autenticada do esquema e histórico atuais de produção. O preflight preparado permite resolver esse confronto sem escrita em produção. Segredos e produtos Live são configurações obrigatórias da fase de deployment, que continua com checkout desligado.

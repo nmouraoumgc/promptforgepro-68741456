@@ -38,6 +38,7 @@ Deno.serve(async req => {
     const {reason,existing,url,attempt} = reservation.data;
     if (reason) return json({reason});
     if (existing) return url ? json({url:hostedUrl(url)}) : json({reason:'checkout_unavailable'});
+    let checkoutRequested = false;
     try {
       const details = await creemRequest('products?product_id=' + encodeURIComponent(product));
       const annual = input.billing === 'annual';
@@ -52,6 +53,7 @@ Deno.serve(async req => {
           throw new Error('Discount configuration mismatch');
         }
       }
+      checkoutRequested = true;
       const checkout = await creemRequest('checkouts', {
         product_id:product, request_id:attempt, customer:{email:user.email}, success_url:successUrl,
         ...(code ? {discount_code:code} : {}),
@@ -64,7 +66,7 @@ Deno.serve(async req => {
       if (saved.error) throw saved.error;
       return json({url:checkoutUrl});
     } catch {
-      await admin.from('checkout_attempts').update({status:'abandoned'}).eq('id',attempt);
+      await admin.from('checkout_attempts').update({status:checkoutRequested ? 'abandoned' : 'failed'}).eq('id',attempt);
       return json({reason:'checkout_unavailable'},503);
     }
   } catch {
