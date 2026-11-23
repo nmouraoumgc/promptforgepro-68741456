@@ -27,6 +27,9 @@ Deno.serve(async req => {
     // Fetch current state as checkout.completed can carry only a subscription ID.
     const subId = entityId(first ? obj.subscription : obj);
     if (!subId || !Number.isSafeInteger(event.created_at)) throw new Error('Invalid event');
+    const admin = createClient(setting('SUPABASE_URL'), setting('SUPABASE_SERVICE_ROLE_KEY'));
+    const lease = await admin.rpc('acquire_creem_sync', {p_subscription:subId});
+    if (lease.error || !lease.data) throw new Error('Subscription synchronization busy');
     const sub = await creemRequest('subscriptions?subscription_id=' + encodeURIComponent(subId));
     const customer = entityId(sub.customer);
     if (sub.id !== subId || entityId(sub.product) !== product || !customer || !sub.current_period_end_date) {
@@ -36,11 +39,11 @@ Deno.serve(async req => {
     // Creem subscription revokes access even when its period end is future.
     const status = sub.status === 'scheduled_cancel' ? 'active'
       : sub.status === 'canceled' ? 'expired' : sub.status;
-    const admin = createClient(setting('SUPABASE_URL'), setting('SUPABASE_SERVICE_ROLE_KEY'));
-    const result = await admin.rpc('apply_creem_subscription',{
+    const result = await admin.rpc('commit_creem_sync',{
+      p_token:lease.data,
       p_request:first ? obj.request_id : null, p_checkout:first ? obj.id : null,
       p_subscription:subId, p_customer:customer, p_product:product, p_env:env,
-      p_event_at:event.created_at, p_status:status, p_start:sub.current_period_start_date ?? null,
+      p_status:status, p_start:sub.current_period_start_date ?? null,
       p_end:sub.current_period_end_date, p_cancel:sub.status === 'scheduled_cancel',
     });
     if (result.error) throw result.error;

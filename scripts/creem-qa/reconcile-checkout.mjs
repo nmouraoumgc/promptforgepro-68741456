@@ -15,6 +15,8 @@ export async function reconcileCheckout(checkoutId, request) {
     throw new Error('Creem did not confirm a completed paid Sandbox checkout with a local binding');
   }
 
+  const token = await request('rpc/acquire_creem_sync', {p_subscription:subscriptionId});
+  if (!token) throw new Error('Subscription synchronization busy');
   const subscription = await request('subscriptions?subscription_id=' + encodeURIComponent(subscriptionId));
   const customerId = entityId(subscription.customer);
   if (subscription.id !== subscriptionId || entityId(subscription.product) !== productId ||
@@ -26,14 +28,14 @@ export async function reconcileCheckout(checkoutId, request) {
   const scheduled = subscription.status === 'scheduled_cancel';
   // The RPC locks and verifies the original request/checkout binding and environment.
   // Zero lets any genuine webhook take precedence and prevents replay over an applied event.
-  await request('rpc/apply_creem_subscription', {
+  await request('rpc/commit_creem_sync', {
+    p_token:token,
     p_request: checkout.request_id,
     p_checkout: checkoutId,
     p_subscription: subscriptionId,
     p_customer: customerId,
     p_product: productId,
     p_env: 'sandbox',
-    p_event_at: 0,
     p_status: scheduled ? 'active' : subscription.status === 'canceled' ? 'expired' : subscription.status,
     p_start: subscription.current_period_start_date ?? null,
     p_end: subscription.current_period_end_date,
@@ -61,7 +63,7 @@ async function run() {
       signal: AbortSignal.timeout(15000),
     }).catch(() => { throw new Error(body ? 'Supabase QA request failed' : 'Creem Sandbox request failed'); });
     if (!response.ok) throw new Error((body ? 'Supabase QA' : 'Creem Sandbox') + ' HTTP ' + response.status);
-    if (!body) return response.json().catch(() => { throw new Error('Invalid Creem Sandbox response'); });
+    if (!body || path === 'rpc/acquire_creem_sync') return response.json().catch(() => { throw new Error('Invalid Creem Sandbox response'); });
   });
   console.log('Sandbox reconciliation RPC accepted. Verify the subscription and profile in QA.');
 }

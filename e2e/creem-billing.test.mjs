@@ -51,8 +51,22 @@ for (const billing of ['monthly','annual']) {
       await db.exec(plans.slice(plans.indexOf('create or replace function public.recompute_profile_plan'),plans.indexOf('drop trigger if exists trg_sync_plan_from_override')));
       await db.exec('create trigger plan after insert or update on subscriptions for each row execute function sync_profile_plan_from_subscription()');
       await db.exec(await readMigration('20261122120000_creem_pro.sql'));
+      await db.exec(await readMigration('20261123160000_creem_serial_sync.sql'));
       await db.query('insert into auth.users values ($1)',[user.id]);
       await db.query("insert into profiles values ($1,'free',now())",[user.id]);
+
+      const firstLease = await rpc(db,'acquire_creem_sync',{p_subscription:'concurrent_test'});
+      assert.ok(firstLease.data);
+      assert.equal((await rpc(db,'acquire_creem_sync',{p_subscription:'concurrent_test'})).data,null);
+      await db.exec("update creem_sync_leases set expires_at=now()-interval '1 second'");
+      const replacement = await rpc(db,'acquire_creem_sync',{p_subscription:'concurrent_test'});
+      assert.notEqual(firstLease.data,replacement.data);
+      const staleCommit = await rpc(db,'commit_creem_sync',{
+        p_token:firstLease.data,p_request:null,p_checkout:null,p_subscription:'concurrent_test',
+        p_customer:'customer',p_product:'product',p_env:'sandbox',p_status:'active',
+        p_start:null,p_end:'2099-01-01',p_cancel:false,
+      });
+      assert.match(staleCommit.error.message,/Expired or superseded/);
 
       const product = 'prod_'+billing;
       let checkoutBody;
@@ -96,6 +110,7 @@ for (const billing of ['monthly','annual']) {
       const notify = async (type,obj,time,secret=env.CREEM_WEBHOOK_SECRET) => {
         const body = JSON.stringify({id:'evt_delivery_'+time,eventType:type,created_at:time,object:obj});
         const signature = createHmac('sha256',secret).update(body).digest('hex');
+        await db.exec("update creem_sync_leases set expires_at=now()-interval '1 second'");
         return (await webhook(new Request('https://qa.invalid',{method:'POST',body,headers:{'creem-signature':signature}}))).status;
       };
       const event = {id:'ch_test',product,mode:'test',status:'completed',order:{status:'paid'},request_id:checkoutBody.request_id,subscription:sub.id};
@@ -108,12 +123,17 @@ for (const billing of ['monthly','annual']) {
       const reconcile = (providerCheckout = event) => reconcileCheckout('ch_test', async (path, body) => {
         if (path === 'checkouts?checkout_id=ch_test') return providerCheckout;
         if (path === 'subscriptions?subscription_id=sub_test') return sub;
-        assert.equal(path, 'rpc/apply_creem_subscription');
-        const result = await rpc(db, 'apply_creem_subscription', body);
+        if (path === 'rpc/acquire_creem_sync') {
+          const lease = await rpc(db,'acquire_creem_sync',body);
+          return lease.data;
+        }
+        assert.equal(path, 'rpc/commit_creem_sync');
+        const result = await rpc(db, 'commit_creem_sync', body);
         if (result.error) throw result.error;
       });
       await assert.rejects(reconcile({...event,request_id:'20000000-0000-4000-8000-000000000002'}));
       assert.equal(await plan(),'free');
+      await db.exec("update creem_sync_leases set expires_at=now()-interval '1 second'");
       await reconcile();
       assert.equal(await plan(),'pro');
       await reconcile();
@@ -150,7 +170,7 @@ for (const billing of ['monthly','annual']) {
       assert.equal(await notify('subscription.paid',{...sub,status:'active'},50),204);
       assert.equal((await subscription()).cancel_at_period_end,true);
       assert.equal(await plan(),'pro');
-      assert.equal((await db.query('select creem_event_at from subscriptions')).rows[0].creem_event_at,50);
+      assert.equal((await db.query('select creem_event_at from subscriptions')).rows[0].creem_event_at,null);
       sub.status='canceled';
       assert.equal(await notify('subscription.canceled',sub,51),204);
       assert.equal((await subscription()).cancel_at_period_end,false);
@@ -168,7 +188,7 @@ for (const billing of ['monthly','annual']) {
       assert.equal(await plan(),'free');
       sub.status='expired';
       assert.equal(await notify('subscription.expired',sub,53),204);
-      sub.status='active';
+      sub.status='expired';
       sub.current_period_end_date='2099-03-01';
       assert.equal(await notify('subscription.paid',sub,2),204);
       assert.equal(await plan(),'free');
