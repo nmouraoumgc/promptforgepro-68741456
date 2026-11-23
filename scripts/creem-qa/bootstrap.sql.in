@@ -35,9 +35,20 @@ begin
     end if;
   end if;
 
-  -- Use the existing QA plan type. Fail and roll back on an incompatible profile schema.
-  perform id, email, current_plan, updated_at from public.profiles limit 0;
-  alter type public.plan_type add value if not exists 'packs';
+  -- Keep the existing profile and role columns as text. These new enums
+  -- belong to the billing schema and include every value at creation.
+  perform id, email, current_plan from public.profiles limit 0;
+  perform user_id, role from public.user_roles limit 0;
+  if not exists (
+    select 1 from pg_trigger
+    where tgrelid = 'auth.users'::regclass and tgname = 'qa_auth_profile_created'
+      and tgfoid = to_regprocedure('public.qa_create_profile()')
+      and tgtype = 5 and tgenabled in ('O', 'A')
+  ) then
+    raise exception 'QA bootstrap refused: expected the active QA profile creation trigger';
+  end if;
+  create type public.plan_type as enum ('free', 'pro', 'premium', 'packs');
+  create type public.app_role as enum ('admin', 'user');
 
 -- BILLING_MIGRATIONS
 
@@ -50,7 +61,7 @@ begin
     public.payment_failures, public.purchases, public.plan_overrides,
     public.disposable_email_domains, public.creem_checkouts from public, anon, authenticated;
   grant select on public.subscriptions, public.purchases to authenticated;
-  revoke update on public.profiles from public;
+  revoke update on public.profiles from public, anon, authenticated;
   revoke insert, delete on public.profiles from public, anon, authenticated;
   revoke insert (current_plan), update (current_plan) on public.profiles from public, anon, authenticated;
   grant select on public.profiles to service_role;
@@ -62,20 +73,6 @@ begin
     for each row execute function public.sync_profile_plan_from_subscription();
   create trigger trg_sync_plan_from_purchase after insert or update or delete on public.purchases
     for each row execute function public.sync_profile_plan_from_subscription();
-
-  -- The partial project may lack the profile creation trigger. Preserve any
-  -- existing profile initialization and supply only a missing profile.
-  create function public.ensure_creem_qa_profile() returns trigger
-  language plpgsql security definer set search_path = public as $profile$
-  begin
-    insert into public.profiles(id,email,current_plan) values(new.id,new.email,'free')
-    on conflict (id) do nothing;
-    return new;
-  end;
-  $profile$;
-  revoke all on function public.ensure_creem_qa_profile() from public, anon, authenticated;
-  create trigger zz_ensure_creem_qa_profile after insert on auth.users
-    for each row execute function public.ensure_creem_qa_profile();
 
   create schema creem_qa_bootstrap_v1;
   revoke all on schema creem_qa_bootstrap_v1 from public, anon, authenticated;

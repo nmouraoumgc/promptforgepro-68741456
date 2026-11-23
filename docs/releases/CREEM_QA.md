@@ -7,11 +7,11 @@
 - O checkout de partida corresponde a `main` no GitHub (`efc72bd`). A PR #41 já está integrada e o último commit da PR é `7a1ffb0`.
 - A partir do ambiente Codex, as ligações HTTPS ao projeto QA, à API de gestão do Supabase e à API Creem Sandbox foram recusadas pelo proxy com HTTP 403 no túnel CONNECT. Não foram detetadas credenciais Supabase ou Creem no processo nem bindings na configuração do ambiente.
 - `e2e/creem-billing.test.mjs` executa as Edge Functions, as funções SQL e o corpo do job de expiração em PGlite, com transporte Creem e autenticação simulados. Abrange os planos mensal e anual, o cupão de primeira cobrança, pagamento inicial falhado, assinatura inválida, modo incorreto, ativação, repetição e eventos atrasados, extensão do período pago, atraso no pagamento, cancelamento e expiração. O teste não executa o worker pg_cron nem confirma os payloads e as políticas de reentrega da Creem real.
-- O estado remoto descrito para o QA aguarda confirmação direta. Não foram aplicadas migrações nem criadas compras remotas.
+- O preflight remoto da PR #42 confirmou cinco tabelas, zero utilizadores e migrações, ausência de pg_cron e os tipos, colunas e trigger descritos abaixo. Não foram aplicadas migrações nem criadas compras remotas.
 
 ## Aplicar o bootstrap no QA
 
-1. Confirmar que o projeto selecionado na ligação Supabase do ChatGPT ou no SQL Editor é `nzhjzdmuevwsaldpqlxd`. Executar [preflight.sql](../../scripts/creem-qa/preflight.sql). A primeira aplicação pressupõe as cinco tabelas públicas identificadas, zero utilizadores, histórico vazio e ausência de pg_cron. Rever os triggers existentes antes de criar contas. Confirmar que não contactam produção nem enviam emails.
+1. Confirmar que o projeto selecionado na ligação Supabase do ChatGPT ou no SQL Editor é `nzhjzdmuevwsaldpqlxd`. Executar [preflight.sql](../../scripts/creem-qa/preflight.sql). A primeira aplicação pressupõe as cinco tabelas públicas identificadas, zero utilizadores, histórico vazio e ausência de pg_cron. Confirmar o trigger ativo `qa_auth_profile_created` → `public.qa_create_profile()` e rever os triggers existentes antes de criar contas. Confirmar que não contactam produção nem enviam emails.
 2. A partir da raiz deste checkout, gerar o SQL e verificar a suite local.
 
    ```sh
@@ -47,7 +47,7 @@
 
 ### Sequência reutilizada
 
-A geração extrai das migrações os blocos de compras e papéis, subscrições, tentativas, eventos, antiabuso, domínios descartáveis, falhas de pagamento, recomputação do plano e RPCs Creem. Antes desses blocos, acrescenta `packs` ao enum QA. Depois, protege o plano de alterações diretas por utilizadores autenticados, instala os triggers de subscrições e compras, ajusta os grants e restringe as duas tabelas de faturação ao modo sandbox. Não importa migrações de dunning, integrações Paddle, backfill de perfis, extensões de rede nem agendamentos. Em particular, as migrações `20261027150000_dunning_cron_schedule.sql` e `20261027220000_cron_secret.sql` contêm referências ao projeto de produção e ficam fora do bootstrap.
+A geração extrai das migrações os blocos de compras e papéis, subscrições, tentativas, eventos, antiabuso, domínios descartáveis, falhas de pagamento, recomputação do plano e RPCs Creem. Antes desses blocos, cria os enums de faturação com todos os valores, incluindo `packs` na definição inicial de `plan_type`. Mantém `profiles.current_plan` e `user_roles.role` como texto, preserva as constraints e políticas existentes, e reutiliza o trigger QA de criação de perfis. A recomputação grava o plano como texto e dispensa `profiles.updated_at`. Depois, protege o plano de alterações diretas por utilizadores autenticados, instala os triggers de subscrições e compras, ajusta os grants e restringe as duas tabelas de faturação ao modo sandbox. Não importa migrações de dunning, integrações Paddle, backfill de perfis, extensões de rede nem agendamentos. Em particular, as migrações `20261027150000_dunning_cron_schedule.sql` e `20261027220000_cron_secret.sql` contêm referências ao projeto de produção e ficam fora do bootstrap.
 
 ## Critérios da validação real
 

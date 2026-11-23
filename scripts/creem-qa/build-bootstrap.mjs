@@ -15,12 +15,19 @@ function section(sql, start, end) {
   return sql.slice(from, to).trim();
 }
 
+function adapt(sql, original, replacement) {
+  if (sql.split(original).length !== 2) {
+    throw new Error('Expected one QA adaptation for: ' + original);
+  }
+  return sql.replace(original, replacement);
+}
+
 const base = readMigration('20260101093607');
 const plans = readMigration('20261030230100');
 
 const statements = [
-  section(base, 'CREATE OR REPLACE FUNCTION public.has_role', '-- User roles policies'),
-  readMigration('20261027201000').trim(),
+  adapt(section(base, 'CREATE OR REPLACE FUNCTION public.has_role', '-- User roles policies'),
+    'AND role = _role', 'AND role = _role::text'),
   section(base, 'CREATE TABLE public.purchases', '-- Create function to handle new user signup'),
   section(readMigration('20260525114020'), 'CREATE TABLE public.checkout_attempts', '-- Dunning notifications'),
   section(readMigration('20260430081854'), 'create table if not exists public.subscriptions', 'create or replace function public.has_active_subscription'),
@@ -28,7 +35,9 @@ const statements = [
   section(readMigration('20261029140000'), 'ALTER TABLE public.checkout_attempts', 'CREATE OR REPLACE FUNCTION public.block_disposable_email'),
   readMigration('20261029140100').trim(),
   section(readMigration('20261030130000'), 'CREATE TABLE IF NOT EXISTS public.payment_failures', 'CREATE TABLE IF NOT EXISTS public.discount_flags'),
-  section(plans, 'create table if not exists public.plan_overrides', '-- 4) Grandfather'),
+  adapt(section(plans, 'create table if not exists public.plan_overrides', '-- 4) Grandfather'),
+    'set current_plan = v_new_plan, updated_at = now()\n  where id = _user_id and current_plan is distinct from v_new_plan;',
+    'set current_plan = v_new_plan::text\n  where id = _user_id and current_plan is distinct from v_new_plan::text;'),
   section(readMigration('20261122120000'), 'alter table public.subscriptions', '-- The profile stores the effective plan'),
 ];
 

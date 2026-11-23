@@ -7,31 +7,7 @@ import { PGlite } from '@electric-sql/pglite';
 const user = '10000000-0000-4000-8000-000000000001';
 const other = '10000000-0000-4000-8000-000000000002';
 
-async function partialQa(db) {
-  await db.exec(`
-    create role anon;
-    create role authenticated;
-    create role service_role bypassrls;
-    create schema auth;
-    create table auth.users(id uuid primary key, email text not null);
-    create function auth.uid() returns uuid language sql as
-      $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
-    create function auth.role() returns text language sql as $$select current_user::text$$;
-    create type public.plan_type as enum ('free','pro','premium');
-    create type public.app_role as enum ('admin','user');
-    create table public.profiles(id uuid primary key references auth.users, email text not null,
-      current_plan public.plan_type not null default 'free', updated_at timestamptz default now());
-    alter table public.profiles enable row level security;
-    create policy own_profile on public.profiles to authenticated
-      using (auth.uid() = id) with check (auth.uid() = id);
-    grant usage on schema auth to authenticated;
-    grant select, update, insert on public.profiles to authenticated;
-    create table public.user_roles(user_id uuid, role public.app_role);
-    create table public.learn_lesson_content(id uuid);
-    create table public.learn_lessons(id uuid);
-    create table public.learn_progress(id uuid);
-  `);
-}
+const baseline = readFileSync(new URL('fixtures/creem-qa-baseline.sql', import.meta.url), 'utf8');
 
 function sql() {
   return execFileSync(process.execPath, ['scripts/creem-qa/build-bootstrap.mjs'], {
@@ -42,7 +18,7 @@ function sql() {
 test('QA bootstrap rejects a different schema before creating billing objects', async () => {
   const db = new PGlite();
   try {
-    await partialQa(db);
+    await db.exec(baseline);
     await db.exec('create table public.extra_table(id uuid)');
     await assert.rejects(db.exec(sql()), /QA bootstrap refused/);
     await db.exec('rollback');
@@ -56,11 +32,24 @@ test('QA bootstrap rejects a different schema before creating billing objects', 
 test('QA bootstrap can be reapplied and uses the real billing schema, grants and triggers', async () => {
   const db = new PGlite();
   try {
-    await partialQa(db);
+    await db.exec(baseline);
     const bootstrap = sql();
     assert.doesNotMatch(bootstrap, /cron\.schedule|net\.http|https?:\/\//i);
     await db.exec(bootstrap);
     await db.exec(bootstrap);
+    const { rows: policies } = await db.query(`select tablename, policyname, cmd from pg_policies
+      where schemaname='public' and tablename in ('profiles','user_roles') order by tablename`);
+    assert.deepEqual(policies, [
+      {tablename:'profiles',policyname:'own_profile',cmd:'SELECT'},
+      {tablename:'user_roles',policyname:'own_roles',cmd:'SELECT'},
+    ]);
+    const { rows: triggers } = await db.query(`select tgname from pg_trigger
+      where tgrelid = 'auth.users'::regclass and not tgisinternal`);
+    assert.deepEqual(triggers, [{tgname:'qa_auth_profile_created'}]);
+    const { rows: columns } = await db.query(`select column_name, data_type from information_schema.columns
+      where table_schema='public' and ((table_name='profiles' and column_name in ('current_plan','updated_at'))
+        or (table_name='user_roles' and column_name='role')) order by column_name`);
+    assert.deepEqual(columns, [{column_name:'current_plan',data_type:'text'}, {column_name:'role',data_type:'text'}]);
     await db.query('insert into auth.users values ($1,$2),($3,$4)', [user, 'buyer@example.test', other, 'other@example.test']);
     const { rows: [roles] } = await db.query(`
       select has_function_privilege('authenticated','public.reserve_creem_checkout(uuid,text,text,text,text,text,text)','execute') as can_reserve,
@@ -96,7 +85,6 @@ test('QA bootstrap can be reapplied and uses the real billing schema, grants and
     assert.equal((await db.query('select * from subscriptions')).rows.length, 1);
     await assert.rejects(db.query("update profiles set current_plan='premium'"), {code:'42501'});
     await assert.rejects(db.query("insert into profiles(id,email,current_plan) values ($1,'other@example.test','premium')", [other]), {code:'42501'});
-    await db.query("update profiles set display_name='Sandbox user'");
     await assert.rejects(db.query("update subscriptions set status='active'"), {code:'42501'});
     await db.exec('reset role');
     await db.exec(bootstrap);
@@ -110,6 +98,12 @@ test('QA bootstrap can be reapplied and uses the real billing schema, grants and
     await db.exec(expire);
     assert.equal((await db.query('select status from subscriptions')).rows[0].status, 'expired');
     assert.equal((await db.query('select current_plan from profiles where id=$1', [user])).rows[0].current_plan, 'free');
+    await db.query("insert into purchases(user_id,plan,amount_cents) values ($1,'packs',100)", [user]);
+    assert.equal((await db.query('select current_plan from profiles where id=$1', [user])).rows[0].current_plan, 'packs');
+    await assert.rejects(db.query("update profiles set current_plan='invalid'"), {code:'23514'});
+    await db.query("insert into user_roles values ($1,'admin')", [user]);
+    assert.equal((await db.query("select public.has_role($1,'admin') as admin", [user])).rows[0].admin, true);
+    assert.equal((await db.query("select public.has_role($1,'admin') as admin", [other])).rows[0].admin, false);
   } finally {
     await db.close();
   }
