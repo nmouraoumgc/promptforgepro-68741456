@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { createHmac } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { PGlite } from '@electric-sql/pglite';
+import { reconcileCheckout } from '../scripts/creem-qa/reconcile-checkout.mjs';
 import { loadEdge } from './helpers/edgeHarness.mjs';
 
 const env = {
@@ -55,7 +56,7 @@ for (const billing of ['monthly','annual']) {
 
       const product = 'prod_'+billing;
       let checkoutBody;
-      const sub = {id:'sub_test',customer:'cust_test',product,status:'active',current_period_end_date:'2099-02-01'};
+      const sub = {id:'sub_test',mode:'test',customer:'cust_test',product,status:'active',current_period_end_date:'2099-02-01'};
       const client = {
         auth:{getUser:async () => ({data:{user}})},
         rpc:(name,args) => rpc(db,name,args),
@@ -104,10 +105,23 @@ for (const billing of ['monthly','annual']) {
       assert.equal(await notify('checkout.completed',{...event,order:{status:'failed'}},1),204);
       assert.equal(await plan(),'free');
       assert.equal((await db.query('select count(*)::int as count from subscriptions')).rows[0].count,0);
+      const reconcile = (providerCheckout = event) => reconcileCheckout('ch_test', async (path, body) => {
+        if (path === 'checkouts?checkout_id=ch_test') return providerCheckout;
+        if (path === 'subscriptions?subscription_id=sub_test') return sub;
+        assert.equal(path, 'rpc/apply_creem_subscription');
+        const result = await rpc(db, 'apply_creem_subscription', body);
+        if (result.error) throw result.error;
+      });
+      await assert.rejects(reconcile({...event,request_id:'20000000-0000-4000-8000-000000000002'}));
+      assert.equal(await plan(),'free');
+      await reconcile();
+      assert.equal(await plan(),'pro');
+      await reconcile();
       assert.equal(await notify('checkout.completed',event,1),204);
       assert.equal(await plan(),'pro');
       assert.equal(await notify('checkout.completed',event,1),204);
-      sub.current_period_end_date='2099-03-01';
+      const renewedEnd = billing === 'annual' ? '2100-02-01' : '2099-03-01';
+      sub.current_period_end_date=renewedEnd;
       assert.equal(await notify('subscription.paid',sub,2),204);
       const subscription = async () => {
         const {rows} = await db.query(`select status, cancel_at_period_end,
@@ -116,33 +130,41 @@ for (const billing of ['monthly','annual']) {
         assert.equal(rows.length,1);
         return rows[0];
       };
-      assert.equal((await subscription()).paid_through,'2099-03-01');
+      assert.equal((await subscription()).paid_through,renewedEnd);
       sub.status='past_due';
       assert.equal(await notify('subscription.past_due',sub,3),204);
       assert.equal((await subscription()).status,'past_due');
-      assert.equal((await subscription()).paid_through,'2099-03-01');
+      assert.equal((await subscription()).paid_through,renewedEnd);
+      assert.equal(await plan(),'pro');
+      sub.status='active';
+      sub.current_period_end_date = billing === 'annual' ? '2101-02-01' : '2099-04-01';
+      assert.equal(await notify('subscription.paid',sub,4),204);
+      assert.equal((await subscription()).status,'active');
       assert.equal(await plan(),'pro');
       sub.status='scheduled_cancel';
-      assert.equal(await notify('subscription.scheduled_cancel',sub,4),204);
+      assert.equal(await notify('subscription.scheduled_cancel',sub,5),204);
       assert.equal((await subscription()).cancel_at_period_end,true);
       assert.equal(await plan(),'pro');
       sub.status='canceled';
-      assert.equal(await notify('subscription.canceled',sub,5),204);
+      assert.equal(await notify('subscription.canceled',sub,6),204);
+      assert.equal((await subscription()).cancel_at_period_end,false);
       assert.equal(await plan(),'pro');
       const {rows:[job]} = await db.query("select * from cron.jobs where name='expire-creem-pro'");
       assert.equal(job.schedule,'*/5 * * * *');
       await db.exec(job.command);
       assert.equal(await plan(),'pro');
       sub.current_period_end_date='2000-01-01';
-      assert.equal(await notify('subscription.canceled',sub,6),204);
+      assert.equal(await notify('subscription.canceled',sub,7),204);
       await db.exec(job.command);
       assert.equal((await subscription()).status,'expired');
       assert.equal(await plan(),'free');
       sub.status='expired';
-      assert.equal(await notify('subscription.expired',sub,7),204);
+      assert.equal(await notify('subscription.expired',sub,8),204);
       sub.status='active';
       sub.current_period_end_date='2099-03-01';
       assert.equal(await notify('subscription.paid',sub,2),204);
+      assert.equal(await plan(),'free');
+      await reconcile();
       assert.equal(await plan(),'free');
       assert.deepEqual(await (await buy({authorization:'Bearer test'})).json(),{reason:'code_already_used'});
     } finally { await db.close(); }

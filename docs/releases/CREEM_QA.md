@@ -7,13 +7,13 @@
 - O checkout de partida corresponde a `main` no GitHub (`efc72bd`). A PR #41 já está integrada e o último commit da PR é `7a1ffb0`.
 - A partir do ambiente Codex, as ligações HTTPS ao projeto QA, à API de gestão do Supabase e à API Creem Sandbox foram recusadas pelo proxy com HTTP 403 no túnel CONNECT. Não foram detetadas credenciais Supabase ou Creem no processo nem bindings na configuração do ambiente.
 - `e2e/creem-billing.test.mjs` executa as Edge Functions, as funções SQL e o corpo do job de expiração em PGlite, com transporte Creem e autenticação simulados. Abrange os planos mensal e anual, o cupão de primeira cobrança, pagamento inicial falhado, assinatura inválida, modo incorreto, ativação, repetição e eventos atrasados, extensão do período pago, atraso no pagamento, cancelamento e expiração. O teste não executa o worker pg_cron nem confirma os payloads e as políticas de reentrega da Creem real.
-- O preflight remoto da PR #42 confirmou cinco tabelas, zero utilizadores e migrações, ausência de pg_cron e os tipos, colunas e trigger descritos abaixo. Não foram aplicadas migrações nem criadas compras remotas.
+- O preflight remoto da PR #42 confirmou cinco tabelas, zero utilizadores e migrações, ausência de pg_cron e os tipos, colunas e trigger descritos abaixo. Esse preflight foi anterior à aplicação do bootstrap e às compras iniciais.
 
 ## Estado após a aplicação remota
 
 Segundo a confirmação publicada na PR #42, o projeto QA tem a migração `20261123112850_creem_qa_bootstrap_v1_20261123` aplicada e as funções `creem-checkout` e `creem-webhook` estão ACTIVE v2. As permissões das RPCs Creem, RLS e restrições Sandbox foram verificadas nessa sessão. Ambas as funções foram publicadas com `verify_jwt=false`: o checkout valida o token no handler e o webhook valida a assinatura Creem. **Não repetir o bootstrap para iniciar os testes Sandbox.**
 
-O ambiente Codex recebeu HTTP 403 no túnel do proxy para a API Creem Sandbox, o projeto QA e a API de gestão Supabase. A interface desta sessão também não disponibilizou controlo do browser partilhado. A configuração na Creem, a introdução de segredos no QA, a criação de contas e as compras e eventos reais da sandbox ainda estão pendentes.
+A API Creem Sandbox e a API REST do Supabase QA responderam HTTP 401 aos pedidos sem credenciais nesta sessão. As quatro compras iniciais foram confirmadas pelo utilizador numa sessão com acesso. A matriz abaixo lista os cenários remotos ainda pendentes.
 
 ### Ajuste de permissões no QA
 
@@ -22,14 +22,6 @@ Aplicar [harden-definer-grants.sql](../../scripts/creem-qa/harden-definer-grants
 O formulário de inscrição usa `is_disposable_email` antes de iniciar sessão, e as funções de checkout usam-na no servidor. Mantêm-se os grants necessários aos dois caminhos. O aviso sobre tabelas com RLS sem políticas é esperado para tabelas de acesso exclusivo do serviço. Os avisos de desempenho ficam separados deste ajuste.
 
 Os testes locais verificam a reaplicação da correção, o acesso do administrador autenticado às compras, o isolamento do utilizador comum, a validação de email sem sessão e a criação de perfis sob o papel de administração de Auth. Os 43 testes de `npm test` passaram. Em PostgreSQL 17.12, uma verificação separada confirmou a reaplicação, a criação de perfis pelo administrador de Auth, o acesso de compras pela política de administrador e a validação de email anónima. A confirmação destas permissões no QA remoto continua pendente.
-
-### Passagem de trabalho para a sessão autenticada
-
-1. Na Creem Sandbox, confirmar os produtos recorrentes de 9 €/mês e 90 €/ano em EUR e o cupão `PRODUCTHUNT20` de 20% na primeira cobrança de ambos.
-2. Associar o webhook de teste a `https://nzhjzdmuevwsaldpqlxd.supabase.co/functions/v1/creem-webhook`. Selecionar os eventos disponíveis correspondentes a `checkout.completed`, `subscription.paid`, `subscription.active`, `subscription.update`, `subscription.canceled`, `subscription.scheduled_cancel`, `subscription.expired`, `subscription.paused`, `subscription.past_due` e `subscription.unpaid`. Registar os nomes reais e eventuais diferenças de suporte do painel.
-3. No painel seguro do Supabase QA, inserir a chave API e o segredo de assinatura da sandbox, os IDs dos produtos e a origem do frontend QA. Usar `CREEM_MODE=test`. Apontar o frontend isolado ao QA e ativar o checkout apenas nesse frontend e no QA. Criar quatro contas de teste confirmadas pelo Auth Admin sem envio de emails.
-4. Em quatro contas separadas, concluir os checkouts mensal sem cupão (9 €), mensal com cupão (7,20 €), anual sem cupão (90 €) e anual com cupão (72 €), com meios de pagamento de teste. Confirmar a entrega de webhook, a subscrição única, o plano Pro e o acesso pago em cada conta.
-5. Usar os mecanismos sandbox disponíveis para reentrega, renovação, cancelamento, falha e expiração. Confirmar os critérios abaixo e registar o que a sandbox permite observar. A simulação local de eventos fora de ordem complementa a evidência e não substitui entregas da Creem.
 
 ## Aplicar o bootstrap num QA por inicializar
 
@@ -91,3 +83,38 @@ Usar exclusivamente meios de pagamento de teste e guardar timestamps, estados, c
 2. Com as vendas desativadas, aplicar apenas as migrações aprovadas que estejam em falta e publicar as funções do commit validado. Configurar produtos, cupão e webhook Live com credenciais próprias. Confirmar que a funcionalidade Free e o acesso dos utilizadores pagos existentes continuam operacionais.
 3. Confirmar a monitorização do endpoint de webhook e a reconciliação entre pagamentos, subscrições e planos. Incluir um procedimento de reentrega e recuperação sempre que exista pagamento confirmado sem Pro após a janela operacional acordada.
 4. Mediante aprovação de lançamento, ligar o checkout no backend e no frontend. Para travar novas vendas, desligar primeiro `CREEM_CHECKOUT_ENABLED`; manter a receção dos webhooks ativos para processar pagamentos já iniciados.
+
+## Ciclo de vida após as quatro compras iniciais
+
+O utilizador confirmou as quatro compras Creem Sandbox de **9 €, 7,20 €, 90 € e 72 €**, com entrega de webhook, associação da subscrição e acesso Pro nas quatro contas. Reutilizar essas subscrições para os testes seguintes.
+
+| Cenário | Evidência local com Creem simulada | Creem Sandbox real |
+| --- | --- | --- |
+| Pagamento inicial | Fluxos mensal e anual exercitam o handler e a persistência de QA. | Quatro compras confirmadas pelo utilizador. |
+| Renovação mensal e anual | Um evento pago prolonga o período em um mês ou um ano, respetivamente. O preço da renovação não é verificado pelo handler. | Pendente. Confirmar em EUR 9 € e 90 €, incluindo nas subscrições que usaram `PRODUCTHUNT20`. Guardar a transação e o período pago antes e depois. |
+| Reentrega e ordem | A entrega duplicada mantém uma só subscrição. Um evento antigo não reativa uma subscrição expirada. | Pendente. Reentregar eventos a partir da Creem e verificar o estado e a contagem de registos. |
+| Falha e recuperação | Pagamento inicial falhado mantém Free. `past_due` não prolonga o período nesta sequência. Um pagamento posterior recupera o estado ativo. | Pendente. Confirmar a falha numa renovação, o período pago inalterado e o prolongamento após recuperação. |
+| Cancelamento | `scheduled_cancel` marca o fim do período. `canceled` remove a marca e o acesso mantém-se enquanto a data paga devolvida pela Creem estiver no futuro. | Pendente. Comparar cancelamento imediato e agendado e validar a data efetiva devolvida pela Creem em cada caso. |
+| Expiração | O evento de expiração e o SQL de expiração foram exercitados localmente. | Pendente. Confirmar o perfil e uma chamada a uma funcionalidade Pro após o termo. No QA sem cron, usar o script manual quando necessário. |
+| Reconciliação | O checkout pago sem entrega inicial pode ser recuperado. Um vínculo incorreto é recusado e a execução repetida não substitui um estado obtido de um webhook. | Pendente. Testar recuperação num caso controlado de webhook não processado. Reutilizar a evidência das compras iniciais sem as repetir. |
+
+### Recuperar um webhook não processado
+
+Primeiro, procurar a entrega na Creem e pedir reentrega do evento original. Confirmar uma resposta 2xx, o estado da subscrição e o plano efetivo. Para uma renovação em falta, comparar a transação e a nova data paga com o registo do QA. A reentrega do evento é o procedimento suportado para atualizar uma subscrição já vinculada.
+
+Se o pagamento inicial estiver confirmado mas a entrega não estiver disponível, usar o ID do checkout já associado a uma tentativa no QA. O script consulta a Creem Sandbox, exige um checkout pago e valida a referência, o produto e a subscrição através da RPC existente. A rotina só aponta para o Supabase QA e a API Sandbox. Não recupera uma tentativa cujo vínculo de checkout nunca tenha sido gravado e não altera o estado registado por um webhook já aplicado.
+
+Injetar `CREEM_API_KEY` da Sandbox e `SUPABASE_QA_SERVICE_ROLE_KEY` pelo mecanismo seguro da sessão. Com Node.js 24, executar da raiz do repositório:
+
+```sh
+CREEM_MODE=test NODE_USE_ENV_PROXY=1 node scripts/creem-qa/reconcile-checkout.mjs <checkout-id>
+```
+
+Uma resposta de sucesso da RPC também pode representar uma operação repetida. Confirmar sempre o vínculo, o estado da subscrição, a data paga e o perfil QA. Se não houver vínculo local ou não for possível reentregar uma renovação perdida, registar a divergência e manter a decisão de Live pendente até haver um procedimento de recuperação validado.
+
+### Decisão de Live
+
+- Confirmar os preços integrais de ambas as renovações com evidência da Creem.
+- Demonstrar recuperação de falha de cobrança e de entrega, reentrega idempotente e manutenção do estado mais recente.
+- Confirmar o comportamento efetivo de ambos os cancelamentos e a remoção do acesso na expiração. Verificar o agendamento separadamente antes de Live.
+- Aprovar o procedimento operacional para a deteção e reconciliação de divergências. Obter aprovação explícita antes de qualquer alteração em produção ou ativação Live.
