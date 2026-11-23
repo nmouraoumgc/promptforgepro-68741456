@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { createHmac } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { PGlite } from '@electric-sql/pglite';
+import { reconcileCheckout } from '../scripts/creem-qa/reconcile-checkout.mjs';
 import { loadEdge } from './helpers/edgeHarness.mjs';
 
 const env = {
@@ -22,7 +23,7 @@ const rpc = async (db, name, args) => {
 const readMigration = name => readFile('supabase/migrations/'+name,'utf8');
 
 for (const billing of ['monthly','annual']) {
-  test(billing + ' from authenticated checkout to signed payment, duplicate, renewal and expiry', async () => {
+  test(billing + ' from authenticated checkout to payment failure, signed payment, renewal, cancellation and expiry', async () => {
     const db = new PGlite();
     try {
       await db.exec(`
@@ -30,7 +31,11 @@ for (const billing of ['monthly','annual']) {
         create schema auth; create table auth.users(id uuid primary key);
         create function auth.uid() returns uuid language sql as $$select null::uuid$$;
         create function auth.role() returns text language sql as $$select 'service_role'::text$$;
-        create schema cron; create function cron.schedule(text,text,text) returns int language sql as $$select 1$$;
+        create schema cron;
+        create table cron.jobs(name text, schedule text, command text);
+        create function cron.schedule(text,text,text) returns int language sql as $$
+          insert into cron.jobs values ($1,$2,$3) returning 1
+        $$;
         create type plan_type as enum ('free','pro','premium','packs');
         create table profiles(id uuid primary key,current_plan plan_type,updated_at timestamptz);
         create table purchases(user_id uuid,plan plan_type,status text);
@@ -46,12 +51,26 @@ for (const billing of ['monthly','annual']) {
       await db.exec(plans.slice(plans.indexOf('create or replace function public.recompute_profile_plan'),plans.indexOf('drop trigger if exists trg_sync_plan_from_override')));
       await db.exec('create trigger plan after insert or update on subscriptions for each row execute function sync_profile_plan_from_subscription()');
       await db.exec(await readMigration('20261122120000_creem_pro.sql'));
+      await db.exec(await readMigration('20261123160000_creem_serial_sync.sql'));
       await db.query('insert into auth.users values ($1)',[user.id]);
       await db.query("insert into profiles values ($1,'free',now())",[user.id]);
 
+      const firstLease = await rpc(db,'acquire_creem_sync',{p_subscription:'concurrent_test'});
+      assert.ok(firstLease.data);
+      assert.equal((await rpc(db,'acquire_creem_sync',{p_subscription:'concurrent_test'})).data,null);
+      await db.exec("update creem_sync_leases set expires_at=now()-interval '1 second'");
+      const replacement = await rpc(db,'acquire_creem_sync',{p_subscription:'concurrent_test'});
+      assert.notEqual(firstLease.data,replacement.data);
+      const staleCommit = await rpc(db,'commit_creem_sync',{
+        p_token:firstLease.data,p_request:null,p_checkout:null,p_subscription:'concurrent_test',
+        p_customer:'customer',p_product:'product',p_env:'sandbox',p_status:'active',
+        p_start:null,p_end:'2099-01-01',p_cancel:false,
+      });
+      assert.match(staleCommit.error.message,/Expired or superseded/);
+
       const product = 'prod_'+billing;
       let checkoutBody;
-      const sub = {id:'sub_test',customer:'cust_test',product,status:'active',current_period_end_date:'2099-02-01'};
+      const sub = {id:'sub_test',mode:'test',customer:'cust_test',product,status:'active',current_period_end_date:'2099-02-01'};
       const client = {
         auth:{getUser:async () => ({data:{user}})},
         rpc:(name,args) => rpc(db,name,args),
@@ -89,25 +108,102 @@ for (const billing of ['monthly','annual']) {
       const plan = async () => (await db.query('select current_plan from profiles')).rows[0].current_plan;
       assert.equal(await plan(),'free');
       const notify = async (type,obj,time,secret=env.CREEM_WEBHOOK_SECRET) => {
-        const body = JSON.stringify({eventType:type,created_at:time,object:obj});
+        const body = JSON.stringify({id:'evt_delivery_'+time,eventType:type,created_at:time,object:obj});
         const signature = createHmac('sha256',secret).update(body).digest('hex');
+        await db.exec("update creem_sync_leases set expires_at=now()-interval '1 second'");
         return (await webhook(new Request('https://qa.invalid',{method:'POST',body,headers:{'creem-signature':signature}}))).status;
       };
       const event = {id:'ch_test',product,mode:'test',status:'completed',order:{status:'paid'},request_id:checkoutBody.request_id,subscription:sub.id};
       assert.equal(await notify('checkout.completed',event,1,'wrong-secret'),401);
       assert.equal(await notify('subscription.paid',sub,2),503);
       assert.equal(await notify('checkout.completed',{...event,mode:'prod'},1),400);
+      assert.equal(await notify('checkout.completed',{...event,order:{status:'failed'}},1),204);
+      assert.equal(await plan(),'free');
+      assert.equal((await db.query('select count(*)::int as count from subscriptions')).rows[0].count,0);
+      const reconcile = (providerCheckout = event) => reconcileCheckout('ch_test', async (path, body) => {
+        if (path === 'checkouts?checkout_id=ch_test') return providerCheckout;
+        if (path === 'subscriptions?subscription_id=sub_test') return sub;
+        if (path === 'rpc/acquire_creem_sync') {
+          const lease = await rpc(db,'acquire_creem_sync',body);
+          return lease.data;
+        }
+        assert.equal(path, 'rpc/commit_creem_sync');
+        const result = await rpc(db, 'commit_creem_sync', body);
+        if (result.error) throw result.error;
+      });
+      await assert.rejects(reconcile({...event,request_id:'20000000-0000-4000-8000-000000000002'}));
+      assert.equal(await plan(),'free');
+      await db.exec("update creem_sync_leases set expires_at=now()-interval '1 second'");
+      await reconcile();
+      assert.equal(await plan(),'pro');
+      await reconcile();
       assert.equal(await notify('checkout.completed',event,1),204);
       assert.equal(await plan(),'pro');
       assert.equal(await notify('checkout.completed',event,1),204);
+      const renewedEnd = billing === 'annual' ? '2100-02-01' : '2099-03-01';
+      sub.current_period_end_date=renewedEnd;
       assert.equal(await notify('subscription.paid',sub,2),204);
-      sub.status='expired';
-      assert.equal(await notify('subscription.expired',sub,3),204);
-      assert.equal(await plan(),'free');
+      const subscription = async () => {
+        const {rows} = await db.query(`select status, cancel_at_period_end,
+          to_char(current_period_end at time zone 'UTC','YYYY-MM-DD') as paid_through
+          from subscriptions`);
+        assert.equal(rows.length,1);
+        return rows[0];
+      };
+      assert.equal((await subscription()).paid_through,renewedEnd);
+      sub.status='past_due';
+      assert.equal(await notify('subscription.past_due',sub,3),204);
+      assert.equal((await subscription()).status,'past_due');
+      assert.equal((await subscription()).paid_through,renewedEnd);
+      assert.equal(await plan(),'pro');
       sub.status='active';
+      sub.current_period_end_date = billing === 'annual' ? '2101-02-01' : '2099-04-01';
+      assert.equal(await notify('subscription.paid',sub,4),204);
+      assert.equal((await subscription()).status,'active');
+      assert.equal(await plan(),'pro');
+      sub.status='scheduled_cancel';
+      assert.equal(await notify('subscription.scheduled_cancel',sub,5),204);
+      assert.equal((await subscription()).cancel_at_period_end,true);
+      assert.equal(await plan(),'pro');
+      // Resend carries an old commercial payload with a new ID/time.
+      // The handler must use the current subscription fetched from Creem.
+      assert.equal(await notify('subscription.paid',{...sub,status:'active'},50),204);
+      assert.equal((await subscription()).cancel_at_period_end,true);
+      assert.equal(await plan(),'pro');
+      assert.equal((await db.query('select creem_event_at from subscriptions')).rows[0].creem_event_at,null);
+      sub.status='canceled';
+      assert.equal(await notify('subscription.canceled',sub,51),204);
+      assert.equal((await subscription()).cancel_at_period_end,false);
+      assert.equal(await plan(),'free');
+      assert.equal(await notify('subscription.paid',{...sub,status:'active'},52),204);
+      assert.equal(await plan(),'free');
+      const {rows:[job]} = await db.query("select * from cron.jobs where name='expire-creem-pro'");
+      assert.equal(job.schedule,'*/5 * * * *');
+      await db.exec(job.command);
+      assert.equal(await plan(),'free');
+      sub.current_period_end_date='2000-01-01';
+      assert.equal(await notify('subscription.canceled',sub,52),204);
+      await db.exec(job.command);
+      assert.equal((await subscription()).status,'expired');
+      assert.equal(await plan(),'free');
+      sub.status='expired';
+      assert.equal(await notify('subscription.expired',sub,53),204);
+      sub.status='expired';
+      sub.current_period_end_date='2099-03-01';
       assert.equal(await notify('subscription.paid',sub,2),204);
+      assert.equal(await plan(),'free');
+      await reconcile();
       assert.equal(await plan(),'free');
       assert.deepEqual(await (await buy({authorization:'Bearer test'})).json(),{reason:'code_already_used'});
     } finally { await db.close(); }
   });
 }
+
+test('the hosted QA project rejects Live mode before making a provider request', async () => {
+  const { creemRequest } = await loadEdge('supabase/functions/_shared/creem.ts', {
+    env: {...env, CREEM_MODE:'live', SUPABASE_URL:'https://nzhjzdmuevwsaldpqlxd.supabase.co'},
+    exportedModule:true,
+    fetch: () => assert.fail('QA must never contact the Live API'),
+  });
+  await assert.rejects(creemRequest('subscriptions?subscription_id=sub_test'), /QA requires Creem test mode/);
+});

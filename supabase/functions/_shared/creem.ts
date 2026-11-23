@@ -6,8 +6,12 @@ export function setting(key: string): string {
 
 export function creemEnvironment() {
   const mode = setting('CREEM_MODE');
+  const project = new URL(setting('SUPABASE_URL')).hostname.split('.')[0];
+  if (project === 'nzhjzdmuevwsaldpqlxd' && mode !== 'test') {
+    throw new Error('QA requires Creem test mode');
+  }
   if (mode === 'live') return 'live';
-  if (mode !== 'test' || new URL(setting('SUPABASE_URL')).hostname.split('.')[0] === 'cwrxbxxfaemcvliasycz') {
+  if (mode !== 'test' || project === 'cwrxbxxfaemcvliasycz') {
     throw new Error('Configure test billing on an isolated Supabase project');
   }
   return 'sandbox';

@@ -1,0 +1,82 @@
+-- Generated with scripts/creem-qa/build-bootstrap.mjs.
+-- In Supabase SQL Editor, confirm project nzhjzdmuevwsaldpqlxd before executing.
+begin;
+
+do $creem_qa_bootstrap$
+declare
+  existing_tables text[];
+  original_tables constant text[] := array[
+    'learn_lesson_content', 'learn_lessons', 'learn_progress', 'profiles', 'user_roles'
+  ];
+begin
+  perform pg_advisory_xact_lock(hashtextextended('creem-qa-bootstrap-v1', 0));
+  if to_regnamespace('creem_qa_bootstrap_v1') is not null then
+    if to_regclass('public.creem_checkouts') is null
+      or to_regprocedure('public.reserve_creem_checkout(uuid,text,text,text,text,text,text)') is null
+      or to_regprocedure('public.apply_creem_subscription(uuid,text,text,text,text,text,bigint,text,timestamptz,timestamptz,boolean)') is null
+    then
+      raise exception 'QA bootstrap refused: installed schema is incomplete';
+    end if;
+    return;
+  end if;
+
+  select array_agg(tablename::text order by tablename::text)
+    into existing_tables from pg_tables where schemaname = 'public';
+  if existing_tables is distinct from original_tables
+    or exists (select 1 from auth.users)
+    or exists (select 1 from pg_extension where extname = 'pg_cron')
+  then
+    raise exception 'QA bootstrap refused: expected the five-table QA baseline without users or pg_cron';
+  end if;
+
+  if to_regclass('supabase_migrations.schema_migrations') is not null then
+    if exists (select 1 from supabase_migrations.schema_migrations) then
+      raise exception 'QA bootstrap refused: migration history is not empty';
+    end if;
+  end if;
+
+  -- Keep the existing profile and role columns as text. These new enums
+  -- belong to the billing schema and include every value at creation.
+  perform id, email, current_plan from public.profiles limit 0;
+  perform user_id, role from public.user_roles limit 0;
+  if not exists (
+    select 1 from pg_trigger
+    where tgrelid = 'auth.users'::regclass and tgname = 'qa_auth_profile_created'
+      and tgfoid = to_regprocedure('public.qa_create_profile()')
+      and tgtype = 5 and tgenabled in ('O', 'A')
+  ) then
+    raise exception 'QA bootstrap refused: expected the active QA profile creation trigger';
+  end if;
+  create type public.plan_type as enum ('free', 'pro', 'premium', 'packs');
+  create type public.app_role as enum ('admin', 'user');
+
+-- BILLING_MIGRATIONS
+
+  alter table public.creem_checkouts add constraint creem_qa_checkout_sandbox_only
+    check (environment = 'sandbox');
+  alter table public.subscriptions add constraint creem_qa_subscription_sandbox_only
+    check (environment = 'sandbox');
+
+  revoke all on public.subscriptions, public.checkout_attempts, public.checkout_events,
+    public.payment_failures, public.purchases, public.plan_overrides,
+    public.disposable_email_domains, public.creem_checkouts from public, anon, authenticated;
+  grant select on public.subscriptions, public.purchases to authenticated;
+  revoke update on public.profiles from public, anon, authenticated;
+  revoke insert, delete on public.profiles from public, anon, authenticated;
+  revoke insert (current_plan), update (current_plan) on public.profiles from public, anon, authenticated;
+  grant select on public.profiles to service_role;
+  grant all on public.subscriptions, public.checkout_attempts, public.checkout_events,
+    public.payment_failures, public.purchases, public.plan_overrides,
+    public.disposable_email_domains, public.creem_checkouts to service_role;
+
+  create trigger trg_sync_plan_from_subscription after insert or update or delete on public.subscriptions
+    for each row execute function public.sync_profile_plan_from_subscription();
+  create trigger trg_sync_plan_from_purchase after insert or update or delete on public.purchases
+    for each row execute function public.sync_profile_plan_from_subscription();
+
+  create schema creem_qa_bootstrap_v1;
+  revoke all on schema creem_qa_bootstrap_v1 from public, anon, authenticated;
+end;
+$creem_qa_bootstrap$;
+
+commit;
