@@ -22,7 +22,7 @@ const rpc = async (db, name, args) => {
 const readMigration = name => readFile('supabase/migrations/'+name,'utf8');
 
 for (const billing of ['monthly','annual']) {
-  test(billing + ' from authenticated checkout to signed payment, duplicate, renewal and expiry', async () => {
+  test(billing + ' from authenticated checkout to payment failure, signed payment, renewal, cancellation and expiry', async () => {
     const db = new PGlite();
     try {
       await db.exec(`
@@ -30,7 +30,11 @@ for (const billing of ['monthly','annual']) {
         create schema auth; create table auth.users(id uuid primary key);
         create function auth.uid() returns uuid language sql as $$select null::uuid$$;
         create function auth.role() returns text language sql as $$select 'service_role'::text$$;
-        create schema cron; create function cron.schedule(text,text,text) returns int language sql as $$select 1$$;
+        create schema cron;
+        create table cron.jobs(name text, schedule text, command text);
+        create function cron.schedule(text,text,text) returns int language sql as $$
+          insert into cron.jobs values ($1,$2,$3) returning 1
+        $$;
         create type plan_type as enum ('free','pro','premium','packs');
         create table profiles(id uuid primary key,current_plan plan_type,updated_at timestamptz);
         create table purchases(user_id uuid,plan plan_type,status text);
@@ -97,17 +101,59 @@ for (const billing of ['monthly','annual']) {
       assert.equal(await notify('checkout.completed',event,1,'wrong-secret'),401);
       assert.equal(await notify('subscription.paid',sub,2),503);
       assert.equal(await notify('checkout.completed',{...event,mode:'prod'},1),400);
+      assert.equal(await notify('checkout.completed',{...event,order:{status:'failed'}},1),204);
+      assert.equal(await plan(),'free');
+      assert.equal((await db.query('select count(*)::int as count from subscriptions')).rows[0].count,0);
       assert.equal(await notify('checkout.completed',event,1),204);
       assert.equal(await plan(),'pro');
       assert.equal(await notify('checkout.completed',event,1),204);
+      sub.current_period_end_date='2099-03-01';
       assert.equal(await notify('subscription.paid',sub,2),204);
-      sub.status='expired';
-      assert.equal(await notify('subscription.expired',sub,3),204);
+      const subscription = async () => {
+        const {rows} = await db.query(`select status, cancel_at_period_end,
+          to_char(current_period_end at time zone 'UTC','YYYY-MM-DD') as paid_through
+          from subscriptions`);
+        assert.equal(rows.length,1);
+        return rows[0];
+      };
+      assert.equal((await subscription()).paid_through,'2099-03-01');
+      sub.status='past_due';
+      assert.equal(await notify('subscription.past_due',sub,3),204);
+      assert.equal((await subscription()).status,'past_due');
+      assert.equal((await subscription()).paid_through,'2099-03-01');
+      assert.equal(await plan(),'pro');
+      sub.status='scheduled_cancel';
+      assert.equal(await notify('subscription.scheduled_cancel',sub,4),204);
+      assert.equal((await subscription()).cancel_at_period_end,true);
+      assert.equal(await plan(),'pro');
+      sub.status='canceled';
+      assert.equal(await notify('subscription.canceled',sub,5),204);
+      assert.equal(await plan(),'pro');
+      const {rows:[job]} = await db.query("select * from cron.jobs where name='expire-creem-pro'");
+      assert.equal(job.schedule,'*/5 * * * *');
+      await db.exec(job.command);
+      assert.equal(await plan(),'pro');
+      sub.current_period_end_date='2000-01-01';
+      assert.equal(await notify('subscription.canceled',sub,6),204);
+      await db.exec(job.command);
+      assert.equal((await subscription()).status,'expired');
       assert.equal(await plan(),'free');
+      sub.status='expired';
+      assert.equal(await notify('subscription.expired',sub,7),204);
       sub.status='active';
+      sub.current_period_end_date='2099-03-01';
       assert.equal(await notify('subscription.paid',sub,2),204);
       assert.equal(await plan(),'free');
       assert.deepEqual(await (await buy({authorization:'Bearer test'})).json(),{reason:'code_already_used'});
     } finally { await db.close(); }
   });
 }
+
+test('the hosted QA project rejects Live mode before making a provider request', async () => {
+  const { creemRequest } = await loadEdge('supabase/functions/_shared/creem.ts', {
+    env: {...env, CREEM_MODE:'live', SUPABASE_URL:'https://nzhjzdmuevwsaldpqlxd.supabase.co'},
+    exportedModule:true,
+    fetch: () => assert.fail('QA must never contact the Live API'),
+  });
+  await assert.rejects(creemRequest('subscriptions?subscription_id=sub_test'), /QA requires Creem test mode/);
+});
