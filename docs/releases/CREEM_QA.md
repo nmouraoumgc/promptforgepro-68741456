@@ -47,7 +47,7 @@
 
 ### Sequência reutilizada
 
-A geração extrai das migrações os blocos de compras e papéis, subscrições, tentativas, eventos, antiabuso, domínios descartáveis, falhas de pagamento, recomputação do plano e RPCs Creem. Antes desses blocos, acrescenta `packs` ao enum QA. Depois, instala os triggers de subscrições e compras, ajusta os grants e restringe as duas tabelas de faturação ao modo sandbox. Não importa migrações de dunning, integrações Paddle, backfill de perfis, extensões de rede nem agendamentos. Em particular, as migrações `20261027150000_dunning_cron_schedule.sql` e `20261027220000_cron_secret.sql` contêm referências ao projeto de produção e ficam fora do bootstrap.
+A geração extrai das migrações os blocos de compras e papéis, subscrições, tentativas, eventos, antiabuso, domínios descartáveis, falhas de pagamento, recomputação do plano e RPCs Creem. Antes desses blocos, acrescenta `packs` ao enum QA. Depois, protege o plano de alterações diretas por utilizadores autenticados, instala os triggers de subscrições e compras, ajusta os grants e restringe as duas tabelas de faturação ao modo sandbox. Não importa migrações de dunning, integrações Paddle, backfill de perfis, extensões de rede nem agendamentos. Em particular, as migrações `20261027150000_dunning_cron_schedule.sql` e `20261027220000_cron_secret.sql` contêm referências ao projeto de produção e ficam fora do bootstrap.
 
 ## Critérios da validação real
 

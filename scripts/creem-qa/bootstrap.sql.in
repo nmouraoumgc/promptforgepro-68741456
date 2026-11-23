@@ -50,6 +50,9 @@ begin
     public.payment_failures, public.purchases, public.plan_overrides,
     public.disposable_email_domains, public.creem_checkouts from public, anon, authenticated;
   grant select on public.subscriptions, public.purchases to authenticated;
+  revoke update on public.profiles from public;
+  revoke insert, delete on public.profiles from public, anon, authenticated;
+  revoke insert (current_plan), update (current_plan) on public.profiles from public, anon, authenticated;
   grant select on public.profiles to service_role;
   grant all on public.subscriptions, public.checkout_attempts, public.checkout_events,
     public.payment_failures, public.purchases, public.plan_overrides,

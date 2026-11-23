@@ -20,6 +20,7 @@ const plans = readMigration('20261030230100');
 
 const statements = [
   section(base, 'CREATE OR REPLACE FUNCTION public.has_role', '-- User roles policies'),
+  readMigration('20261027201000').trim(),
   section(base, 'CREATE TABLE public.purchases', '-- Create function to handle new user signup'),
   section(readMigration('20260525114020'), 'CREATE TABLE public.checkout_attempts', '-- Dunning notifications'),
   section(readMigration('20260430081854'), 'create table if not exists public.subscriptions', 'create or replace function public.has_active_subscription'),

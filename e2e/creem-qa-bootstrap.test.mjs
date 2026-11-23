@@ -21,6 +21,11 @@ async function partialQa(db) {
     create type public.app_role as enum ('admin','user');
     create table public.profiles(id uuid primary key references auth.users, email text not null,
       current_plan public.plan_type not null default 'free', updated_at timestamptz default now());
+    alter table public.profiles enable row level security;
+    create policy own_profile on public.profiles to authenticated
+      using (auth.uid() = id) with check (auth.uid() = id);
+    grant usage on schema auth to authenticated;
+    grant select, update, insert on public.profiles to authenticated;
     create table public.user_roles(user_id uuid, role public.app_role);
     create table public.learn_lesson_content(id uuid);
     create table public.learn_lessons(id uuid);
@@ -89,6 +94,9 @@ test('QA bootstrap can be reapplied and uses the real billing schema, grants and
     assert.equal((await db.query('select * from subscriptions')).rows.length, 0);
     await db.query("select set_config('request.jwt.claim.sub',$1,false)", [user]);
     assert.equal((await db.query('select * from subscriptions')).rows.length, 1);
+    await assert.rejects(db.query("update profiles set current_plan='premium'"), {code:'42501'});
+    await assert.rejects(db.query("insert into profiles(id,email,current_plan) values ($1,'other@example.test','premium')", [other]), {code:'42501'});
+    await db.query("update profiles set display_name='Sandbox user'");
     await assert.rejects(db.query("update subscriptions set status='active'"), {code:'42501'});
     await db.exec('reset role');
     await db.exec(bootstrap);
