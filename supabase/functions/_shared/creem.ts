@@ -6,11 +6,11 @@ export function setting(key: string): string {
 
 export function creemEnvironment() {
   const mode = setting('CREEM_MODE');
-  if (mode === 'live') return 'live';
-  if (mode !== 'test' || new URL(setting('SUPABASE_URL')).hostname.split('.')[0] === 'cwrxbxxfaemcvliasycz') {
-    throw new Error('Configure test billing on an isolated Supabase project');
-  }
-  return 'sandbox';
+  const project = new URL(setting('SUPABASE_URL')).hostname.split('.')[0];
+  // Fail closed: never use Live credentials outside production, or Sandbox in production.
+  if (mode === 'live' && project === 'cwrxbxxfaemcvliasycz') return 'live';
+  if (mode === 'test' && project === 'nzhjzdmuevwsaldpqlxd') return 'sandbox';
+  throw new Error('Creem mode and Supabase project do not match an approved environment');
 }
 
 export function productFor(billing: 'monthly' | 'annual') {
