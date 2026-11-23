@@ -37,6 +37,20 @@ test('QA bootstrap can be reapplied and uses the real billing schema, grants and
     assert.doesNotMatch(bootstrap, /cron\.schedule|net\.http|https?:\/\//i);
     await db.exec(bootstrap);
     await db.exec(bootstrap);
+    const harden = readFileSync('scripts/creem-qa/harden-definer-grants.sql', 'utf8');
+    await db.exec(harden);
+    await db.exec(harden);
+    const { rows: [grants] } = await db.query(`
+      select has_function_privilege('anon','public.has_role(uuid,public.app_role)','execute') as anon_role,
+             has_function_privilege('authenticated','public.has_role(uuid,public.app_role)','execute') as authenticated_role,
+             has_function_privilege('service_role','public.has_role(uuid,public.app_role)','execute') as service_role_check,
+             has_function_privilege('anon','public.is_disposable_email(text)','execute') as signup_check,
+             has_function_privilege('service_role','public.is_disposable_email(text)','execute') as checkout_check,
+             has_function_privilege('anon','public.qa_create_profile()','execute') as anon_trigger,
+             has_function_privilege('authenticated','public.qa_create_profile()','execute') as authenticated_trigger
+    `);
+    assert.deepEqual(grants, {anon_role:false, authenticated_role:true, service_role_check:true,
+      signup_check:true, checkout_check:true, anon_trigger:false, authenticated_trigger:false});
     const { rows: policies } = await db.query(`select tablename, policyname, cmd from pg_policies
       where schemaname='public' and tablename in ('profiles','user_roles') order by tablename`);
     assert.deepEqual(policies, [
@@ -50,15 +64,19 @@ test('QA bootstrap can be reapplied and uses the real billing schema, grants and
       where table_schema='public' and ((table_name='profiles' and column_name in ('current_plan','updated_at'))
         or (table_name='user_roles' and column_name='role')) order by column_name`);
     assert.deepEqual(columns, [{column_name:'current_plan',data_type:'text'}, {column_name:'role',data_type:'text'}]);
+    await db.exec('set role supabase_auth_admin');
     await db.query('insert into auth.users values ($1,$2),($3,$4)', [user, 'buyer@example.test', other, 'other@example.test']);
+    await db.exec('reset role');
     const { rows: [roles] } = await db.query(`
       select has_function_privilege('authenticated','public.reserve_creem_checkout(uuid,text,text,text,text,text,text)','execute') as can_reserve,
              has_function_privilege('anon','public.apply_creem_subscription(uuid,text,text,text,text,text,bigint,text,timestamptz,timestamptz,boolean)','execute') as can_apply,
              has_table_privilege('authenticated','public.creem_checkouts','select') as can_read_binding
     `);
     assert.deepEqual(roles, {can_reserve: false, can_apply: false, can_read_binding: false});
+    await db.exec('set role anon');
     const { rows: [domain] } = await db.query("select public.is_disposable_email('qa@child.mailinator.com') as blocked");
     assert.equal(domain.blocked, true);
+    await db.exec('reset role');
     await db.exec('set role service_role');
     const { rows } = await db.query(`select public.reserve_creem_checkout(
       $1,'buyer@example.test',repeat('a',64),'pro_monthly','prod_monthly','sandbox',null
@@ -104,6 +122,15 @@ test('QA bootstrap can be reapplied and uses the real billing schema, grants and
     await db.query("insert into user_roles values ($1,'admin')", [user]);
     assert.equal((await db.query("select public.has_role($1,'admin') as admin", [user])).rows[0].admin, true);
     assert.equal((await db.query("select public.has_role($1,'admin') as admin", [other])).rows[0].admin, false);
+    await db.exec('set role authenticated');
+    await db.query("select set_config('request.jwt.claim.sub',$1,false)", [other]);
+    assert.equal((await db.query('select * from purchases')).rows.length, 0);
+    await db.exec('reset role');
+    await db.query("insert into purchases(user_id,plan,amount_cents) values ($1,'packs',100)", [other]);
+    await db.exec('set role authenticated');
+    await db.query("select set_config('request.jwt.claim.sub',$1,false)", [user]);
+    assert.equal((await db.query('select * from purchases')).rows.length, 2);
+    await db.exec('reset role');
   } finally {
     await db.close();
   }

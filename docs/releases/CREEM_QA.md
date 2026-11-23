@@ -9,7 +9,29 @@
 - `e2e/creem-billing.test.mjs` executa as Edge Functions, as funções SQL e o corpo do job de expiração em PGlite, com transporte Creem e autenticação simulados. Abrange os planos mensal e anual, o cupão de primeira cobrança, pagamento inicial falhado, assinatura inválida, modo incorreto, ativação, repetição e eventos atrasados, extensão do período pago, atraso no pagamento, cancelamento e expiração. O teste não executa o worker pg_cron nem confirma os payloads e as políticas de reentrega da Creem real.
 - O preflight remoto da PR #42 confirmou cinco tabelas, zero utilizadores e migrações, ausência de pg_cron e os tipos, colunas e trigger descritos abaixo. Não foram aplicadas migrações nem criadas compras remotas.
 
-## Aplicar o bootstrap no QA
+## Estado após a aplicação remota
+
+Segundo a confirmação publicada na PR #42, o projeto QA tem a migração `20261123112850_creem_qa_bootstrap_v1_20261123` aplicada e as funções `creem-checkout` e `creem-webhook` estão ACTIVE v2. As permissões das RPCs Creem, RLS e restrições Sandbox foram verificadas nessa sessão. Ambas as funções foram publicadas com `verify_jwt=false`: o checkout valida o token no handler e o webhook valida a assinatura Creem. **Não repetir o bootstrap para iniciar os testes Sandbox.**
+
+O ambiente Codex recebeu HTTP 403 no túnel do proxy para a API Creem Sandbox, o projeto QA e a API de gestão Supabase. A interface desta sessão também não disponibilizou controlo do browser partilhado. A configuração na Creem, a introdução de segredos no QA, a criação de contas e as compras e eventos reais da sandbox ainda estão pendentes.
+
+### Ajuste de permissões no QA
+
+Aplicar [harden-definer-grants.sql](../../scripts/creem-qa/harden-definer-grants.sql) numa única execução no projeto QA já inicializado. O script retira o acesso anónimo a `has_role` e retira o EXECUTE de clientes a `qa_create_profile`. Mantém `has_role` para as políticas RLS de compras autenticadas e para o `service_role`. A função continua a aceitar um identificador de utilizador. Uma revisão das consultas de papéis feitas por utilizadores autenticados fica fora deste ajuste.
+
+O formulário de inscrição usa `is_disposable_email` antes de iniciar sessão, e as funções de checkout usam-na no servidor. Mantêm-se os grants necessários aos dois caminhos. O aviso sobre tabelas com RLS sem políticas é esperado para tabelas de acesso exclusivo do serviço. Os avisos de desempenho ficam separados deste ajuste.
+
+Os testes locais verificam a reaplicação da correção, o acesso do administrador autenticado às compras, o isolamento do utilizador comum, a validação de email sem sessão e a criação de perfis sob o papel de administração de Auth. Os 43 testes de `npm test` passaram. Em PostgreSQL 17.12, uma verificação separada confirmou a reaplicação, a criação de perfis pelo administrador de Auth, o acesso de compras pela política de administrador e a validação de email anónima. A confirmação destas permissões no QA remoto continua pendente.
+
+### Passagem de trabalho para a sessão autenticada
+
+1. Na Creem Sandbox, confirmar os produtos recorrentes de 9 €/mês e 90 €/ano em EUR e o cupão `PRODUCTHUNT20` de 20% na primeira cobrança de ambos.
+2. Associar o webhook de teste a `https://nzhjzdmuevwsaldpqlxd.supabase.co/functions/v1/creem-webhook`. Selecionar os eventos disponíveis correspondentes a `checkout.completed`, `subscription.paid`, `subscription.active`, `subscription.update`, `subscription.canceled`, `subscription.scheduled_cancel`, `subscription.expired`, `subscription.paused`, `subscription.past_due` e `subscription.unpaid`. Registar os nomes reais e eventuais diferenças de suporte do painel.
+3. No painel seguro do Supabase QA, inserir a chave API e o segredo de assinatura da sandbox, os IDs dos produtos e a origem do frontend QA. Usar `CREEM_MODE=test`. Apontar o frontend isolado ao QA e ativar o checkout apenas nesse frontend e no QA. Criar quatro contas de teste confirmadas pelo Auth Admin sem envio de emails.
+4. Em quatro contas separadas, concluir os checkouts mensal sem cupão (9 €), mensal com cupão (7,20 €), anual sem cupão (90 €) e anual com cupão (72 €), com meios de pagamento de teste. Confirmar a entrega de webhook, a subscrição única, o plano Pro e o acesso pago em cada conta.
+5. Usar os mecanismos sandbox disponíveis para reentrega, renovação, cancelamento, falha e expiração. Confirmar os critérios abaixo e registar o que a sandbox permite observar. A simulação local de eventos fora de ordem complementa a evidência e não substitui entregas da Creem.
+
+## Aplicar o bootstrap num QA por inicializar
 
 1. Confirmar que o projeto selecionado na ligação Supabase do ChatGPT ou no SQL Editor é `nzhjzdmuevwsaldpqlxd`. Executar [preflight.sql](../../scripts/creem-qa/preflight.sql). A primeira aplicação pressupõe as cinco tabelas públicas identificadas, zero utilizadores, histórico vazio e ausência de pg_cron. Confirmar o trigger ativo `qa_auth_profile_created` → `public.qa_create_profile()` e rever os triggers existentes antes de criar contas. Confirmar que não contactam produção nem enviam emails.
 2. A partir da raiz deste checkout, gerar o SQL e verificar a suite local.

@@ -1,8 +1,11 @@
 create role anon;
 create role authenticated;
 create role service_role bypassrls;
+create role supabase_auth_admin;
 create schema auth;
 create table auth.users(id uuid primary key, email text not null);
+grant usage on schema auth to supabase_auth_admin;
+grant insert on auth.users to supabase_auth_admin;
 create function auth.uid() returns uuid language sql as
   $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
 create function auth.role() returns text language sql as $$select current_user::text$$;
