@@ -48,7 +48,7 @@ Deno.serve(async req => {
       const annual = input.billing === 'annual';
       const packs = input.billing === 'packs';
       if (details.id !== product || details.currency !== 'EUR' || details.price !== (packs ? 1900 : annual ? 9000 : 900) ||
-          (packs ? details.billing_type !== 'one-time' : (details.billing_type !== 'recurring' || details.billing_period !== (annual ? 'every-year' : 'every-month')))) {
+          (packs ? details.billing_type !== 'onetime' : (details.billing_type !== 'recurring' || details.billing_period !== (annual ? 'every-year' : 'every-month')))) {
         throw new Error('Product configuration mismatch');
       }
       if (code) {
