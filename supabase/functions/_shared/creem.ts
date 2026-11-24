@@ -13,7 +13,8 @@ export function creemEnvironment() {
   throw new Error('Creem mode and Supabase project do not match an approved environment');
 }
 
-export function productFor(billing: 'monthly' | 'annual') {
+export function productFor(billing: 'monthly' | 'annual' | 'packs') {
+  if (billing === 'packs') return setting('CREEM_PACKS_ID');
   return setting(billing === 'annual' ? 'CREEM_PRO_ANNUAL_ID' : 'CREEM_PRO_MONTHLY_ID');
 }
 
