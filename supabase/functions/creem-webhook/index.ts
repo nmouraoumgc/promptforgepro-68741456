@@ -27,7 +27,7 @@ Deno.serve(async req => {
     const admin = createClient(setting('SUPABASE_URL'), setting('SUPABASE_SERVICE_ROLE_KEY'));
     if (first && product === productFor('packs')) {
       const orderId = entityId(obj.order);
-      if (!orderId || !obj.request_id) throw new Error('Invalid one-time checkout');
+      if (!orderId || !obj.request_id || obj.order?.currency !== 'EUR' || Number(obj.order?.amount_paid) !== 1900) throw new Error('Invalid one-time checkout');
       const {data: binding,error:bindingError} = await admin.from('creem_checkouts')
         .select('attempt_id,checkout_id,checkout_attempts!inner(user_id,status)')
         .eq('attempt_id',obj.request_id).eq('product_id',product).eq('environment',env).maybeSingle();
