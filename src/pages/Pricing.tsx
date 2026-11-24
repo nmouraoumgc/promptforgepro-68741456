@@ -46,6 +46,7 @@ export default function Pricing() {
   const isEnglish = (i18n.resolvedLanguage || i18n.language || 'pt').startsWith('en');
 
   const [isLoadingPro, setIsLoadingPro] = useState(false);
+  const [isLoadingPacks, setIsLoadingPacks] = useState(false);
   // Pro billing interval: /pricing?billing=annual preselects the annual price (90€/year).
   const [billing, setBilling] = useState<'monthly' | 'annual'>(() =>
     (searchParamsInit().get('billing') || '').toLowerCase().startsWith('annual') ? 'annual' : 'monthly');
@@ -119,7 +120,7 @@ export default function Pricing() {
   const ownsPacksProduct = currentPlan === 'packs' || currentPlan === 'premium';
 
   const handleSelectPlan = async (planId: PlanType) => {
-    if (planId !== 'free' && (planId !== 'pro' || !PAID_CHECKOUT_ENABLED)) return;
+    if (planId !== 'free' && !PAID_CHECKOUT_ENABLED) return;
     if (planId === 'pro') {
       if (!authLoading && !user) {
         toast({
@@ -138,6 +139,20 @@ export default function Pricing() {
       return;
     }
 
+    if (planId === 'packs') {
+      if (!user) { navigate('/login?redirect=' + encodeURIComponent('/pricing')); return; }
+      setIsLoadingPacks(true);
+      try {
+        const {data,error} = await supabase.functions.invoke('creem-checkout', { body: {billing:'packs'} });
+        if (error || !data?.url) {
+          toast({title:checkoutBlockMessage(data?.reason || 'checkout_unavailable',isEnglish),variant:'destructive'});
+          return;
+        }
+        track('checkout_opened', {plan:'packs', has_campaign_code:false});
+        window.location.assign(data.url);
+      } finally { setIsLoadingPacks(false); }
+      return;
+    }
     if (!user) { navigate('/signup'); return; }
     navigate('/app');
   };
@@ -350,7 +365,7 @@ export default function Pricing() {
                 <Button
                   className={`w-full ${plan.highlight ? 'shadow-md' : ''}`}
                   variant={plan.highlight ? 'default' : 'outline'}
-                  disabled={isActive || includedInPro || isPacks || (plan.id === 'pro' && (!PAID_CHECKOUT_ENABLED || currentPlan === 'premium' || isLoadingPro))}
+                  disabled={isActive || includedInPro || !PAID_CHECKOUT_ENABLED || (isPacks && isLoadingPacks) || (plan.id === 'pro' && (currentPlan === 'premium' || isLoadingPro))}
                   onClick={() => handleSelectPlan(plan.id)}
                 >
                   {includedInPro ? (
@@ -366,7 +381,7 @@ export default function Pricing() {
                   ) : (
                     <>
                       {plan.highlight && <Sparkles className="h-4 w-4 mr-2" />}
-                      {isPacks && PAID_CHECKOUT_ENABLED ? (isEnglish ? 'Temporarily unavailable' : 'Temporariamente indisponível') : plan.cta}
+                      {isPacks && isLoadingPacks ? (isEnglish ? 'Redirecting...' : 'A redirecionar...') : plan.cta}
                     </>
                   )}
                 </Button>
