@@ -20,14 +20,31 @@ Deno.serve(async req => {
     const modes = env === 'live' ? ['prod'] : ['test','sandbox'];
     if (obj.mode && !modes.includes(obj.mode)) return new Response(null,{status:400});
     const product = entityId(obj.product) || entityId(obj.order?.product);
-    if (!product || ![productFor('monthly'),productFor('annual')].includes(product)) return new Response(null,{status:204});
+    if (!product || ![productFor('monthly'),productFor('annual'),productFor('packs')].includes(product)) return new Response(null,{status:204});
     if (first && (!obj.request_id || obj.status !== 'completed' || obj.order?.status !== 'paid')) {
+      return new Response(null,{status:204});
+    }
+    const admin = createClient(setting('SUPABASE_URL'), setting('SUPABASE_SERVICE_ROLE_KEY'));
+    if (first && product === productFor('packs')) {
+      const orderId = entityId(obj.order);
+      if (!orderId || !obj.request_id) throw new Error('Invalid one-time checkout');
+      const {data: binding,error:bindingError} = await admin.from('creem_checkouts')
+        .select('attempt_id,checkout_id,checkout_attempts!inner(user_id,status)')
+        .eq('attempt_id',obj.request_id).eq('product_id',product).eq('environment',env).maybeSingle();
+      if (bindingError || !binding || (binding.checkout_id && binding.checkout_id !== obj.id)) throw new Error('Checkout binding mismatch');
+      const attempt = Array.isArray(binding.checkout_attempts) ? binding.checkout_attempts[0] : binding.checkout_attempts;
+      if (!attempt?.user_id) throw new Error('Missing checkout owner');
+      const {error:purchaseError} = await admin.from('purchases').upsert({
+        user_id:attempt.user_id, plan:'packs', amount_cents:1900, currency:'EUR',
+        status:'completed', creem_order_id:orderId,
+      }, {onConflict:'creem_order_id',ignoreDuplicates:true});
+      if (purchaseError) throw purchaseError;
+      await admin.from('checkout_attempts').update({status:'completed',updated_at:new Date().toISOString()}).eq('id',obj.request_id);
       return new Response(null,{status:204});
     }
     // Fetch current state as checkout.completed can carry only a subscription ID.
     const subId = entityId(first ? obj.subscription : obj);
     if (!subId || !Number.isSafeInteger(event.created_at)) throw new Error('Invalid event');
-    const admin = createClient(setting('SUPABASE_URL'), setting('SUPABASE_SERVICE_ROLE_KEY'));
     const lease = await admin.rpc('acquire_creem_sync', {p_subscription:subId});
     if (lease.error || !lease.data) throw new Error('Subscription synchronization busy');
     const sub = await creemRequest('subscriptions?subscription_id=' + encodeURIComponent(subId));
