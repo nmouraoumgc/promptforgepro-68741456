@@ -62,6 +62,7 @@ Deno.serve(async (req) => {
     return json({
       ...metrics,
       provider_health: { paddle: paddleOk ? 'ok' : 'unavailable', creem: 'db' },
+      financial_data_complete: paddleOk,
       provider_subscriptions: {
         paddle: rows.filter((s) => s.paddle_subscription_id).length,
         creem: rows.filter((s) => s.creem_subscription_id).length,
