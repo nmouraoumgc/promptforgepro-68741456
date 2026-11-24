@@ -40,7 +40,7 @@ Deno.serve(async req => {
     if (existing) return url ? json({url:hostedUrl(url)}) : json({reason:'checkout_unavailable'});
     let checkoutRequested = false;
     try {
-      const details = await creemRequest('products?product_id=' + encodeURIComponent(product));
+      const details = await creemRequest('products/' + encodeURIComponent(product));
       const annual = input.billing === 'annual';
       if (details.id !== product || details.currency !== 'EUR' || details.price !== (annual ? 9000 : 900) ||
           details.billing_type !== 'recurring' || details.billing_period !== (annual ? 'every-year' : 'every-month')) {
@@ -65,7 +65,12 @@ Deno.serve(async req => {
       }).eq('attempt_id',attempt).select('attempt_id').single();
       if (saved.error) throw saved.error;
       return json({url:checkoutUrl});
-    } catch {
+    } catch (err) {
+      console.error('creem-checkout provider failure', {
+        phase: checkoutRequested ? 'create_checkout' : 'validate_configuration',
+        name: err instanceof Error ? err.name : 'UnknownError',
+        message: err instanceof Error ? err.message : String(err),
+      });
       await admin.from('checkout_attempts').update({status:checkoutRequested ? 'abandoned' : 'failed'}).eq('id',attempt);
       return json({reason:'checkout_unavailable'},503);
     }
