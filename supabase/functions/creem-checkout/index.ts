@@ -22,16 +22,20 @@ Deno.serve(async req => {
     if (!user.email_confirmed_at) return json({reason:'email_not_confirmed'});
 
     const input = await req.json();
-    if (!['monthly','annual'].includes(input.billing)) return json({},400);
+    if (!['monthly','annual','packs'].includes(input.billing)) return json({},400);
     const code = input.discountCode || null;
-    if (code !== null && code !== 'PRODUCTHUNT20') return json({reason:'invalid_code'});
+    if (code !== null && (input.billing === 'packs' || code !== 'PRODUCTHUNT20')) return json({reason:'invalid_code'});
     const hash = await ipHash(req);
     if (!hash) return json({reason:'checkout_unavailable'},503);
     const product = productFor(input.billing);
     const environment = creemEnvironment();
-    const successUrl = new URL('/subscription-success', setting('CREEM_SITE_ORIGIN')).href;
+    const successUrl = new URL(input.billing === 'packs' ? '/purchase-success' : '/subscription-success', setting('CREEM_SITE_ORIGIN')).href;
+    if (input.billing === 'packs') {
+      const owned = await admin.from('profiles').select('current_plan').eq('id',user.id).maybeSingle();
+      if (owned.data && ['packs','premium','pro'].includes(owned.data.current_plan)) return json({reason:'already_subscribed'});
+    }
     const reservation = await admin.rpc('reserve_creem_checkout', {
-      p_user:user.id, p_email:user.email, p_hash:hash, p_price:'pro_' + input.billing,
+      p_user:user.id, p_email:user.email, p_hash:hash, p_price:input.billing === 'packs' ? 'packs' : 'pro_' + input.billing,
       p_product:product, p_environment:environment, p_code:code,
     });
     if (reservation.error) throw reservation.error;
@@ -42,8 +46,9 @@ Deno.serve(async req => {
     try {
       const details = await creemRequest('products/' + encodeURIComponent(product));
       const annual = input.billing === 'annual';
-      if (details.id !== product || details.currency !== 'EUR' || details.price !== (annual ? 9000 : 900) ||
-          details.billing_type !== 'recurring' || details.billing_period !== (annual ? 'every-year' : 'every-month')) {
+      const packs = input.billing === 'packs';
+      if (details.id !== product || details.currency !== 'EUR' || details.price !== (packs ? 1900 : annual ? 9000 : 900) ||
+          (packs ? details.billing_type !== 'one-time' : (details.billing_type !== 'recurring' || details.billing_period !== (annual ? 'every-year' : 'every-month')))) {
         throw new Error('Product configuration mismatch');
       }
       if (code) {
