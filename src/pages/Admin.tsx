@@ -190,12 +190,12 @@ export default function Admin() {
     // Exact user counts (the profiles list above is capped at 1000 rows by PostgREST)
     await fetchUserCounts();
 
-    // Real revenue / MRR from Paddle, computed server-side (admin-only edge function)
+    // Revenue / MRR metrics are computed server-side. Provider failures degrade without hiding DB-backed admin data.
     setMetricsError(null);
     const { data: m, error: mErr } = await supabase.functions.invoke('admin-metrics');
     if (mErr || !m || (m as { error?: string }).error) {
       setMetrics(null);
-      setMetricsError(isEnglish ? 'Could not load Paddle metrics' : 'Não foi possível carregar as métricas do Paddle');
+      setMetricsError(isEnglish ? 'Could not load payment metrics' : 'Não foi possível carregar as métricas de pagamentos');
     } else {
       setMetrics(m as AdminMetrics);
     }
@@ -352,7 +352,7 @@ export default function Admin() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{metrics ? metrics.paid_txns_all_time : 'n/d'}</p>
-                  <p className="text-sm text-muted-foreground">{isEnglish ? 'Purchases (paid, Paddle)' : 'Compras (pagas, Paddle)'}</p>
+                  <p className="text-sm text-muted-foreground">{isEnglish ? 'Purchases (paid)' : 'Compras (pagas)'}</p>
                   {metrics && (
                     <p className="text-xs text-muted-foreground">
                       {isEnglish ? 'gross' : 'bruto'} {fmtMoney(metrics.revenue_all_time)} · {isEnglish ? 'net' : 'líquido'} {fmtMoney(metrics.revenue_all_time_net)}
@@ -370,7 +370,7 @@ export default function Admin() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{metrics ? `${metrics.discounts_active}/${metrics.discounts_total}` : 'n/d'}</p>
-                  <p className="text-sm text-muted-foreground">{isEnglish ? 'Promo codes (active/total, Paddle)' : 'Códigos Promo (ativos/total, Paddle)'}</p>
+                  <p className="text-sm text-muted-foreground">{isEnglish ? 'Promo codes (active/total)' : 'Códigos Promo (ativos/total)'}</p>
                   {metrics && metrics.discounts.filter((d) => d.status === 'active' && (!d.expires_at || new Date(d.expires_at) > new Date())).slice(0, 2).map((d) => (
                     <p key={d.id} className="text-xs text-muted-foreground">
                       {d.code ?? d.id}: {d.times_used}{d.usage_limit ? `/${d.usage_limit}` : ''} {isEnglish ? 'uses' : 'usos'}
