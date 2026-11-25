@@ -20,12 +20,13 @@ Deno.serve(async req => {
     const modes = env === 'live' ? ['prod'] : ['test','sandbox'];
     if (obj.mode && !modes.includes(obj.mode)) return new Response(null,{status:400});
     const product = entityId(obj.product) || entityId(obj.order?.product);
-    if (!product || ![productFor('monthly'),productFor('annual'),productFor('packs')].includes(product)) return new Response(null,{status:204});
+    const packsProduct = Deno.env.get('CREEM_PACKS_ID');
+    if (!product || ![productFor('monthly'),productFor('annual'),packsProduct].includes(product)) return new Response(null,{status:204});
     if (first && (!obj.request_id || obj.status !== 'completed' || obj.order?.status !== 'paid')) {
       return new Response(null,{status:204});
     }
     const admin = createClient(setting('SUPABASE_URL'), setting('SUPABASE_SERVICE_ROLE_KEY'));
-    if (first && product === productFor('packs')) {
+    if (first && packsProduct && product === packsProduct) {
       const orderId = entityId(obj.order);
       if (!orderId || !obj.request_id || obj.order?.currency !== 'EUR' || Number(obj.order?.amount_paid) !== 1900) throw new Error('Invalid one-time checkout');
       const {data: binding,error:bindingError} = await admin.from('creem_checkouts')
