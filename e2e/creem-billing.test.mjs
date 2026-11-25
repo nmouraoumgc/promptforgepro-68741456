@@ -86,7 +86,7 @@ for (const billing of ['monthly','annual']) {
       const transport = async (url,init) => {
         const {origin,pathname} = new URL(url);
         assert.equal(origin,'https://test-api.creem.io');
-        if (pathname === '/v1/products') return Response.json({id:product,price:billing==='annual'?9000:900,currency:'EUR',billing_type:'recurring',billing_period:billing==='annual'?'every-year':'every-month'});
+        if (pathname === '/v1/products/'+product) return Response.json({id:product,price:billing==='annual'?9000:900,currency:'EUR',billing_type:'recurring',billing_period:billing==='annual'?'every-year':'every-month'});
         if (pathname === '/v1/discounts') return Response.json({code:'PRODUCTHUNT20',status:'active',type:'percentage',duration:'once',percentage:20,applies_to_products:[product]});
         if (pathname === '/v1/subscriptions') return Response.json(sub);
         assert.equal(pathname,'/v1/checkouts');
