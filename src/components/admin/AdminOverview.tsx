@@ -60,6 +60,10 @@ export interface AdminMetrics {
   discounts: { id: string; code: string | null; description: string | null; type: string; amount: string; currency: string | null; status: string; recur: boolean; times_used: number; usage_limit: number | null; expires_at: string | null; created_at: string }[];
   discounts_active: number;
   discounts_total: number;
+  financial_data_complete?: boolean;
+  provider_health?: { paddle: 'ok' | 'unavailable'; creem: 'db' | 'unavailable' };
+  paddle_data_complete?: boolean;
+  provider_subscriptions?: { paddle: number; creem: number; paddle_active: number; creem_active: number } | null;
   /** Exact signups per month and how many of them are Pro (flag or active/trialing subscription). */
   signups_by_month?: { month: string; signups: number; pro: number }[];
 }
@@ -99,13 +103,14 @@ const monthLabel = (key: string) => {
 export function AdminOverview({ counts, metrics, metricsError }: Props) {
   const isEnglish = useIsEnglish();
   const na = 'n/d';
+  const financialsAvailable = metrics?.paddle_data_complete === true;
 
   const stats = useMemo(() => {
     const total = counts?.total ?? 0;
-    const payingUsers = metrics ? metrics.paying_user_ids.length : null;
+    const payingUsers = metrics && financialsAvailable ? metrics.paying_user_ids.length : null;
     const conversionRate = payingUsers !== null && total > 0 ? (payingUsers / total) * 100 : null;
     return { total, payingUsers, conversionRate };
-  }, [counts, metrics]);
+  }, [counts, metrics, financialsAvailable]);
 
   const currencies = useMemo(() => {
     const set = new Set<string>();
@@ -118,7 +123,7 @@ export function AdminOverview({ counts, metrics, metricsError }: Props) {
     const serverSignups = metrics?.signups_by_month?.length ? metrics.signups_by_month : null;
     const months = serverSignups?.map((s) => s.month) ?? counts?.signupsByMonth.map((s) => s.month) ?? metrics?.revenue_by_month.map((r) => r.month) ?? [];
     return months.map((m) => {
-      const rev = metrics?.revenue_by_month.find((r) => r.month === m)?.amounts ?? {};
+      const rev = financialsAvailable ? metrics?.revenue_by_month.find((r) => r.month === m)?.amounts ?? {} : {};
       const srv = serverSignups?.find((s) => s.month === m);
       const row: Record<string, string | number> = {
         month: monthLabel(m),
@@ -128,7 +133,7 @@ export function AdminOverview({ counts, metrics, metricsError }: Props) {
       currencies.forEach((c) => { row[c] = Number(((rev[c] ?? 0) / 100).toFixed(2)); });
       return row;
     });
-  }, [counts, metrics, currencies]);
+  }, [counts, metrics, currencies, financialsAvailable]);
   const hasProSeries = !!metrics?.signups_by_month?.length;
 
   const planData = useMemo(
@@ -156,8 +161,8 @@ export function AdminOverview({ counts, metrics, metricsError }: Props) {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <KpiCard
           icon={TrendingUp}
-          label={isEnglish ? 'Real MRR (paid)' : 'MRR real (pago)'}
-          value={metrics ? fmtMoney(metrics.mrr_paid) : na}
+          label={isEnglish ? 'Paddle MRR (paid)' : 'MRR Paddle (pago)'}
+          value={metrics && financialsAvailable ? fmtMoney(metrics.mrr_paid) : na}
           sub={metrics ? (isEnglish
             ? `${metrics.mrr_paid_subs} subscriptions with a real charge`
             : `${metrics.mrr_paid_subs} subscrições com cobrança real`) : undefined}
@@ -165,17 +170,17 @@ export function AdminOverview({ counts, metrics, metricsError }: Props) {
         />
         <KpiCard
           icon={Repeat}
-          label={isEnglish ? 'Forecast MRR' : 'MRR previsto'}
-          value={metrics ? fmtMoney(metrics.mrr_forecast) : na}
+          label={isEnglish ? 'Paddle forecast MRR' : 'MRR Paddle previsto'}
+          value={metrics && financialsAvailable ? fmtMoney(metrics.mrr_forecast) : na}
           sub={metrics ? (isEnglish
-            ? `${metrics.mrr_forecast_subs} active in Paddle · ${metrics.zero_charge_active_subs} never charged (only if next renewal succeeds)`
-            : `${metrics.mrr_forecast_subs} ativas no Paddle · ${metrics.zero_charge_active_subs} nunca cobradas (só se a próxima renovação passar)`) : undefined}
+            ? `${metrics.mrr_forecast_subs} Paddle forecast · ${metrics.provider_subscriptions?.creem_active ?? 'n/d'} Creem active (revenue excluded)`
+            : `${metrics.mrr_forecast_subs} previsão Paddle · ${metrics.provider_subscriptions?.creem_active ?? 'n/d'} Creem ativas (receita excluída)`) : undefined}
           accent="primary"
         />
         <KpiCard
           icon={Euro}
-          label={isEnglish ? 'Revenue this month' : 'Receita este mês'}
-          value={metrics ? fmtMoney(metrics.revenue_month) : na}
+          label={isEnglish ? 'Paddle revenue this month' : 'Receita Paddle este mês'}
+          value={metrics && financialsAvailable ? fmtMoney(metrics.revenue_month) : na}
           sub={metrics ? (isEnglish
             ? `${metrics.paid_txns_month} paid · ${metrics.free_txns_month} at 0 · net ${fmtMoney(metrics.revenue_month_net)} (Paddle)`
             : `${metrics.paid_txns_month} pagas · ${metrics.free_txns_month} a 0 · líquido ${fmtMoney(metrics.revenue_month_net)} (Paddle)`) : undefined}
@@ -183,11 +188,11 @@ export function AdminOverview({ counts, metrics, metricsError }: Props) {
         />
         <KpiCard
           icon={ShoppingCart}
-          label={isEnglish ? 'Total revenue (net)' : 'Receita total (líquida)'}
-          value={metrics ? fmtMoney(metrics.revenue_all_time_net) : na}
+          label={isEnglish ? 'Paddle revenue (net)' : 'Receita Paddle (líquida)'}
+          value={metrics && financialsAvailable ? fmtMoney(metrics.revenue_all_time_net) : na}
           sub={metrics ? (isEnglish
-            ? `gross ${fmtMoney(metrics.revenue_all_time)} · ${metrics.paid_txns_all_time} paid · ${metrics.refunds_chargebacks_count} refunds/chargebacks`
-            : `bruto ${fmtMoney(metrics.revenue_all_time)} · ${metrics.paid_txns_all_time} pagas · ${metrics.refunds_chargebacks_count} reembolsos/chargebacks`) : undefined}
+            ? financialsAvailable ? `gross ${fmtMoney(metrics.revenue_all_time)} · ${metrics.paid_txns_all_time} paid · ${metrics.refunds_chargebacks_count} refunds/chargebacks` : 'Historical Paddle financial data unavailable'
+            : financialsAvailable ? `bruto ${fmtMoney(metrics.revenue_all_time)} · ${metrics.paid_txns_all_time} pagas · ${metrics.refunds_chargebacks_count} reembolsos/chargebacks` : 'Dados financeiros históricos Paddle indisponíveis') : undefined}
           accent="amber"
         />
         <KpiCard
@@ -203,17 +208,17 @@ export function AdminOverview({ counts, metrics, metricsError }: Props) {
       <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
         <SmallStat icon={Crown} label={isEnglish ? 'Prompt Packs (plan)' : 'Prompt Packs (plano)'} value={counts?.premium ?? na} />
         <SmallStat icon={Sparkles} label={isEnglish ? 'Pro (flag)' : 'Pro (flag)'} value={counts?.pro ?? na} />
-        <SmallStat icon={Users} label={isEnglish ? 'Paying users' : 'Pagantes reais'} value={stats.payingUsers ?? na} />
+        <SmallStat icon={Users} label={isEnglish ? 'Paddle paying users' : 'Pagantes Paddle'} value={stats.payingUsers ?? na} />
         <SmallStat
           icon={UserPlus}
-          label={isEnglish ? 'Conversion (paying)' : 'Conversão (pagantes)'}
+          label={isEnglish ? 'Paddle conversion' : 'Conversão Paddle'}
           value={stats.conversionRate !== null ? `${stats.conversionRate.toFixed(2)}%` : na}
         />
-        <SmallStat icon={Repeat} label={isEnglish ? 'Revenue 30d' : 'Receita 30d'} value={metrics ? fmtMoney(metrics.revenue_30d) : na} />
+        <SmallStat icon={Repeat} label={isEnglish ? 'Paddle revenue 30d' : 'Receita Paddle 30d'} value={metrics && financialsAvailable ? fmtMoney(metrics.revenue_30d) : na} />
         <SmallStat
           icon={AlertTriangle}
-          label={isEnglish ? 'Refunds/chargebacks' : 'Reembolsos/chargebacks'}
-          value={metrics ? fmtMoney(metrics.refunds_chargebacks_all_time) : na}
+          label={isEnglish ? 'Paddle refunds/chargebacks' : 'Reembolsos/chargebacks Paddle'}
+          value={metrics && financialsAvailable ? fmtMoney(metrics.refunds_chargebacks_all_time) : na}
         />
       </div>
 

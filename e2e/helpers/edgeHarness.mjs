@@ -7,7 +7,7 @@ import { webcrypto } from 'node:crypto';
 export async function loadEdge(file, { auth, rpc, fetch: transport, resolveBrand = async () => null, realAuth = false, clientFactory, env = {}, exportedModule = false } = {}) {
   let handler;
   const context = vm.createContext({ URL, Request, Response, Headers, AbortSignal, TextEncoder, crypto: webcrypto,
-    console: { log() {}, error() {} }, fetch: transport || (() => { throw new Error('Unexpected network request'); }),
+    console: { log() {}, warn() {}, error() {} }, fetch: transport || (() => { throw new Error('Unexpected network request'); }),
     Deno: { serve: fn => { handler = fn; }, env: { get: (key) => ({ GROQ_API_KEY: 'LOCAL_FAKE', SUPABASE_URL: 'https://qa.invalid', SUPABASE_SERVICE_ROLE_KEY: 'LOCAL_FAKE', ...env })[key] } } });
   const cache = new Map();
   const synthetic = (id, exports) => new vm.SyntheticModule(Object.keys(exports), function () { for (const [k, v] of Object.entries(exports)) this.setExport(k, v); }, { context, identifier: id });
@@ -17,6 +17,7 @@ export async function loadEdge(file, { auth, rpc, fetch: transport, resolveBrand
     if (id.startsWith('https://deno.land/x/xhr')) mod = synthetic(id, {});
     else if (id.startsWith('https://deno.land/std')) mod = synthetic(id, { serve: fn => { handler = fn; } });
     else if ((id.startsWith('https://esm.sh/@supabase/') || id.startsWith('npm:@supabase/'))) mod = synthetic(id, { createClient: clientFactory ?? (() => ({ rpc })) });
+    else if (id === 'npm:@paddle/paddle-node-sdk') mod = synthetic(id, { Environment: {sandbox:'sandbox',production:'production'}, Paddle: class {}, EventName: {} });
     else if (id.endsWith('/_shared/auth.ts') && !realAuth) mod = synthetic(id, { corsHeaders: {}, authenticateRequest: async () => auth });
     else if (id.endsWith('/_shared/brand.ts')) mod = synthetic(id, { resolveTaskBrand: resolveBrand, BrandSelectionError: class BrandSelectionError extends Error {}, loadActiveBrand: async () => null, brandInstructions: () => '' });
     else {
