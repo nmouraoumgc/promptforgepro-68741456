@@ -365,7 +365,7 @@ export default function Pricing() {
                 <Button
                   className={`w-full ${plan.highlight ? 'shadow-md' : ''}`}
                   variant={plan.highlight ? 'default' : 'outline'}
-                  disabled={isActive || includedInPro || !PAID_CHECKOUT_ENABLED || (isPacks && isLoadingPacks) || (plan.id === 'pro' && (currentPlan === 'premium' || isLoadingPro))}
+                  disabled={isActive || includedInPro || (!PAID_CHECKOUT_ENABLED && plan.id !== 'free') || (isPacks && isLoadingPacks) || (plan.id === 'pro' && (currentPlan === 'premium' || isLoadingPro))}
                   onClick={() => handleSelectPlan(plan.id)}
                 >
                   {includedInPro ? (
