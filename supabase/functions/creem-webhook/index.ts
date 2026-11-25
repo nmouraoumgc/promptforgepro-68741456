@@ -40,7 +40,9 @@ Deno.serve(async req => {
         status:'completed', creem_order_id:orderId,
       }, {onConflict:'creem_order_id',ignoreDuplicates:true});
       if (purchaseError) throw purchaseError;
-      await admin.from('checkout_attempts').update({status:'completed',updated_at:new Date().toISOString()}).eq('id',obj.request_id);
+      const {error:attemptError} = await admin.from('checkout_attempts')
+        .update({status:'completed',updated_at:new Date().toISOString()}).eq('id',obj.request_id);
+      if (attemptError) throw attemptError;
       return new Response(null,{status:204});
     }
     // Fetch current state as checkout.completed can carry only a subscription ID.
