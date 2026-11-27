@@ -64,6 +64,8 @@ export interface AdminMetrics {
   provider_health?: { paddle: 'ok' | 'unavailable'; creem: 'db' | 'unavailable' };
   paddle_data_complete?: boolean;
   provider_subscriptions?: { paddle: number; creem: number; paddle_active: number; creem_active: number } | null;
+  creem_packs?: { paid_orders: number; buyers: number; recorded_gross: Money } | null;
+  creem_financial?: { paid_transactions: number; gross_all_time: Money; gross_month: Money; gross_30d: Money } | null;
   /** Exact signups per month and how many of them are Pro (flag or active/trialing subscription). */
   signups_by_month?: { month: string; signups: number; pro: number }[];
 }
@@ -205,6 +207,26 @@ export function AdminOverview({ counts, metrics, metricsError }: Props) {
       </div>
 
       {/* Secondary KPIs */}
+      <Card>
+        <CardContent className="py-4 space-y-1 text-sm">
+          <p className="font-semibold">Creem · {isEnglish ? 'payments' : 'pagamentos'}</p>
+          {metrics?.creem_financial ? (
+            <p>{isEnglish ? 'Gross total' : 'Total bruto'} {fmtMoney(metrics.creem_financial.gross_all_time)} · {isEnglish ? 'this month' : 'este mês'} {fmtMoney(metrics.creem_financial.gross_month)} · 30d {fmtMoney(metrics.creem_financial.gross_30d)} · {metrics.creem_financial.paid_transactions} {isEnglish ? 'transactions' : 'transações'}</p>
+          ) : <p>{na} · {isEnglish ? 'Creem transaction API unavailable' : 'API de transações Creem indisponível'}</p>}
+          <p className="text-muted-foreground">{isEnglish ? 'Gross includes refunded/disputed charges; provider settlement and net revenue unavailable.' : 'O bruto inclui cobranças reembolsadas/contestadas; liquidação e receita líquida indisponíveis.'}</p>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardContent className="py-4 text-sm space-y-1">
+          <p className="font-semibold">Creem · Prompt Packs</p>
+          <p>{metrics?.creem_packs
+            ? `${metrics.creem_packs.paid_orders} ${isEnglish ? 'recorded paid orders' : 'encomendas pagas registadas'} · ${metrics.creem_packs.buyers} ${isEnglish ? 'buyers' : 'compradores'} · ${fmtMoney(metrics.creem_packs.recorded_gross)}`
+            : na}</p>
+          <p className="text-muted-foreground">{isEnglish
+            ? 'Database records only. Creem subscription charges, refunds and settlement are not included.'
+            : 'Apenas registos da base de dados. Cobranças de subscrições Creem, reembolsos e liquidação não incluídos.'}</p>
+        </CardContent>
+      </Card>
       <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
         <SmallStat icon={Crown} label={isEnglish ? 'Prompt Packs (plan)' : 'Prompt Packs (plano)'} value={counts?.premium ?? na} />
         <SmallStat icon={Sparkles} label={isEnglish ? 'Pro (flag)' : 'Pro (flag)'} value={counts?.pro ?? na} />

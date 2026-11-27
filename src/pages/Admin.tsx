@@ -59,6 +59,7 @@ interface Purchase {
   currency: string;
   status: string;
   created_at: string;
+  creem_order_id: string | null;
 }
 
 interface Subscription {
@@ -69,6 +70,9 @@ interface Subscription {
   environment: string;
   current_period_end: string | null;
   created_at: string;
+  cancel_at_period_end: boolean;
+  paddle_subscription_id: string | null;
+  creem_subscription_id: string | null;
 }
 
 export default function Admin() {
@@ -182,7 +186,7 @@ export default function Admin() {
     // Fetch subscriptions (admins can see all)
     const { data: subsData } = await supabase
       .from('subscriptions')
-      .select('id, user_id, status, price_id, environment, current_period_end, created_at')
+      .select('id, user_id, status, price_id, environment, current_period_end, created_at, cancel_at_period_end, paddle_subscription_id, creem_subscription_id')
       .order('created_at', { ascending: false });
 
     if (subsData) setSubscriptions(subsData as Subscription[]);
@@ -392,6 +396,7 @@ export default function Admin() {
             <TabsTrigger value="packs">Prompt Packs</TabsTrigger>
             <TabsTrigger value="users">{isEnglish ? 'Users' : 'Utilizadores'}</TabsTrigger>
             <TabsTrigger value="purchases">{isEnglish ? 'Purchases' : 'Compras'}</TabsTrigger>
+            <TabsTrigger value="transition">{isEnglish ? 'Paddle transition' : 'Transição Paddle'}</TabsTrigger>
             <TabsTrigger value="promo">{isEnglish ? 'Promo codes' : 'Códigos de Promoção'}</TabsTrigger>
             <TabsTrigger value="alerts">{isEnglish ? 'Alerts' : 'Alertas'}</TabsTrigger>
           </TabsList>
@@ -403,6 +408,38 @@ export default function Admin() {
             ) : (
               <AdminOverview counts={userCounts} metrics={metrics} metricsError={metricsError} />
             )}
+          </TabsContent>
+
+          <TabsContent value="transition">
+            <Card>
+              <CardHeader>
+                <CardTitle>{isEnglish ? 'Paddle access and Creem transition' : 'Acesso Paddle e transição para Creem'}</CardTitle>
+                <CardDescription>{isEnglish
+                  ? 'Current paid-through dates from the database. Active and trialing do not prove a charge or guarantee a renewal. No automatic provider cancellation.'
+                  : 'Datas de acesso da base de dados. Ativa e em teste não provam cobrança nem garantem renovação. Sem cancelamento automático no fornecedor.'}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader><TableRow>
+                    <TableHead>Email</TableHead><TableHead>{isEnglish ? 'State' : 'Estado'}</TableHead>
+                    <TableHead>{isEnglish ? 'Access until' : 'Acesso até'}</TableHead>
+                    <TableHead>{isEnglish ? 'Scheduled end' : 'Fim agendado'}</TableHead>
+                    <TableHead>{isEnglish ? 'Next step' : 'Próximo passo'}</TableHead>
+                  </TableRow></TableHeader>
+                  <TableBody>{subscriptions.filter(s => s.paddle_subscription_id && ['active','trialing','past_due'].includes(s.status)).map(s => (
+                    <TableRow key={s.id}>
+                      <TableCell>{users.find(u => u.id === s.user_id)?.email ?? s.user_id.slice(0, 8)}</TableCell>
+                      <TableCell>{s.status}</TableCell>
+                      <TableCell>{s.current_period_end ? new Date(s.current_period_end).toLocaleString(isEnglish ? 'en-GB' : 'pt-PT', {timeZone:'Europe/Lisbon'}) : 'n/d'}</TableCell>
+                      <TableCell>{s.cancel_at_period_end ? (isEnglish ? 'Yes' : 'Sim') : (isEnglish ? 'No' : 'Não')}</TableCell>
+                      <TableCell>{s.cancel_at_period_end
+                        ? (isEnglish ? 'After access ends, buy Pro on Creem with the same account' : 'Após terminar o acesso, comprar Pro na Creem com a mesma conta')
+                        : (isEnglish ? 'Confirm Paddle renewal or cancellation before Creem purchase' : 'Confirmar renovação ou cancelamento Paddle antes de comprar na Creem')}</TableCell>
+                    </TableRow>
+                  ))}</TableBody>
+                </Table>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Packs Tab */}
@@ -644,7 +681,7 @@ export default function Admin() {
             <Card>
               <CardHeader>
                 <CardTitle>{isEnglish ? 'Purchases (database table)' : 'Compras (tabela da base de dados)'}</CardTitle>
-                <CardDescription>{isEnglish ? 'Legacy purchases table, not used by Paddle checkout' : 'Tabela antiga de compras, não é usada pelo checkout Paddle'}</CardDescription>
+                <CardDescription>{isEnglish ? 'Creem Packs orders and historical purchases; provider shown per record' : 'Encomendas Creem Packs e compras históricas; fornecedor indicado por registo'}</CardDescription>
               </CardHeader>
               <CardContent>
                 <Table>
@@ -652,6 +689,7 @@ export default function Admin() {
                     <TableRow>
                       <TableHead>ID</TableHead>
                       <TableHead>{isEnglish ? 'Plan' : 'Plano'}</TableHead>
+                      <TableHead>{isEnglish ? 'Provider' : 'Fornecedor'}</TableHead>
                       <TableHead>{isEnglish ? 'Amount' : 'Valor'}</TableHead>
                       <TableHead>{isEnglish ? 'Status' : 'Estado'}</TableHead>
                       <TableHead>{isEnglish ? 'Date' : 'Data'}</TableHead>
@@ -666,6 +704,7 @@ export default function Admin() {
                         <TableCell>
                           <Badge>{purchase.plan}</Badge>
                         </TableCell>
+                        <TableCell>{purchase.creem_order_id ? 'Creem' : (isEnglish ? 'Historical / unknown' : 'Histórico / desconhecido')}</TableCell>
                         <TableCell>
                           {(purchase.amount_cents / 100).toFixed(2)}€
                         </TableCell>

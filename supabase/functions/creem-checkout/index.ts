@@ -23,6 +23,15 @@ Deno.serve(async req => {
 
     const input = await req.json();
     if (!['monthly','annual','packs'].includes(input.billing)) return json({},400);
+    // An expired local paid-through date is not proof that Paddle did not renew.
+    // Require a recorded cancellation before allowing a second provider to charge.
+    const paddle = await admin.from('subscriptions')
+      .select('status,cancel_at_period_end')
+      .eq('user_id', user.id).not('paddle_subscription_id', 'is', null)
+      .order('created_at', {ascending:false}).limit(1).maybeSingle();
+    if (paddle.error) return json({reason:'checkout_unavailable'},503);
+    if (paddle.data && ['active','trialing','past_due'].includes(paddle.data.status) &&
+        !paddle.data.cancel_at_period_end) return json({reason:'paddle_renewal_unconfirmed'});
     const code = input.discountCode || null;
     if (code !== null && (input.billing === 'packs' || code !== 'PRODUCTHUNT20')) return json({reason:'invalid_code'});
     const hash = await ipHash(req);

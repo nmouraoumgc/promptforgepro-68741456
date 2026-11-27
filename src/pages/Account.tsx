@@ -56,9 +56,9 @@ export default function Account() {
     enabled: !!user,
     queryFn: async () => {
       const { data } = await supabase.from('subscriptions')
-        .select('status, current_period_end, cancel_at_period_end, environment')
+        .select('status, current_period_end, cancel_at_period_end, environment, paddle_subscription_id, creem_subscription_id')
         .eq('user_id', user!.id).order('created_at', { ascending: false }).limit(1).maybeSingle();
-      return data as { status: string; current_period_end: string | null; cancel_at_period_end: boolean | null } | null;
+      return data as { status: string; current_period_end: string | null; cancel_at_period_end: boolean | null; paddle_subscription_id: string | null; creem_subscription_id: string | null } | null;
     },
   });
   const usageQ = useQuery({
@@ -320,7 +320,7 @@ export default function Account() {
                     <>
                       {L('Estado', 'Status')}: <span className="font-medium text-foreground">{({ active: L('Ativa', 'Active'), trialing: L('Em período de teste', 'Trial'), past_due: L('Pagamento em atraso', 'Past due'), paused: L('Pausada', 'Paused'), canceled: L('Cancelada', 'Cancelled') } as Record<string, string>)[subQ.data.status] ?? subQ.data.status}</span>
                       {subQ.data.current_period_end && (
-                        <> · {subQ.data.cancel_at_period_end ? L('Termina a', 'Ends on') : L('Renova a', 'Renews on')}{' '}
+                        <> · {subQ.data.paddle_subscription_id ? L('Acesso atual até', 'Current access until') : subQ.data.cancel_at_period_end ? L('Termina a', 'Ends on') : L('Renova a', 'Renews on')}{' '}
                           <span className="font-medium text-foreground">{new Date(subQ.data.current_period_end).toLocaleDateString(isEnglish ? 'en-GB' : 'pt-PT', { day: 'numeric', month: 'long', year: 'numeric' })}</span></>
                       )}
                     </>
@@ -329,12 +329,29 @@ export default function Account() {
                     : L('Plano atribuído sem subscrição recorrente.', 'Plan granted without a recurring subscription.')}
                 </div>
 
+                {subQ.data?.paddle_subscription_id && (
+                  <p className="text-sm text-muted-foreground">
+                    {new Date(subQ.data.current_period_end ?? 0).getTime() > Date.now()
+                      ? subQ.data.cancel_at_period_end
+                        ? L('O acesso Paddle termina na data indicada. Depois podes comprar Pro na Creem com a mesma conta.', 'Paddle access ends on the date shown. You can then buy Pro on Creem with the same account.')
+                        : L('Confirma a renovação ou o cancelamento da Paddle antes de comprar na Creem, para evitar uma cobrança duplicada.', 'Confirm Paddle renewal or cancellation before buying on Creem to avoid a duplicate charge.')
+                      : subQ.data.cancel_at_period_end || subQ.data.status === 'canceled'
+                        ? L('O período Paddle terminou. Escolhe um plano Pro para comprar pela Creem com esta conta.', 'The Paddle period has ended. Choose a Pro plan to purchase through Creem with this account.')
+                        : L('O período indicado terminou, mas o fim da subscrição Paddle não está confirmado. Contacta o suporte antes de comprar na Creem.', 'The displayed period ended, but the Paddle subscription has not been confirmed as ended. Contact support before buying on Creem.')}
+                  </p>
+                )}
+
                 <Separator />
 
                 <div className="flex gap-3">
                   <Button variant="outline" onClick={() => navigate('/pricing')}>
                     {t('account.viewPlans')}
                   </Button>
+                  {subQ.data?.paddle_subscription_id && subQ.data.current_period_end &&
+                    new Date(subQ.data.current_period_end).getTime() <= Date.now() &&
+                    (subQ.data.cancel_at_period_end || subQ.data.status === 'canceled') && currentPlan === 'free' && (
+                    <Button onClick={() => navigate('/pricing')}>{L('Comprar Pro na Creem', 'Buy Pro on Creem')}</Button>
+                  )}
                   {/* Upgrades always point to Pro. Pro, grandfathered Premium and admins have no upgrade. */}
                   {(currentPlan === 'free' || currentPlan === 'packs') && !isAdmin && (
                     <Button onClick={() => navigate('/pricing')}>

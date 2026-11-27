@@ -30,11 +30,14 @@ export default function Plans() {
     if (!user) { setHasPaddleSubscription(false); return; }
     supabase
       .from('subscriptions')
-      .select('id')
+      .select('paddle_subscription_id, current_period_end, status, cancel_at_period_end')
       .eq('user_id', user.id)
-      .limit(1)
-      .maybeSingle()
-      .then(({ data }) => setHasPaddleSubscription(!!data));
+      .not('paddle_subscription_id', 'is', null)
+      .order('created_at', { ascending: false }).limit(1).maybeSingle()
+      .then(({ data }) => setHasPaddleSubscription(!!data &&
+        ['active', 'trialing', 'past_due', 'canceled'].includes(data.status) &&
+        ((!data.cancel_at_period_end && data.status !== 'canceled') ||
+          (!!data.current_period_end && new Date(data.current_period_end).getTime() > Date.now()))));
   }, [user]);
 
 

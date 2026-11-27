@@ -4,6 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 export function checkoutBlockMessage(reason: string | null | undefined, en: boolean): string {
   const map: Record<string, [string, string]> = {
     already_subscribed: ['Já tens acesso ao Pro.', 'You already have Pro access.'],
+    paddle_renewal_unconfirmed: [
+      'Ainda não foi confirmado o fim da subscrição Paddle. Contacta o suporte antes de comprar na Creem, para evitar uma cobrança duplicada.',
+      'Your Paddle subscription has not been confirmed as ended. Contact support before buying on Creem to avoid a duplicate charge.',
+    ],
     buyer_blocked: ['O pagamento foi bloqueado. Contacta o suporte.', 'Payment blocked. Please contact support.'],
     disposable_email: [
       "Emails temporários não são permitidos. Usa um email permanente.",
