@@ -1,6 +1,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { creemEnvironment, creemRequest, hostedUrl, productFor, setting } from '../_shared/creem.ts';
 import { ipHash } from '../_shared/checkout-ip.ts';
+import { checkoutCodeRule, type CheckoutCode } from '../_shared/creemDiscounts.ts';
 
 const headers = {
   'Access-Control-Allow-Origin': '*',
@@ -24,7 +25,14 @@ Deno.serve(async req => {
     const input = await req.json();
     if (!['monthly','annual','packs'].includes(input.billing)) return json({},400);
     const code = input.discountCode || null;
-    if (code !== null && (input.billing === 'packs' || code !== 'PRODUCTHUNT20')) return json({reason:'invalid_code'});
+    let rule: CheckoutCode | null;
+    try { rule = checkoutCodeRule(code, input.billing); } catch { return json({reason:'invalid_code'}); }
+    if (rule?.paddleOnly) {
+      const paddle = await admin.from('subscriptions').select('id')
+        .eq('user_id',user.id).not('paddle_subscription_id','is',null).limit(1);
+      if (paddle.error) return json({reason:'checkout_unavailable'},503);
+      if (!paddle.data?.length) return json({reason:'invalid_code'});
+    }
     const hash = await ipHash(req);
     if (!hash) return json({reason:'checkout_unavailable'},503);
     const product = productFor(input.billing);
@@ -33,6 +41,14 @@ Deno.serve(async req => {
     if (input.billing === 'packs') {
       const owned = await admin.from('profiles').select('current_plan').eq('id',user.id).maybeSingle();
       if (owned.data && ['packs','premium','pro'].includes(owned.data.current_plan)) return json({reason:'already_subscribed'});
+    }
+    if (input.billing !== 'packs') {
+      // Paddle access ends 48h after its paid-through date (expire-paddle-grace job, every 15 min).
+      // Apply that same rule for this user now, so a stale cached Pro does not answer
+      // 'already_subscribed' in the minutes before the job runs. It never touches Creem rows or
+      // overrides, and is a no-op while the grace period is still running.
+      const grace = await admin.rpc('expire_paddle_grace', {p_user:user.id});
+      if (grace.error) console.error('creem-checkout paddle grace check failed', {name:grace.error.name ?? 'Error'});
     }
     const reservation = await admin.rpc('reserve_creem_checkout', {
       p_user:user.id, p_email:user.email, p_hash:hash, p_price:input.billing === 'packs' ? 'packs' : 'pro_' + input.billing,
@@ -54,7 +70,7 @@ Deno.serve(async req => {
       if (code) {
         const discount = await creemRequest('discounts?discount_code=' + encodeURIComponent(code));
         if (discount.code !== code || discount.status !== 'active' || discount.type !== 'percentage' ||
-            discount.duration !== 'once' || discount.percentage !== 20 || !discount.applies_to_products?.includes(product)) {
+            discount.duration !== 'once' || discount.percentage !== rule?.percentage || !discount.applies_to_products?.includes(product)) {
           throw new Error('Discount configuration mismatch');
         }
       }
