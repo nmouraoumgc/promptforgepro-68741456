@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { authenticateRequest, corsHeaders } from "../_shared/auth.ts";
 import { outputLanguageRules, isEnglishLang } from '../_shared/ptpt.ts';
 import { plainTextRules, toPlainText } from '../_shared/plaintext.ts';
+import { chat, AiError, hasAiProvider } from '../_shared/ai.ts';
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -24,9 +25,8 @@ serve(async (req) => {
       );
     }
 
-    const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");
-    if (!GROQ_API_KEY) {
-      throw new Error("GROQ_API_KEY is not configured");
+    if (!hasAiProvider()) {
+      throw new Error("API key não configurada");
     }
 
     // Hook de choque controlado prompt
@@ -56,47 +56,39 @@ Regras:
 - Máximo de 15 palavras por hook
 Formato: Apresentar APENAS os hooks numerados, um por linha. Sem introdução nem explicação.`;
 
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${GROQ_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: Deno.env.get('AI_MODEL') ?? 'openai/gpt-oss-120b',
-        ...(Deno.env.get('AI_REASONING_EFFORT') ? { reasoning_effort: Deno.env.get('AI_REASONING_EFFORT') } : {}),
-        messages: [
-          { role: "system", content: systemPrompt + outputLanguageRules(language) + plainTextRules(language) },
-          { role: "user", content: userPrompt },
-        ],
-        max_tokens: 1500, // was 500; raised because reasoning models (gpt-oss) count reasoning tokens here
+    let content = "";
+    try {
+      const r = await chat([
+        { role: "system", content: systemPrompt + outputLanguageRules(language) + plainTextRules(language) },
+        { role: "user", content: userPrompt },
+      ], {
+        maxTokens: 1500, // was 500; raised because reasoning models (gpt-oss) count reasoning tokens here
         temperature: 0.8,
-      }),
-    });
-
-    if (!response.ok) {
-      if (response.status === 429) {
+      });
+      content = r.content;
+    } catch (e) {
+      const status = e instanceof AiError ? e.status : 500;
+      if (status === 429) {
         return new Response(
           JSON.stringify({ error: "Limite de pedidos excedido. Tenta novamente em alguns segundos." }),
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      if (response.status === 402) {
+      if (status === 402) {
         return new Response(
           JSON.stringify({ error: "Créditos insuficientes. Adiciona créditos à tua conta." }),
           { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
-      return new Response(
-        JSON.stringify({ error: "Erro ao gerar hooks. Tenta novamente." }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      // Empty answer from every provider: keep the previous behaviour (200 with empty hooks).
+      if (!(e instanceof AiError && e.reason === "empty")) {
+        console.error("AI provider error:", status);
+        return new Response(
+          JSON.stringify({ error: "Erro ao gerar hooks. Tenta novamente." }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
-
-    const data = await response.json();
-    const content = data.choices?.[0]?.message?.content || "";
 
     return new Response(
       JSON.stringify({ 

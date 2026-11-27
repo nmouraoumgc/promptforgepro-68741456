@@ -6,6 +6,7 @@ import { authenticateRequest, corsHeaders } from "../_shared/auth.ts";
 import { resolveTaskBrand, BrandSelectionError, brandInstructions } from "../_shared/brand.ts";
 import { outputLanguageRules } from '../_shared/ptpt.ts';
 import { plainTextRules, toPlainText } from '../_shared/plaintext.ts';
+import { chat, AiError, hasAiProvider } from '../_shared/ai.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -27,9 +28,8 @@ serve(async (req) => {
       );
     }
 
-    const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY');
-    if (!GROQ_API_KEY) {
-      console.error('GROQ_API_KEY not configured');
+    if (!hasAiProvider()) {
+      console.error('AI provider not configured');
       return new Response(
         JSON.stringify({ error: 'API key não configurada' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -143,54 +143,49 @@ Formato da resposta:
   "improvements": ["...", "...", "..."]
 }`;
 
-    console.log('Calling Groq API for prompt optimization...');
+    console.log('Calling AI for prompt optimization...');
 
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${GROQ_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      signal: AbortSignal.timeout(45000),
-      body: JSON.stringify({
-        model: Deno.env.get('AI_MODEL') ?? 'openai/gpt-oss-120b',
-        ...(Deno.env.get('AI_REASONING_EFFORT') ? { reasoning_effort: Deno.env.get('AI_REASONING_EFFORT') } : {}),
-        messages: [
-          { role: 'system', content: (systemPrompt + outputLanguageRules(language)) + brandInstructions(brand, isEnglish) + (isEnglish
-            ? '\n\nThe "content" of each variation is a plain-text prompt (use \\n for line breaks inside the JSON string).'
-            : '\n\nO "content" de cada variação é um prompt em texto simples (usa \\n para quebras de linha dentro da string JSON).') + plainTextRules(isEnglish ? 'en' : 'pt') },
-          { role: 'user', content: isEnglish ? `Analyze and optimize this prompt:\n\n"${prompt}"` : `Analisa e otimiza este prompt:\n\n"${prompt}"` }
-        ],
-      }),
-    });
-
-    if (!response.ok) {
-      if (response.status === 429) {
+    let content: string;
+    try {
+      const r = await chat([
+        { role: 'system', content: (systemPrompt + outputLanguageRules(language)) + brandInstructions(brand, isEnglish) + (isEnglish
+          ? '\n\nThe "content" of each variation is a plain-text prompt (use \\n for line breaks inside the JSON string).'
+          : '\n\nO "content" de cada variação é um prompt em texto simples (usa \\n para quebras de linha dentro da string JSON).') + plainTextRules(isEnglish ? 'en' : 'pt') },
+        { role: 'user', content: isEnglish ? `Analyze and optimize this prompt:\n\n"${prompt}"` : `Analisa e otimiza este prompt:\n\n"${prompt}"` },
+      ], { timeoutMs: 45_000 });
+      content = r.content;
+    } catch (e) {
+      const status = e instanceof AiError ? e.status : 500;
+      if (status === 429) {
         return new Response(
           JSON.stringify({ error: 'O fornecedor de IA limitou temporariamente os pedidos. Tenta novamente mais tarde. / The AI provider temporarily rate-limited requests. Please try again later.', code: 'AI_RATE_LIMIT' }),
           { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
-      if (response.status === 402) {
+      if (status === 402) {
         return new Response(
           JSON.stringify({ error: 'Créditos insuficientes.' }),
           { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
-      console.error('AI gateway error:', response.status);
+      if (e instanceof AiError && e.reason === 'empty') {
+        console.error('No content in AI response');
+        return new Response(
+          JSON.stringify({ error: 'Resposta vazia da IA' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      if (e instanceof AiError && e.reason === 'timeout') {
+        // Same outcome as the previous AbortSignal.timeout(45000) path (generic optimize error).
+        console.error('AI provider timeout');
+        return new Response(
+          JSON.stringify({ error: 'Não foi possível otimizar. Tenta novamente. / Could not optimize. Try again.' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      console.error('AI gateway error:', status);
       return new Response(
         JSON.stringify({ error: 'Erro ao processar o pedido' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const data = await response.json();
-    const content = data.choices?.[0]?.message?.content;
-
-    if (!content) {
-      console.error('No content in AI response');
-      return new Response(
-        JSON.stringify({ error: 'Resposta vazia da IA' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
