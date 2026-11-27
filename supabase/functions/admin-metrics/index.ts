@@ -31,20 +31,49 @@ Deno.serve(async (req) => {
     const { data: role } = await admin.from('user_roles').select('role').eq('user_id', u.user.id).eq('role', 'admin').maybeSingle();
     if (!role) return json({ error: 'forbidden' }, 403);
 
-    const [signups, subs, txns, adjs, discounts] = await Promise.all([
-      // exact counts computed in SQL (no PostgREST row cap); service-role only
-      admin.rpc('admin_signups_pro_by_month', { p_months: 6, p_tz: 'Europe/Lisbon' }).then(({ data, error }) => {
-        if (error) { console.error('signups_by_month failed', error.message); return []; }
-        return data as unknown[];
-      }),
+    const signups = await admin.rpc('admin_signups_pro_by_month', { p_months: 6, p_tz: 'Europe/Lisbon' }).then(({ data, error }) => {
+      if (error) { console.error('signups_by_month failed', error.message); return []; }
+      return data as unknown[];
+    });
+
+    // Paddle is historical. A Paddle API outage must not blank the whole admin page.
+    // Keep returning DB-backed/provider-neutral data and expose provider health explicitly.
+    const paddle = await Promise.allSettled([
       getAll('/subscriptions?status=active,trialing,past_due,paused&per_page=200&include=recurring_transaction_details'),
       getAll('/transactions?status=completed,paid&per_page=30'),
       getAll('/adjustments?per_page=50'),
       getAll('/discounts?status=active,archived&per_page=50'),
     ]);
-    const metrics = computeAdminMetrics(subs, txns, adjs, new Date(), discounts);
+    const paddleOk = paddle.every((r) => r.status === 'fulfilled');
+    const value = (i: number) => paddle[i].status === 'fulfilled' ? (paddle[i] as PromiseFulfilledResult<unknown[]>).value : [];
+    if (!paddleOk) {
+      console.warn('admin-metrics: Paddle historical metrics partially unavailable');
+    }
+
+    const metrics = computeAdminMetrics(value(0), value(1), value(2), new Date(), value(3));
     metrics.signups_by_month = toSignupMonths(signups);
-    return json(metrics);
+
+    const { data: providerSubs, error: providerSubsError } = await admin
+      .from('subscriptions')
+      .select('status,paddle_subscription_id,creem_subscription_id,current_period_end');
+    if (providerSubsError) console.error('provider subscription counts failed', providerSubsError.message);
+    const rows = providerSubs ?? [];
+    const active = (s: {status: string; current_period_end: string | null}) =>
+      ['active','trialing','past_due'].includes(s.status) &&
+      (!s.current_period_end || new Date(s.current_period_end).getTime() > Date.now());
+    return json({
+      ...metrics,
+      provider_health: { paddle: paddleOk ? 'ok' : 'unavailable', creem: providerSubsError ? 'unavailable' : 'db' },
+      // Creem confirmed payments are not included in Paddle's historical transaction feed.
+      financial_data_complete: false,
+      paddle_data_complete: paddleOk,
+      provider_subscriptions: providerSubsError ? null : {
+        paddle: rows.filter((s) => s.paddle_subscription_id).length,
+        creem: rows.filter((s) => s.creem_subscription_id).length,
+        paddle_active: rows.filter((s) => s.paddle_subscription_id && active(s)).length,
+        creem_active: rows.filter((s) => s.creem_subscription_id && active(s)).length,
+      },
+    });
   } catch (e) {
     console.error('admin-metrics failed', e instanceof Error ? e.message : String(e));
     return json({ error: 'metrics_unavailable' }, 502);
