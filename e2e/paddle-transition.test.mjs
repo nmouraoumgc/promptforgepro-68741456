@@ -282,14 +282,15 @@ test('PADDLE_TRANSITION: dry run by default, disabled flag blocks sending, sends
   assert.equal(again.body.skipped.already_sent, 2);
 });
 
-test('PADDLE_TRANSITION copy: PT and EN, Lisbon dates, 48h grace, PADDLE50, no em or en dash', async () => {
+test('PADDLE_TRANSITION copy: English only, UTC dates, 48h grace, PADDLE50, no em or en dash', async () => {
   const mod = await loadEdge('supabase/functions/_shared/campaignPaddleTransition.ts', { exportedModule: true });
   const m = mod.renderPaddleTransition({ periodEnd: '2026-11-30T00:40:00Z', claimUrl: 'https://promptforgepro.me/pricing?code=PADDLE50&r=x"y', unsubscribeUrl: 'https://promptforgepro.me/unsubscribe?t=t' });
   for (const s of [m.subject, m.html, m.text]) { assert.ok(!s.includes('\u2014')); assert.ok(!s.includes('\u2013')); }
-  assert.ok(m.text.includes('30 de novembro, às 00:40 (hora de Lisboa)'));
-  assert.ok(m.text.includes('2 de dezembro, às 00:40 (hora de Lisboa)'));
-  assert.ok(m.text.includes('2 December at 00:40 (Lisbon time)'));
-  assert.ok(m.text.includes('o Paddle não te vai cobrar nada'));
+  assert.equal(m.subject, 'Your Pro access and 50% off your first month');
+  assert.ok(m.text.includes('Your free month ends on 30 November at 00:40 UTC.'));
+  assert.ok(m.text.includes('your Pro access stays on until 2 December at 00:40 UTC.'));
   assert.ok(m.text.includes('Paddle will not charge you anything'));
+  for (const pt of ['Olá', 'Lisboa', 'Cancelar', 'Código', 'mês']) { assert.ok(!m.text.includes(pt), pt); assert.ok(!m.html.includes(pt), pt); }
+  assert.ok(m.html.includes('lang="en"'));
   assert.ok(m.html.includes('PADDLE50') && m.html.includes('&amp;r=x&quot;y'));
 });
