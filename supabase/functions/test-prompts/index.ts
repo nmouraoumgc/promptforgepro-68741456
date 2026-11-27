@@ -3,6 +3,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { authenticateRequest, corsHeaders } from "../_shared/auth.ts";
 import { outputLanguageRules, isEnglishLang } from '../_shared/ptpt.ts';
 import { plainTextRules, toPlainText } from '../_shared/plaintext.ts';
+import { chat, AiError, hasAiProvider } from '../_shared/ai.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -30,9 +31,8 @@ serve(async (req) => {
       );
     }
 
-    const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY');
-    if (!GROQ_API_KEY) {
-      console.error('GROQ_API_KEY not configured');
+    if (!hasAiProvider()) {
+      console.error('AI provider not configured');
       return new Response(
         JSON.stringify({ error: en ? 'API key not configured' : 'API key não configurada' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -41,70 +41,47 @@ serve(async (req) => {
 
     console.log('Testing prompts A and B...');
 
-    // Test both prompts in parallel
-    const [responseA, responseB] = await Promise.all([
-      fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${GROQ_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: Deno.env.get('AI_MODEL') ?? 'openai/gpt-oss-120b',
-          ...(Deno.env.get('AI_REASONING_EFFORT') ? { reasoning_effort: Deno.env.get('AI_REASONING_EFFORT') } : {}),
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: promptA }
-          ],
-        }),
-      }),
-      fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${GROQ_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: Deno.env.get('AI_MODEL') ?? 'openai/gpt-oss-120b',
-          ...(Deno.env.get('AI_REASONING_EFFORT') ? { reasoning_effort: Deno.env.get('AI_REASONING_EFFORT') } : {}),
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: promptB }
-          ],
-        }),
-      })
-    ]);
+    // Test both prompts in parallel. Each branch falls back to OpenRouter on its own,
+    // so a Groq 429 on one branch does not fail the pair if OpenRouter can still answer.
+    const run = (userPrompt: string) => chat([
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt },
+    ]).then((r) => r.content).catch((e) => {
+      // Empty answer from every provider: keep the previous "No response" placeholder.
+      if (e instanceof AiError && e.reason === 'empty') return '';
+      throw e;
+    });
+    const [resA, resB] = await Promise.allSettled([run(promptA), run(promptB)]);
+
+    const statuses = [resA, resB]
+      .filter((r): r is PromiseRejectedResult => r.status === 'rejected')
+      .map((r) => (r.reason instanceof AiError ? r.reason.status : 500));
 
     // Handle rate limiting
-    if (responseA.status === 429 || responseB.status === 429) {
+    if (statuses.includes(429)) {
       return new Response(
         JSON.stringify({ error: en ? 'Rate limit exceeded. Please try again later.' : 'Limite de pedidos excedido. Tenta novamente mais tarde.' }),
         { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    if (responseA.status === 402 || responseB.status === 402) {
+    if (statuses.includes(402)) {
       return new Response(
         JSON.stringify({ error: en ? 'Insufficient credits.' : 'Créditos insuficientes.' }),
         { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    if (!responseA.ok || !responseB.ok) {
-      console.error('AI gateway error:', responseA.status, responseB.status);
+    if (resA.status === 'rejected' || resB.status === 'rejected') {
+      console.error('AI provider error:', ...statuses);
       return new Response(
         JSON.stringify({ error: en ? 'Error processing the prompts' : 'Erro ao processar os prompts' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const [dataA, dataB] = await Promise.all([
-      responseA.json(),
-      responseB.json()
-    ]);
-
-    const contentA = toPlainText(dataA.choices?.[0]?.message?.content) || (en ? 'No response' : 'Sem resposta');
-    const contentB = toPlainText(dataB.choices?.[0]?.message?.content) || (en ? 'No response' : 'Sem resposta');
+    const contentA = toPlainText(resA.value) || (en ? 'No response' : 'Sem resposta');
+    const contentB = toPlainText(resB.value) || (en ? 'No response' : 'Sem resposta');
 
     console.log('Successfully tested both prompts');
 

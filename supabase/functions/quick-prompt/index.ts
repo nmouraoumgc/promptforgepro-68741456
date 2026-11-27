@@ -4,6 +4,7 @@ import { authenticateRequest, corsHeaders } from "../_shared/auth.ts";
 import { resolveTaskBrand, BrandSelectionError, brandInstructions } from "../_shared/brand.ts";
 import { outputLanguageRules } from '../_shared/ptpt.ts';
 import { plainTextRules, toPlainText } from '../_shared/plaintext.ts';
+import { chat, AiError, hasAiProvider } from '../_shared/ai.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -26,9 +27,8 @@ serve(async (req) => {
       );
     }
 
-    const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY');
-    if (!GROQ_API_KEY) {
-      console.error('GROQ_API_KEY not configured');
+    if (!hasAiProvider()) {
+      console.error('AI provider not configured');
       return new Response(
         JSON.stringify({ error: 'API key não configurada' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -58,52 +58,39 @@ CRITICAL LANGUAGE RULE:
 
     const userRequest = `Create a prompt based on this request:\n\n"${request}"`;
 
-    console.log('Generating quick prompt with Groq API...');
+    console.log('Generating quick prompt...');
 
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${GROQ_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: Deno.env.get('AI_MODEL') ?? 'openai/gpt-oss-120b',
-        ...(Deno.env.get('AI_REASONING_EFFORT') ? { reasoning_effort: Deno.env.get('AI_REASONING_EFFORT') } : {}),
-        messages: [
-          { role: 'system', content: (systemPrompt + outputLanguageRules(isEnglish ? 'en' : 'pt')) + brandInstructions(brand, isEnglish) + plainTextRules(isEnglish ? 'en' : 'pt') },
-          { role: 'user', content: userRequest }
-        ],
-      }),
-    });
-
-    if (!response.ok) {
-      if (response.status === 429) {
+    let generatedPrompt: string;
+    try {
+      const r = await chat([
+        { role: 'system', content: (systemPrompt + outputLanguageRules(isEnglish ? 'en' : 'pt')) + brandInstructions(brand, isEnglish) + plainTextRules(isEnglish ? 'en' : 'pt') },
+        { role: 'user', content: userRequest },
+      ]);
+      generatedPrompt = r.content;
+    } catch (e) {
+      const status = e instanceof AiError ? e.status : 500;
+      if (status === 429) {
         return new Response(
           JSON.stringify({ error: 'Limite de pedidos excedido. Tenta novamente mais tarde. / Rate limit exceeded. Please try again later.' }),
           { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
-      if (response.status === 402) {
+      if (status === 402) {
         return new Response(
           JSON.stringify({ error: 'Créditos insuficientes. / Insufficient credits.' }),
           { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
-      const errorText = await response.text();
-      console.error('AI gateway error:', response.status, errorText);
+      if (e instanceof AiError && e.reason === 'empty') {
+        console.error('No content in AI response');
+        return new Response(
+          JSON.stringify({ error: 'Resposta vazia da IA / Empty AI response' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      console.error('AI provider error:', status);
       return new Response(
         JSON.stringify({ error: 'Erro ao processar o pedido / Error processing request' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const data = await response.json();
-    const generatedPrompt = data.choices?.[0]?.message?.content;
-
-    if (!generatedPrompt) {
-      console.error('No content in AI response');
-      return new Response(
-        JSON.stringify({ error: 'Resposta vazia da IA / Empty AI response' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }

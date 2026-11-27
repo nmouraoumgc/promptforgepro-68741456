@@ -6,7 +6,7 @@ import ts from 'typescript';
 import { webcrypto } from 'node:crypto';
 export async function loadEdge(file, { auth, rpc, fetch: transport, resolveBrand = async () => null, realAuth = false, clientFactory, env = {}, exportedModule = false } = {}) {
   let handler;
-  const context = vm.createContext({ URL, Request, Response, Headers, AbortSignal, TextEncoder, crypto: webcrypto,
+  const context = vm.createContext({ URL, Request, Response, Headers, AbortSignal, AbortController, TextEncoder, crypto: webcrypto, setTimeout, clearTimeout,
     console: { log() {}, warn() {}, error() {} }, fetch: transport || (() => { throw new Error('Unexpected network request'); }),
     Deno: { serve: fn => { handler = fn; }, env: { get: (key) => ({ GROQ_API_KEY: 'LOCAL_FAKE', SUPABASE_URL: 'https://qa.invalid', SUPABASE_SERVICE_ROLE_KEY: 'LOCAL_FAKE', ...env })[key] } } });
   const cache = new Map();
