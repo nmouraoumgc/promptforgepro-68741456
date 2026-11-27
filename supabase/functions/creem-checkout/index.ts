@@ -24,7 +24,8 @@ Deno.serve(async req => {
 
     const input = await req.json();
     if (!['monthly','annual','packs'].includes(input.billing)) return json({},400);
-    const code = input.discountCode || null;
+    // Codes are uppercase in Creem (e.g. FOUNDER50); accept any casing from the client.
+    const code = typeof input.discountCode === 'string' && input.discountCode.trim() ? input.discountCode.trim().toUpperCase() : null;
     let rule: CheckoutCode | null;
     try { rule = checkoutCodeRule(code, input.billing); } catch { return json({reason:'invalid_code'}); }
     if (rule?.paddleOnly) {

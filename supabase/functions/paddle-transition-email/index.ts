@@ -11,7 +11,7 @@
 // Never logs addresses or keys; the response has counts and 8-char internal ids only.
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2';
 import { isInternalCaller } from '../_shared/internalAuth.ts';
-import { renderPaddleTransition, graceEnd, PADDLE_TRANSITION_CAMPAIGN, PADDLE50_CODE } from '../_shared/campaignPaddleTransition.ts';
+import { renderPaddleTransition, graceEnd, PADDLE_TRANSITION_CAMPAIGN, FOUNDER50_CODE } from '../_shared/campaignPaddleTransition.ts';
 
 const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type' };
 const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { ...cors, 'Content-Type': 'application/json' } });
@@ -124,7 +124,7 @@ Deno.serve(async (req) => {
         .eq('campaign', PADDLE_TRANSITION_CAMPAIGN).eq('user_id', d.sub.user_id).eq('status', 'pending').select('id').maybeSingle();
       if (!claimed) { out.skipped_claimed++; continue; }
       out.attempted++;
-      const claimUrl = `${SITE}/pricing?code=${PADDLE50_CODE}&billing=monthly&c=${PADDLE_TRANSITION_CAMPAIGN}&r=${claimed.id}`;
+      const claimUrl = `${SITE}/pricing?code=${FOUNDER50_CODE}&billing=monthly&c=${PADDLE_TRANSITION_CAMPAIGN}&r=${claimed.id}`;
       const unsubscribeUrl = `${SITE}/unsubscribe?t=${d.token}`;
       const m = renderPaddleTransition({ periodEnd: d.sub.current_period_end!, claimUrl, unsubscribeUrl });
       const oneClick = `${Deno.env.get('SUPABASE_URL')}/functions/v1/unsubscribe?t=${d.token}`;

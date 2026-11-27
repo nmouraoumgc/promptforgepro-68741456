@@ -11,7 +11,7 @@ export interface CheckoutCode {
 export const CHECKOUT_CODES: Record<string, CheckoutCode> = {
   PRODUCTHUNT20: { percentage: 20, billings: ['monthly', 'annual'], paddleOnly: false },
   // Paddle transition (27/11/2026): 50% off the first month of Pro monthly only.
-  PADDLE50: { percentage: 50, billings: ['monthly'], paddleOnly: true },
+  FOUNDER50: { percentage: 50, billings: ['monthly'], paddleOnly: true },
 };
 
 export function checkoutCodeRule(code: string | null, billing: Billing): CheckoutCode | null {
