@@ -1,4 +1,4 @@
-// Paddle transition (27/11/2026): 48h grace expiry job, Creem checkout after grace with PADDLE50,
+// Paddle transition (27/11/2026): 48h grace expiry job, Creem checkout after grace with FOUNDER50,
 // and the manual PADDLE_TRANSITION notice. Offline: PGlite + the real Edge handlers, no network.
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -164,7 +164,7 @@ function transport(seen, percentage = 50) {
 const buy = (handler, body, ip = '192.0.2.1') => handler(new Request('https://qa.invalid', { method: 'POST',
   headers: { authorization: 'Bearer t', 'x-forwarded-for': ip }, body: JSON.stringify(body) })).then(r => r.json());
 
-test('creem-checkout: stale Paddle Pro after grace can buy with PADDLE50; in grace, Creem owners and other codes are refused', async () => {
+test('creem-checkout: stale Paddle Pro after grace can buy with FOUNDER50; in grace, Creem owners and other codes are refused', async () => {
   const db = await setupDb();
   try {
     await db.exec(await migration(GRACE));
@@ -182,21 +182,24 @@ test('creem-checkout: stale Paddle Pro after grace can buy with PADDLE50; in gra
       return { res: await buy(h, body, '192.0.2.' + n), calls, seen };
     };
     // Grace over: the per-user expiry runs before reserving, so the stale cache does not block.
-    const ok = await run(11, { billing: 'monthly', discountCode: 'PADDLE50' });
+    const ok = await run(11, { billing: 'monthly', discountCode: 'FOUNDER50' });
     assert.equal(ok.res.url, 'https://checkout.creem.io/ch_1');
     assert.deepEqual(ok.calls, ['expire_paddle_grace', 'reserve_creem_checkout']);
-    assert.equal(ok.seen[0].discount_code, 'PADDLE50');
+    assert.equal(ok.seen[0].discount_code, 'FOUNDER50');
     assert.equal(ok.seen[0].product_id, 'prod_monthly');
     assert.equal(await plan(db, 11), 'free');
+    // Lowercase input is normalised to the Creem code (the existing open checkout is reused).
+    const lower = await run(11, { billing: 'monthly', discountCode: ' founder50 ' });
+    assert.equal(lower.res.url, 'https://checkout.creem.io/ch_1');
 
     // In grace: keeps Pro, cannot open a second subscription yet.
-    assert.equal((await run(12, { billing: 'monthly', discountCode: 'PADDLE50' })).res.reason, 'already_subscribed');
+    assert.equal((await run(12, { billing: 'monthly', discountCode: 'FOUNDER50' })).res.reason, 'already_subscribed');
     assert.equal(await status(db, 12), 'active');
     // Already on Creem: no duplicate subscription.
-    assert.equal((await run(13, { billing: 'monthly', discountCode: 'PADDLE50' })).res.reason, 'already_subscribed');
-    // PADDLE50 is monthly only, and only for accounts with Paddle history.
-    assert.equal((await run(11, { billing: 'annual', discountCode: 'PADDLE50' })).res.reason, 'invalid_code');
-    assert.equal((await run(14, { billing: 'monthly', discountCode: 'PADDLE50' })).res.reason, 'invalid_code');
+    assert.equal((await run(13, { billing: 'monthly', discountCode: 'FOUNDER50' })).res.reason, 'already_subscribed');
+    // FOUNDER50 is monthly only, and only for accounts with Paddle history.
+    assert.equal((await run(11, { billing: 'annual', discountCode: 'FOUNDER50' })).res.reason, 'invalid_code');
+    assert.equal((await run(14, { billing: 'monthly', discountCode: 'FOUNDER50' })).res.reason, 'invalid_code');
     assert.equal((await run(14, { billing: 'monthly', discountCode: 'OTHER50' })).res.reason, 'invalid_code');
     assert.equal((await run(14, { billing: 'packs', discountCode: 'PRODUCTHUNT20' })).res.reason, 'invalid_code');
     // A Creem discount whose percentage does not match the expected rule fails closed.
@@ -276,15 +279,15 @@ test('PADDLE_TRANSITION: dry run by default, disabled flag blocks sending, sends
   assert.equal(sent.body.sent, 2); assert.equal(mails.length, 2);
   assert.deepEqual(mails.map(m => m.body.to[0]).sort(), ['u21@example.test', 'u28@example.test']);
   assert.ok(mails.every(m => m.key.startsWith('PADDLE_TRANSITION-') && m.body.from === 'PromptForge Pro <noreply@promptforgepro.me>'));
-  assert.ok(mails[0].body.html.includes('/pricing?code=PADDLE50&amp;billing=monthly'));
+  assert.ok(mails[0].body.html.includes('/pricing?code=FOUNDER50&amp;billing=monthly'));
   const again = await call(live, { action: 'send', dry_run: false });
   assert.equal(again.body.sent, 0); assert.equal(mails.length, 2);
   assert.equal(again.body.skipped.already_sent, 2);
 });
 
-test('PADDLE_TRANSITION copy: English only, UTC dates, 48h grace, PADDLE50, no em or en dash', async () => {
+test('PADDLE_TRANSITION copy: English only, UTC dates, 48h grace, FOUNDER50, no em or en dash', async () => {
   const mod = await loadEdge('supabase/functions/_shared/campaignPaddleTransition.ts', { exportedModule: true });
-  const m = mod.renderPaddleTransition({ periodEnd: '2026-11-30T00:40:00Z', claimUrl: 'https://promptforgepro.me/pricing?code=PADDLE50&r=x"y', unsubscribeUrl: 'https://promptforgepro.me/unsubscribe?t=t' });
+  const m = mod.renderPaddleTransition({ periodEnd: '2026-11-30T00:40:00Z', claimUrl: 'https://promptforgepro.me/pricing?code=FOUNDER50&r=x"y', unsubscribeUrl: 'https://promptforgepro.me/unsubscribe?t=t' });
   for (const s of [m.subject, m.html, m.text]) { assert.ok(!s.includes('\u2014')); assert.ok(!s.includes('\u2013')); }
   assert.equal(m.subject, 'Your Pro access and 50% off your first month');
   assert.ok(m.text.includes('Your free month ends on 30 November at 00:40 UTC.'));
@@ -292,5 +295,5 @@ test('PADDLE_TRANSITION copy: English only, UTC dates, 48h grace, PADDLE50, no e
   assert.ok(m.text.includes('Paddle will not charge you anything'));
   for (const pt of ['Olá', 'Lisboa', 'Cancelar', 'Código', 'mês']) { assert.ok(!m.text.includes(pt), pt); assert.ok(!m.html.includes(pt), pt); }
   assert.ok(m.html.includes('lang="en"'));
-  assert.ok(m.html.includes('PADDLE50') && m.html.includes('&amp;r=x&quot;y'));
+  assert.ok(m.html.includes('FOUNDER50') && m.html.includes('&amp;r=x&quot;y'));
 });
